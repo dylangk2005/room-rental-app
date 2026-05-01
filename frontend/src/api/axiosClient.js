@@ -6,19 +6,8 @@ const axiosClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    withCredentials: true, // Cho phép trình duyệt tự đính cookie vào mỗi request
 })
-
-// Request Interceptor — tự động đính token vào mỗi request
-axiosClient.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('accessToken')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
-        }
-        return config
-    },
-    (error) => Promise.reject(error)
-)
 
 // Response Interceptor — xử lý lỗi tập trung
 axiosClient.interceptors.response.use(
@@ -26,7 +15,6 @@ axiosClient.interceptors.response.use(
     (error) => {
         const status = error.response?.status
         if (status === 401) {
-            localStorage.removeItem('accessToken')
             window.location.href = '/login'
         }
         if (status === 403) {

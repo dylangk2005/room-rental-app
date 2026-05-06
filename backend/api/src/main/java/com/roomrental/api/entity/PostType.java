@@ -2,6 +2,8 @@ package com.roomrental.api.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,6 +26,9 @@ public class PostType {
 
     @Column(name = "priority")
     private Integer priority;
+
+    @Column(name = "push_price", precision = 12, scale = 2, columnDefinition = "DECIMAL(12,2)")
+    private BigDecimal pushPrice;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

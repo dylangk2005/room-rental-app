@@ -45,6 +45,9 @@ public class Post {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "push_time")
+    private LocalDateTime pushTime;
+
     @Column(name = "end_at")
     private LocalDateTime endAt;
 
@@ -57,6 +60,6 @@ public class Post {
     private PostType postType;
 
     public enum PostStatus {
-        PENDING, ACTIVE, EXPIRED, REJECTED, HIDDEN, BANNED
+        PENDING, ACTIVE, EXPIRED, REJECTED, HIDDEN
     }
 }

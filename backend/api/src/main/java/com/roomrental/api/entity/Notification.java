@@ -14,8 +14,8 @@ public class Notification {
     private Integer id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "type")
-    private NotificationType type;
+    @Column(name = "title")
+    private NotificationType title;
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
@@ -30,11 +30,7 @@ public class Notification {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "post_id")
-    private Post post;
-
     public enum NotificationType {
-        EXPIRING_SOON, EXPIRED, APPROVED, REJECTED, REFUNDED, SYSTEM
+        POST_INFORMATION, REPORT_INFORMATION, POST_EXPIRING, SYSTEM_INFORMATION
     }
 }

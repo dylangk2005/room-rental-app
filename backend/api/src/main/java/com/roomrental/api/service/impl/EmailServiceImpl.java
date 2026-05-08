@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
+    private String fromEmail;
 
     @Override
     public void sendOtp(String toEmail, String otp) {
         SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("TayTro <" + fromEmail + ">");
         message.setTo(toEmail);
         message.setSubject("[TayTro.vn] Mã xác thực OTP");
         message.setText(
@@ -23,7 +25,7 @@ public class EmailServiceImpl implements EmailService {
                 "Mã này có hiệu lực trong 5 phút.\n\n" +
                 "Vui lòng không chia sẻ mã này với bất kỳ ai. \n\n" +
                 "Trân trọng,\n" +
-                "Đội ngũ TayTro.vn"
+                "Đội ngũ TayTro"
         );
         mailSender.send(message);
     }

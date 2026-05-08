@@ -43,12 +43,12 @@ public class AuthServiceImpl implements AuthService {
     public void register(RegisterRequest request) {
         // kiểm tra email đã tồn tại chưa
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại");
+            throw AppException.badRequest("Email đã tồn tại");
         }
 
         // kiểm tra số điện thoại đã tồn tại chưa
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
-            throw new RuntimeException("Số điện thoại đã tồn tại");
+            throw AppException.badRequest("Số điện thoại đã tồn tại");
         }
         // Tạo OTP 6 số
         String otp = String.format("%06d", new Random().nextInt(999999));
@@ -72,12 +72,12 @@ public class AuthServiceImpl implements AuthService {
         // Kiểm tra OTP còn tồn tại không
         String storedOtp = (String) redisTemplate.opsForHash().get(key, "otp");
         if (storedOtp == null) {
-            throw new RuntimeException("OTP đã hết hạn hoặc không tồn tại");
+            throw AppException.badRequest("OTP đã hết hạn hoặc không tồn tại");
         }
 
         // Kiểm tra OTP có đúng không
         if (!storedOtp.equals(request.getOtp())) {
-            throw new RuntimeException("OTP không đúng");
+            throw AppException.badRequest("OTP không đúng");
         }
 
         // Lấy thông tin đăng ký tạm thời từ Redis

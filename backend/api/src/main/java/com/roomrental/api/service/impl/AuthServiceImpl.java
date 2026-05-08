@@ -12,6 +12,7 @@ import com.roomrental.api.repository.MembershipLevelRepository;
 import com.roomrental.api.repository.RoleRepository;
 import com.roomrental.api.repository.UserRepository;
 import com.roomrental.api.service.AuthService;
+import com.roomrental.api.service.EmailService;
 import com.roomrental.api.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,6 +37,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, String> redisTemplate;
+    private final EmailService emailService;
 
     @Override
     public void register(RegisterRequest request) {
@@ -60,7 +62,7 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.expire(key, 5, TimeUnit.MINUTES);
 
         // TODO: Gửi OTP qua email hoặc SMS
-        System.out.println("OTP cho " + request.getEmail() + ": " + otp);
+        emailService.sendOtp(request.getEmail(), otp);
     }
 
     @Override

@@ -1,8 +1,6 @@
 package com.roomrental.api.service.impl;
 
-import com.roomrental.api.dto.request.LoginRequest;
-import com.roomrental.api.dto.request.RegisterRequest;
-import com.roomrental.api.dto.request.VerifyOtpRequest;
+import com.roomrental.api.dto.request.*;
 import com.roomrental.api.dto.response.UserResponse;
 import com.roomrental.api.entity.MembershipLevel;
 import com.roomrental.api.entity.Role;
@@ -263,5 +261,58 @@ public class AuthServiceImpl implements AuthService {
                 .membershipLevel(user.getMembershipLevel().getName())
                 .accountBalance(user.getAccountBalance().doubleValue())
                 .build();
+    }
+
+    @Override
+    public void forgotPassword(ForgotPasswordRequest request){
+        // Kiểm tra email tồn tại
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> AppException.badRequest("Email không tồn tại trong hệ thống"));
+
+        // Kiểm tra tài khoản có bị khóa không
+        if (user.getStatus() == User.UserStatus.BANNED) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
+        }
+
+        // Tạo OTP 6 số
+        String otp = String.format("%06d", new Random().nextInt(999999));
+
+        // Lưu OTP vào Redis (5 phút)
+        String key = "otp:reset:" + request.getEmail();
+        redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
+
+        // Gửi OTP qua email
+        emailService.sendResetPasswordOtp(request.getEmail(), otp);
+
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest request){
+        // Kiểm tra OTP còn tồn tại không
+        String key = "otp:reset:" + request.getEmail();
+        String savedOtp = redisTemplate.opsForValue().get(key);
+
+        if (savedOtp == null) {
+            throw AppException.badRequest("OTP đã hết hạn, vui lòng thử lại");
+        }
+
+        // Kiểm tra OTP có đúng không
+        if (!savedOtp.equals(request.getOtp())) {
+            throw AppException.badRequest("OTP không chính xác");
+        }
+
+        // Tìm user theo email
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> AppException.badRequest("Email không tồn tại"));
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Xóa OTP khỏi Redis
+        redisTemplate.delete(key);
+
+        // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
+        redisTemplate.delete("refreshToken:" + request.getEmail());
     }
 }

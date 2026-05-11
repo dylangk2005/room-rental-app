@@ -6,6 +6,7 @@ import com.roomrental.api.dto.request.VerifyOtpRequest;
 import com.roomrental.api.dto.response.ApiResponse;
 import com.roomrental.api.dto.response.UserResponse;
 import com.roomrental.api.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,8 +47,14 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-        authService.logout(response);
+    public ResponseEntity<ApiResponse<Void>> logout(HttpServletRequest request, HttpServletResponse response) {
+        authService.logout(request, response);
         return ResponseEntity.ok(ApiResponse.success("Đăng xuất thành công", null));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<UserResponse>> refresh(HttpServletRequest request, HttpServletResponse response){
+        UserResponse user = authService.refresh(request, response);
+        return ResponseEntity.ok(ApiResponse.success("Làm mới token thành công", user));
     }
 }

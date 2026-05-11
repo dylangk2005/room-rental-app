@@ -15,6 +15,7 @@ import com.roomrental.api.service.AuthService;
 import com.roomrental.api.service.EmailService;
 import com.roomrental.api.util.JwtUtil;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -130,16 +131,32 @@ public class AuthServiceImpl implements AuthService {
             throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn chưa được kích hoạt");
         }
 
-        // Tạo JWT token
-        String token = jwtUtil.generateToken(user.getEmail(), user.getRole().getName());
+        // Tạo access token
+        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName());
 
-        // Set Cookie HttpOnly
-        Cookie cookie = new Cookie("accessToken", token);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(86400); // 24h
-        response.addCookie(cookie);
+        // Tạo refresh token
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
+
+        // Lưu refresh token vào Redis (1 ngày)
+        String key = "refreshToken:" + user.getEmail();
+        redisTemplate.opsForValue().set(key, refreshToken, 1, TimeUnit.DAYS);
+
+        //Set accessToken vào cookie
+        Cookie accessCookie = new Cookie("accessToken", accessToken);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(false);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(900); // 15 phút
+        response.addCookie(accessCookie);
+
+        // Set refreshToken vào cookie
+        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(false);
+        refreshCookie.setPath("/api/auth/refresh"); // Chỉ gửi refresh token khi gọi endpoint refresh
+        refreshCookie.setMaxAge(86400); // 24h
+        response.addCookie(refreshCookie);
+
 
         // Trả về thông tin người dùng
         return UserResponse.builder()
@@ -155,12 +172,96 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(HttpServletResponse response) {
-        // Xóa cookie
-        Cookie cookie = new Cookie("accessToken", null);
-        cookie.setHttpOnly(true);
-        cookie.setPath("/");
-        cookie.setMaxAge(0); // Xóa cookie ngay lập tức
-        response.addCookie(cookie);
+    public void logout(HttpServletRequest request, HttpServletResponse response) {
+       // Xóa accessToken cookie
+        Cookie accessCookie = new Cookie("accessToken", null);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(0);
+        response.addCookie(accessCookie);
+
+        // Xóa refreshToken cookie
+        Cookie refreshCookie = new Cookie("refreshToken", null);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setPath("/api/auth/refresh");
+        refreshCookie.setMaxAge(0);
+        response.addCookie(refreshCookie);
+
+        // Xóa refresh token khỏi Redis
+        if (request.getCookies() != null){
+            for (Cookie cookie : request.getCookies()){
+                if ("refreshToken".equals(cookie.getName())){
+                    String email = jwtUtil.extractEmail(cookie.getValue());
+                    redisTemplate.delete("refreshToken:" + email);
+                    break;
+                }
+            }
+        }
+    }
+
+    @Override
+    public UserResponse refresh(HttpServletRequest request, HttpServletResponse response) {
+        // Lấy refresh token từ cookie
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if (cookie.getName().equals("refreshToken")) {
+                    refreshToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        if (refreshToken == null){
+            throw AppException.unauthorized("Refresh token không tồn tại");
+        }
+
+        // Validate refresh token
+        if (!jwtUtil.isTokenValid(refreshToken)){
+            throw AppException.unauthorized("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
+
+        // Lấy email từ refresh token
+        String email = jwtUtil.extractEmail(refreshToken);
+
+        // Kiểm tra refresh token có tồn tại trong Redis không
+        String key = "refreshToken:" + email;
+        String savedToken = redisTemplate.opsForValue().get(key);
+        if (savedToken == null || !savedToken.equals(refreshToken)) {
+            throw AppException.unauthorized("Refresh token không hợp lệ");
+        }
+
+        // Tìm user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.notFound("Người dùng không tồn tại"));
+
+        // Kiểm tra trạng thái tài khoản
+        if (user.getStatus() == User.UserStatus.BANNED) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
+        }
+
+        // Tạo access token mới
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName());
+
+        // Set accessToken vào cookie
+        Cookie accessCookie = new Cookie("accessToken", newAccessToken);
+        accessCookie.setHttpOnly(true);
+        accessCookie.setSecure(false);
+        accessCookie.setPath("/");
+        accessCookie.setMaxAge(900); // 15 phút
+        response.addCookie(accessCookie);
+
+        // return thông tin người dùng
+        return UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .avatar(user.getAvatar())
+                .status(user.getStatus().name())
+                .role(user.getRole().getName())
+                .membershipLevel(user.getMembershipLevel().getName())
+                .accountBalance(user.getAccountBalance().doubleValue())
+                .build();
     }
 }

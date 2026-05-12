@@ -9,10 +9,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -69,6 +67,18 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(
                 ApiResponse.success("Đặt lại mật khẩu thành công, vui lòng đăng nhập lại", null));
+    }
+
+    @PutMapping("/change-password") // Kiểm tra JWT token để lấy thông tin user, kiểm tra mật khẩu cũ, nếu đúng thì cập nhật mật khẩu mới cho tài khoản
+    public ResponseEntity<ApiResponse<Void>> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request) {
+        // Lấy email từ SecurityContext (Đã được set bởi JwtAuthenticationFilter)
+        String email = SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getName();
+        authService.changePassword(email, request);
+        return ResponseEntity.ok(
+                ApiResponse.success("Đổi mật khẩu thành công, vui lòng đăng nhập lại với mật khẩu mới", null));
     }
 
 }

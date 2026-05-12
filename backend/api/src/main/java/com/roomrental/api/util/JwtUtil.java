@@ -14,7 +14,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("900") // 15 phút
+    @Value("${jwt.expiration}") // 15 phút
     private long expiration;
 
     // Tạo SecretKey từ chuỗi secret

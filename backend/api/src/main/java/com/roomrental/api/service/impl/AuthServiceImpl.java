@@ -315,4 +315,33 @@ public class AuthServiceImpl implements AuthService {
         // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
         redisTemplate.delete("refreshToken:" + request.getEmail());
     }
+
+    @Override
+    public void changePassword(String email, ChangePasswordRequest request) {
+        // Kiểm tra mật khẩu mới và xác nhận có khớp không
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw AppException.badRequest("Mật khẩu xác nhận không khớp");
+        }
+
+        // Tìm user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        // Kiểm tra mật khẩu cũ đúng không
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw AppException.badRequest("Mật khẩu cũ không chính xác");
+        }
+
+        // Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu cũ");
+        }
+
+        // Cập nhật mật khẩu mới
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
+        redisTemplate.delete("refresh:" + email);
+    }
 }

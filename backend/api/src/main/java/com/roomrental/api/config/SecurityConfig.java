@@ -33,35 +33,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Tắt CSRF mặc định (dùng cookie SameSite thay thế)
+                // 1. Tắt CSRF (dùng Cookie SameSite thay thế)
                 .csrf(csrf -> csrf.disable())
 
-                // 2. CORS config
+                // 2. CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 3. Không dùng session (stateless vì dùng JWT)
+                // 3. Stateless — không dùng session
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 // 4. Phân quyền endpoint
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
+                        // Public
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/post-types/**").permitAll()
 
-                        // User endpoints
+                        // User
                         .requestMatchers("/api/favorites/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/reports/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/notifications/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/payments/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/deposits/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
 
-                        // Moderator endpoints
-                        .requestMatchers("/api/posts/approve/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/posts/reject/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        // Moderator
+                        .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
-                        // Manager endpoints
-                        .requestMatchers("/api/users/ban/**").hasAnyRole("MANAGER", "ADMIN")
-                        .requestMatchers("/api/penalties/**").hasAnyRole("MANAGER", "ADMIN")
+                        // Manager
+                        .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
 
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -70,21 +72,20 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // 5. Thêm JWT filter trước UsernamePasswordAuthenticationFilter
+                // 5. Thêm JWT filter
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // CORS — cho phép frontend gọi API
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(frontendUrl));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true); // Bắt buộc để cookie hoạt động
+        config.setAllowCredentials(true); // Bắt buộc để Cookie hoạt động
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -92,7 +93,6 @@ public class SecurityConfig {
         return source;
     }
 
-    // BCrypt để mã hóa password
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

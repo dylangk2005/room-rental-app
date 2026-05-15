@@ -1,8 +1,8 @@
 package com.roomrental.api.service.impl;
 
-import com.roomrental.api.dto.request.CreatePostRequest;
-import com.roomrental.api.dto.request.UpdatePostRequest;
-import com.roomrental.api.dto.response.*;
+import com.roomrental.api.dto.request.post.CreatePostRequest;
+import com.roomrental.api.dto.request.post.UpdatePostRequest;
+import com.roomrental.api.dto.response.post.*;
 import com.roomrental.api.entity.*;
 import com.roomrental.api.entity.Post.PostStatus;
 import com.roomrental.api.exception.AppException;

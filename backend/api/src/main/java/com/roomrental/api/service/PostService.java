@@ -1,8 +1,8 @@
 package com.roomrental.api.service;
 
-import com.roomrental.api.dto.request.CreatePostRequest;
-import com.roomrental.api.dto.request.UpdatePostRequest;
-import com.roomrental.api.dto.response.*;
+import com.roomrental.api.dto.request.post.CreatePostRequest;
+import com.roomrental.api.dto.request.post.UpdatePostRequest;
+import com.roomrental.api.dto.response.post.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;

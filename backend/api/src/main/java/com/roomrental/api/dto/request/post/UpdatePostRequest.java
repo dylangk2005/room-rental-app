@@ -1,4 +1,4 @@
-package com.roomrental.api.dto.request;
+package com.roomrental.api.dto.request.post;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;

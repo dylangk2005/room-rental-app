@@ -1,11 +1,11 @@
 package com.roomrental.api.controller;
 
-import com.roomrental.api.dto.request.CreatePostRequest;
-import com.roomrental.api.dto.request.UpdatePostRequest;
-import com.roomrental.api.dto.response.*;
+import com.roomrental.api.dto.request.post.CreatePostRequest;
+import com.roomrental.api.dto.request.post.UpdatePostRequest;
+import com.roomrental.api.dto.response.common.ApiResponse;
+import com.roomrental.api.dto.response.post.*;
 import com.roomrental.api.service.PostService;
 import com.roomrental.api.util.AuthHelper;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

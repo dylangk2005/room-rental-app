@@ -1,4 +1,4 @@
-package com.roomrental.api.dto.response;
+package com.roomrental.api.dto.response.post;
 
 import lombok.Builder;
 import lombok.Data;
@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class BoostPostResponse {
+public class RenewPostResponse {
     private Integer postId;
-    private LocalDateTime pushTime;
+    private LocalDateTime endAt;
 }

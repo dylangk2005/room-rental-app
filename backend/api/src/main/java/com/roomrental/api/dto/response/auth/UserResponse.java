@@ -1,4 +1,4 @@
-package com.roomrental.api.dto.response;
+package com.roomrental.api.dto.response.auth;
 
 import lombok.Builder;
 import lombok.Data;

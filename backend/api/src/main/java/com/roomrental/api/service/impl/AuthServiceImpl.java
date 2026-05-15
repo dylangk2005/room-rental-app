@@ -1,7 +1,7 @@
 package com.roomrental.api.service.impl;
 
-import com.roomrental.api.dto.request.*;
-import com.roomrental.api.dto.response.UserResponse;
+import com.roomrental.api.dto.request.auth.*;
+import com.roomrental.api.dto.response.auth.UserResponse;
 import com.roomrental.api.entity.MembershipLevel;
 import com.roomrental.api.entity.Role;
 import com.roomrental.api.entity.User;

@@ -1,6 +1,6 @@
 package com.roomrental.api.exception;
 
-import com.roomrental.api.dto.response.ApiResponse;
+import com.roomrental.api.dto.response.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;

@@ -2,12 +2,29 @@ package com.roomrental.api.repository;
 
 import com.roomrental.api.entity.PostImage;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
-public interface PostImageRepository extends JpaRepository <PostImage, Integer> {
+public interface PostImageRepository extends JpaRepository<PostImage, Integer> {
+
     List<PostImage> findByPostId(Integer postId);
-    void deleteByPostId(Integer postId);
+
+    Optional<PostImage> findByImageUrl(String imageUrl);
+
+    // Tìm ảnh đại diện cho mỗi bài đăng trong danh sách bài đăng
+    @Query("""
+        SELECT pi FROM PostImage pi
+        WHERE pi.post.id IN :postIds
+        AND pi.id IN (
+            SELECT MIN(p.id) FROM PostImage p
+            WHERE p.post.id IN :postIds
+            GROUP BY p.post.id
+        )
+    """)
+    List<PostImage> findThumbnailsByPostIdIn(@Param("postIds") List<Integer> postIds);
 }

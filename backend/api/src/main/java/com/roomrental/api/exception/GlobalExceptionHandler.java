@@ -1,6 +1,6 @@
 package com.roomrental.api.exception;
 
-import com.roomrental.api.dto.response.ApiResponse;
+import com.roomrental.api.dto.response.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -42,6 +42,7 @@ public class GlobalExceptionHandler {
     // Bat tat ca loi con lai
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
+        ex.printStackTrace();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiResponse.error("Lỗi hệ thống, vui lòng thử lại sau"));

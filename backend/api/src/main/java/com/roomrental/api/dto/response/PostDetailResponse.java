@@ -1,41 +1,33 @@
 package com.roomrental.api.dto.response;
 
+import com.roomrental.api.entity.Post.PostStatus;
 import lombok.Builder;
 import lombok.Data;
-
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
 @Builder
-public class PostResponse {
+public class PostDetailResponse {
     private Integer id;
     private String title;
     private String description;
     private String address;
     private String province;
     private String district;
-    private String area; // Định dạng: "20 m²"
-    private String rentalPrice; // Định dạng: "5,000,000 VND"
-    private String status;
+    private BigDecimal area;
+    private BigDecimal rentalPrice;
+    private PostStatus status;
     private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-    private LocalDateTime pushTime;
     private LocalDateTime endAt;
 
-    // PostType Info
-    private Integer postTypeId;
+    // PostType
     private String postTypeName;
     private String postTypeTitleColor;
+    private Integer postTypeTitleSize;
     private Integer postTypePriority;
-    private String postTypeTitleSize;
 
-    //Owner Info
-    private Integer ownerId;
-    private String ownerName;
-    private String ownerPhone;
-    private String ownerAvatar;
-
-    // Images
+    // Tất cả ảnh
     private List<String> imageUrls;
 }

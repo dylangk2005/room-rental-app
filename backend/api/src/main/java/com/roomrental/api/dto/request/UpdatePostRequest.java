@@ -2,34 +2,36 @@ package com.roomrental.api.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
-
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 public class UpdatePostRequest {
 
-    @NotBlank(message = "Tiêu đề không được để trống")
-    @Size(max = 255, message = "Tiêu đề không được vượt quá 255 ký tự")
-    private String title;
+        @NotBlank(message = "Tiêu đề không được để trống")
+        @Size(max = 255)
+        private String title;
 
-    @NotBlank(message = "Mô tả không được để trống")
-    private String description;
+        @NotBlank(message = "Mô tả không được để trống")
+        private String description;
 
-    @NotBlank(message = "Địa chỉ không được để trống")
-    private String address;
+        @NotBlank(message = "Địa chỉ không được để trống")
+        private String address;
 
-    @NotBlank(message = "Tỉnh/Thành phố không được để trống")
-    private String province;
+        @NotBlank(message = "Tỉnh/thành không được để trống")
+        private String province;
 
-    @NotBlank(message = "Quận/Huyện không được để trống")
-    private String district;
+        @NotBlank(message = "Quận/huyện không được để trống")
+        private String district;
 
-    @NotNull(message = "Diện tích không được để trống")
-    @DecimalMin(value = "1.0", message = "Diện tích tối thiểu 1 m²")
-    private BigDecimal area;
+        @NotNull(message = "Diện tích không được để trống")
+        @DecimalMin("1.0")
+        private BigDecimal area;
 
-    @NotNull(message = "Giá thuê không được để trống")
-    @DecimalMin(value = "1000", message = "Giá thuê tối thiểu 1000 VND")
-    private BigDecimal rentalPrice;
+        @NotNull(message = "Giá thuê không được để trống")
+        @DecimalMin("1000")
+        private BigDecimal rentalPrice;
 
+        // Danh sách URL ảnh muốn xóa (có thể null)
+        private List<String> deleteImageUrls;
 }

@@ -60,6 +60,6 @@ public class Post {
     private PostType postType;
 
     public enum PostStatus {
-        PENDING, ACTIVE, EXPIRED, REJECTED, HIDDEN
+        PENDING, ACTIVE, EXPIRED, REJECTED, HIDDEN, DELETED
     }
 }

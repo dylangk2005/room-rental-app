@@ -273,43 +273,4 @@ public class PostServiceImpl implements PostService {
         Page<Post> result = postRepository.findByUserId(userId, pageable);
         return mapToPageResponse(result);
     }
-
-    @Override
-    @Transactional
-    public RenewPostResponse renewPost(Integer userId, Integer postId, Integer durationDays) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy bài đăng"));
-        if (!post.getUser().getId().equals(userId)) {
-            throw AppException.forbidden("Bạn không có quyền gia hạn bài đăng này");
-        }
-        LocalDateTime base = post.getEndAt() != null && post.getEndAt().isAfter(LocalDateTime.now())
-                ? post.getEndAt() : LocalDateTime.now();
-        post.setEndAt(base.plusDays(durationDays));
-        post.setUpdatedAt(LocalDateTime.now());
-        Post saved = postRepository.save(post);
-        return RenewPostResponse.builder()
-                .postId(saved.getId())
-                .endAt(saved.getEndAt())
-                .build();
-    }
-
-    @Override
-    @Transactional
-    public BoostPostResponse boostPost(Integer userId, Integer postId) {
-        Post post = postRepository.findById(postId)
-                .orElseThrow(() -> AppException.notFound("Không tìm thấy bài đăng"));
-        if (!post.getUser().getId().equals(userId)) {
-            throw AppException.forbidden("Bạn không có quyền đẩy bài đăng này");
-        }
-        if (post.getStatus() != PostStatus.ACTIVE) {
-            throw AppException.badRequest("Chỉ có thể đẩy bài đăng đang hoạt động");
-        }
-        post.setPushTime(LocalDateTime.now());
-        post.setUpdatedAt(LocalDateTime.now());
-        Post saved = postRepository.save(post);
-        return BoostPostResponse.builder()
-                .postId(saved.getId())
-                .pushTime(saved.getPushTime())
-                .build();
-    }
 }

@@ -25,6 +25,4 @@ public interface PostService {
                                   UpdatePostRequest request, List<MultipartFile> newImages);
     void deletePost(Integer userId, Integer postId);
     PostPageResponse getMyPosts(Integer userId, int page, int size);
-    RenewPostResponse renewPost(Integer userId, Integer postId, Integer durationDays);
-    BoostPostResponse boostPost(Integer userId, Integer postId);
 }

@@ -15,7 +15,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -142,21 +141,4 @@ public class PostController {
                 postService.getMyPosts(authHelper.getCurrentUserId(), page, size)));
     }
 
-    @PostMapping("/{id}/renew")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<RenewPostResponse>> renewPost(
-            @PathVariable Integer id,
-            @RequestBody Map<String, Integer> body) {
-        return ResponseEntity.ok(ApiResponse.success(
-                "Gia hạn thành công",
-                postService.renewPost(authHelper.getCurrentUserId(), id, body.get("durationDays"))));
-    }
-
-    @PostMapping("/{id}/boost")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<BoostPostResponse>> boostPost(@PathVariable Integer id) {
-        return ResponseEntity.ok(ApiResponse.success(
-                "Đẩy tin thành công",
-                postService.boostPost(authHelper.getCurrentUserId(), id)));
-    }
 }

@@ -178,11 +178,11 @@ public class PostServiceImpl implements PostService {
         post.setRentalPrice(request.getRentalPrice());
         post.setUser(user);
         post.setPostType(postType);
-        post.setStatus(PostStatus.PENDING);
+        post.setStatus(PostStatus.DRAFT);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
-        post.setEndAt(LocalDateTime.now().plusDays(request.getDurationDays()));
-        post.setPushTime(LocalDateTime.now());
+        post.setEndAt(null);
+        post.setPushTime(null);
 
         Post saved = postRepository.save(post);
 

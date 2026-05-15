@@ -93,7 +93,7 @@ public class PostController {
         request.setDurationDays(durationDays);
 
         return ResponseEntity.ok(ApiResponse.success(
-                "Đăng tin thành công, chờ kiểm duyệt",
+                "Đã lưu tin nháp, vui lòng thanh toán để đăng tin",
                 postService.createPost(authHelper.getCurrentUserId(), request, images)));
     }
 

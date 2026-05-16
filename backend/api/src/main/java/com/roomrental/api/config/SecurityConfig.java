@@ -71,6 +71,12 @@ public class SecurityConfig {
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
+                        // Moderator, Manager, Admin mới được xem lịch sử kiểm duyệt của chính mình
+                        .requestMatchers("/api/moderation-logs/my-history").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+
+                        // Chỉ Manager và Admin mới được xem tất cả lịch sử kiểm duyệt
+                        .requestMatchers("/api/moderation-logs/**").hasAnyRole("MANAGER", "ADMIN")
+
                         // Còn lại phải đăng nhập
                         .anyRequest().authenticated()
                 )

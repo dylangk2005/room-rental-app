@@ -234,9 +234,20 @@ public class AuthServiceImpl implements AuthService {
         // Xóa refresh token khỏi Redis
         if (request.getCookies() != null){
             for (Cookie cookie : request.getCookies()){
-                if ("refreshToken".equals(cookie.getName())){
+                if ("refreshToken".equals(cookie.getName())) {
                     String email = jwtUtil.extractEmail(cookie.getValue());
                     redisTemplate.delete("refreshToken:" + email);
+
+                    userRepository.findByEmail(email).ifPresent(user ->
+                            auditLogService.log(
+                                    user.getId(),
+                                    "LOGOUT_SUCCESS",
+                                    AuditLog.TargetType.USER,
+                                    user.getId(),
+                                    "User #" + user.getId() + " đăng xuất thành công."
+                            )
+                    );
+
                     break;
                 }
             }

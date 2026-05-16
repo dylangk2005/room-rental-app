@@ -36,7 +36,7 @@ public class ModerationLog {
 
     public enum ModerationAction {
         ACCEPT_POST, REJECT_POST, HIDDEN_POST, REMOVE_POST,
-        ACCEPT_REPORT, REJECT_REPORT, LOCK_POST, BAN_ACCOUNT
+        ACCEPT_REPORT, REJECT_REPORT, WARNING, LOCK_POST, BAN_ACCOUNT
     }
 
     public enum TargetType {

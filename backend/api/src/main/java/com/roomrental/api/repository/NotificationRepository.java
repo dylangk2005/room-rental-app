@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NotificationRepository extends JpaRepository <Notification, Integer> {
-    Page<Notification> findByUserId(Integer userId, Pageable pageable);
-    int countByUserIdAndIsRead(Integer userId, boolean isRead);
+public interface NotificationRepository extends JpaRepository<Notification, Integer> {
+
+    Page<Notification> findByUser_Id(Integer userId, Pageable pageable);
+
+    int countByUser_IdAndIsRead(Integer userId, boolean isRead);
 }

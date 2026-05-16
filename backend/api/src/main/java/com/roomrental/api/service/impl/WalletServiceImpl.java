@@ -6,12 +6,14 @@ import com.roomrental.api.dto.response.wallet.WalletBalanceResponse;
 import com.roomrental.api.dto.response.wallet.WalletTransactionPageResponse;
 import com.roomrental.api.dto.response.wallet.WalletTransactionResponse;
 import com.roomrental.api.entity.Deposit;
+import com.roomrental.api.entity.Notification;
 import com.roomrental.api.entity.Payment;
 import com.roomrental.api.entity.User;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.DepositRepository;
 import com.roomrental.api.repository.PaymentRepository;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.NotificationService;
 import com.roomrental.api.service.VnPayService;
 import com.roomrental.api.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +33,7 @@ public class WalletServiceImpl implements WalletService {
     private final DepositRepository depositRepository;
     private final PaymentRepository paymentRepository;
     private final VnPayService vnPayService;
+    private final NotificationService notificationService;
 
     @Override
     public WalletBalanceResponse getBalance(Integer userId) {
@@ -172,6 +175,20 @@ public class WalletServiceImpl implements WalletService {
         deposit.setOpeningBalance(openingBalance);
         deposit.setClosingBalance(closingBalance);
         deposit.setNote("Nạp tiền qua VNPAY thành công");
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.SYSTEM_INFORMATION,
+                "Nạp tiền thành công qua VNPAY. Số tiền nạp: "
+                        + deposit.getNetAmount()
+                        + "đ. Số dư trước giao dịch: "
+                        + openingBalance
+                        + "đ. Số dư hiện tại: "
+                        + closingBalance
+                        + "đ. Mã giao dịch: "
+                        + deposit.getTransactionRef()
+                        + "."
+        );
     }
 
     private String generateTransactionRef() {

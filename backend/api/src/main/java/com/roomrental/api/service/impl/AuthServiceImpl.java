@@ -2,6 +2,7 @@ package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.auth.*;
 import com.roomrental.api.dto.response.auth.UserResponse;
+import com.roomrental.api.entity.AuditLog;
 import com.roomrental.api.entity.MembershipLevel;
 import com.roomrental.api.entity.Role;
 import com.roomrental.api.entity.User;
@@ -9,6 +10,7 @@ import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.MembershipLevelRepository;
 import com.roomrental.api.repository.RoleRepository;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.AuthService;
 import com.roomrental.api.service.EmailService;
 import com.roomrental.api.util.JwtUtil;
@@ -37,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailService emailService;
+    private final AuditLogService auditLogService;
 
     @Override
     public void register(RegisterRequest request) {
@@ -60,7 +63,7 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.opsForHash().put(key, "phoneNumber", request.getPhoneNumber());
         redisTemplate.expire(key, 5, TimeUnit.MINUTES);
 
-        // TODO: Gửi OTP qua email hoặc SMS
+        // TODO: Gửi OTP qua email
         emailService.sendOtp(request.getEmail(), otp);
     }
 
@@ -96,14 +99,24 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(request.getEmail());
         user.setPassword(password);
         user.setPhoneNumber(phoneNumber);
-        user.setStatus(User.UserStatus.ACTIVE);
         user.setAccountBalance(BigDecimal.ZERO);
         user.setTotalSpent(BigDecimal.ZERO);
         user.setCreatedAt(LocalDateTime.now());
         user.setRole(role);
         user.setMembershipLevel(membershipLevel);
 
-        userRepository.save(user);
+        user.setStatus(User.UserStatus.ACTIVE);
+        User savedUser = userRepository.save(user);
+
+        auditLogService.log(
+                savedUser.getId(),
+                "REGISTER_VERIFIED",
+                AuditLog.TargetType.USER,
+                savedUser.getId(),
+                "User #" + savedUser.getId()
+                        + " xác thực OTP đăng ký thành công. Tài khoản được kích hoạt."
+        );
+
 
         // Xoá OTP khỏi Redis
         redisTemplate.delete(key);
@@ -113,20 +126,47 @@ public class AuthServiceImpl implements AuthService {
     public UserResponse login(LoginRequest request, HttpServletResponse response) {
         // Tìm user theo email
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> AppException.badRequest("Email hoặc mật khẩu không đúng"));
+                .orElse(null);
+
+        if (user == null) {
+            auditLogService.log(
+                    null,
+                    "LOGIN_FAILED",
+                    AuditLog.TargetType.USER,
+                    null,
+                    "Đăng nhập thất bại. Không tìm thấy tài khoản phù hợp với thông tin đăng nhập: "
+                            + request.getEmail()
+            );
+
+            throw AppException.unauthorized("Email hoặc mật khẩu không đúng");
+        };
 
         // Kiểm tra mật khẩu
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())){
-            throw AppException.badRequest("Email hoặc mật khẩu không đúng");
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            auditLogService.log(
+                    user.getId(),
+                    "LOGIN_FAILED",
+                    AuditLog.TargetType.USER,
+                    user.getId(),
+                    "Đăng nhập thất bại cho user #" + user.getId()
+                            + ". Lý do: thông tin đăng nhập không hợp lệ."
+            );
+
+            throw AppException.unauthorized("Email hoặc mật khẩu không đúng");
         }
 
         // Kiểm tra trạng thái tài khoản
-        if (user.getStatus() == User.UserStatus.BANNED) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
-        }
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            auditLogService.log(
+                    user.getId(),
+                    "LOGIN_FAILED",
+                    AuditLog.TargetType.USER,
+                    user.getId(),
+                    "Đăng nhập thất bại cho user #" + user.getId()
+                            + ". Lý do: trạng thái tài khoản hiện tại là " + user.getStatus() + "."
+            );
 
-        if (user.getStatus() == User.UserStatus.INACTIVE) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn chưa được kích hoạt");
+            throw AppException.forbidden("Tài khoản chưa kích hoạt hoặc đã bị khóa");
         }
 
         // Tạo access token
@@ -155,6 +195,13 @@ public class AuthServiceImpl implements AuthService {
         refreshCookie.setMaxAge(86400); // 24h
         response.addCookie(refreshCookie);
 
+        auditLogService.log(
+                user.getId(),
+                "LOGIN_SUCCESS",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                "User #" + user.getId() + " đăng nhập thành công."
+        );
 
         // Trả về thông tin người dùng
         return UserResponse.builder()
@@ -165,7 +212,6 @@ public class AuthServiceImpl implements AuthService {
                 .avatar(user.getAvatar())
                 .role(user.getRole().getName())
                 .membershipLevel(user.getMembershipLevel().getName())
-                .accountBalance(user.getAccountBalance().doubleValue())
                 .build();
     }
 
@@ -259,7 +305,6 @@ public class AuthServiceImpl implements AuthService {
                 .status(user.getStatus().name())
                 .role(user.getRole().getName())
                 .membershipLevel(user.getMembershipLevel().getName())
-                .accountBalance(user.getAccountBalance().doubleValue())
                 .build();
     }
 
@@ -309,6 +354,15 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
+        auditLogService.log(
+                user.getId(),
+                "PASSWORD_RESET",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                "User #" + user.getId()
+                        + " đặt lại mật khẩu thành công bằng OTP."
+        );
+
         // Xóa OTP khỏi Redis
         redisTemplate.delete(key);
 
@@ -340,6 +394,15 @@ public class AuthServiceImpl implements AuthService {
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        auditLogService.log(
+                user.getId(),
+                "CHANGE_PASSWORD",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                "User #" + user.getId()
+                        + " đổi mật khẩu thành công khi đang đăng nhập."
+        );
 
         // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
         redisTemplate.delete("refresh:" + email);

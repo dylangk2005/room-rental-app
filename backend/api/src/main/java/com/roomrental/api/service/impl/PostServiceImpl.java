@@ -7,6 +7,7 @@ import com.roomrental.api.entity.*;
 import com.roomrental.api.entity.Post.PostStatus;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.*;
+import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.CloudinaryService;
 import com.roomrental.api.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class PostServiceImpl implements PostService {
     private final PostTypeRepository postTypeRepository;
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
+    private final AuditLogService auditLogService;
 
     // ─── Pageable sort theo priority ASC, pushTime DESC ──────────────────
     private Pageable buildSortedPageable(int page, int size) {
@@ -197,6 +199,18 @@ public class PostServiceImpl implements PostService {
             imageUrls.add(url);
         }
 
+        auditLogService.log(
+                user.getId(),
+                "POST_CREATED",
+                AuditLog.TargetType.POST,
+                saved.getId(),
+                "User #" + user.getId()
+                        + " tạo tin nháp #" + saved.getId()
+                        + ". Tiêu đề: \"" + saved.getTitle()
+                        + "\". Loại tin: " + (postType.getName() != null ? postType.getName() : "N/A")
+                        + ". Số ảnh tải lên: " + imageUrls.size() + "."
+        );
+
         return mapToDetail(saved, imageUrls);
     }
 
@@ -251,6 +265,18 @@ public class PostServiceImpl implements PostService {
         Post saved = postRepository.save(post);
         List<String> imageUrls = postImageRepository.findByPostId(postId)
                 .stream().map(PostImage::getImageUrl).toList();
+
+        auditLogService.log(
+                userId,
+                "POST_UPDATED",
+                AuditLog.TargetType.POST,
+                saved.getId(),
+                "User #" + userId
+                        + " cập nhật nội dung tin #" + saved.getId()
+                        + ". Tiêu đề hiện tại: \"" + saved.getTitle()
+                        + "\". Số ảnh hiện tại: " + imageUrls.size() + "."
+        );
+
         return mapToDetail(saved, imageUrls);
     }
 
@@ -264,7 +290,20 @@ public class PostServiceImpl implements PostService {
         }
         post.setStatus(PostStatus.DELETED);
         post.setUpdatedAt(LocalDateTime.now());
-        postRepository.save(post);
+
+        Post saved = postRepository.save(post);
+
+        auditLogService.log(
+                userId,
+                "POST_DELETED",
+                AuditLog.TargetType.POST,
+                saved.getId(),
+                "User #" + userId
+                        + " xóa tin #" + saved.getId()
+                        + ". Tiêu đề: \"" + saved.getTitle()
+                        + "\". Trạng thái mới: " + saved.getStatus() + "."
+        );
+
     }
 
     @Override

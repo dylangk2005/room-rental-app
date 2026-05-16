@@ -11,6 +11,7 @@ import com.roomrental.api.repository.PaymentRepository;
 import com.roomrental.api.repository.PostRepository;
 import com.roomrental.api.repository.PostTypePriceRepository;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.NotificationService;
 import com.roomrental.api.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PostTypePriceRepository postTypePriceRepository;
     private final PaymentRepository paymentRepository;
     private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Override
     @Transactional
@@ -51,7 +53,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal baseFee = getPostingPrice(post, request.getDurationDays());
         PaymentCost cost = calculatePaymentCost(user, baseFee);
 
-        ensureEnoughBalance(user, cost.finalFee());
+        ensureEnoughBalance(user, cost.finalFee(), "PAYMENT_POST_FAILED", post);
 
         BigDecimal openingBalance = user.getAccountBalance();
         BigDecimal closingBalance = openingBalance.subtract(cost.finalFee());
@@ -87,6 +89,22 @@ public class PaymentServiceImpl implements PaymentService {
                         + "Phí đã thanh toán: " + cost.finalFee() + "đ."
         );
 
+        auditLogService.log(
+                user.getId(),
+                "PAYMENT_POST_SUCCESS",
+                AuditLog.TargetType.TRANSACTION,
+                payment.getId(),
+                "User #" + user.getId()
+                        + " thanh toán đăng tin #" + post.getId()
+                        + ". Tin chuyển từ DRAFT sang PENDING. "
+                        + "Số ngày mua: " + request.getDurationDays()
+                        + ". Phí gốc: " + baseFee
+                        + "đ. Giảm giá: " + cost.discountPercent()
+                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "đ. Số dư trước: " + openingBalance
+                        + "đ. Số dư sau: " + closingBalance + "đ."
+        );
+
         return mapResponse(payment, post);
     }
 
@@ -110,7 +128,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal baseFee = getPostingPrice(post, request.getDurationDays());
         PaymentCost cost = calculatePaymentCost(user, baseFee);
 
-        ensureEnoughBalance(user, cost.finalFee());
+        ensureEnoughBalance(user, cost.finalFee(), "PAYMENT_POST_FAILED", post);
 
         BigDecimal openingBalance = user.getAccountBalance();
         BigDecimal closingBalance = openingBalance.subtract(cost.finalFee());
@@ -151,6 +169,22 @@ public class PaymentServiceImpl implements PaymentService {
                         + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
         );
 
+        auditLogService.log(
+                user.getId(),
+                "PAYMENT_RENEW_SUCCESS",
+                AuditLog.TargetType.TRANSACTION,
+                payment.getId(),
+                "User #" + user.getId()
+                        + " gia hạn tin #" + post.getId()
+                        + ". Số ngày gia hạn: " + request.getDurationDays()
+                        + ". Ngày hết hạn mới: " + post.getEndAt()
+                        + ". Phí gốc: " + baseFee
+                        + "đ. Giảm giá: " + cost.discountPercent()
+                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "đ. Số dư trước: " + openingBalance
+                        + "đ. Số dư sau: " + closingBalance + "đ."
+        );
+
         return mapResponse(payment, post);
     }
 
@@ -179,7 +213,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         PaymentCost cost = calculatePaymentCost(user, baseFee);
 
-        ensureEnoughBalance(user, cost.finalFee());
+        ensureEnoughBalance(user, cost.finalFee(), "PAYMENT_POST_FAILED", post);
 
         BigDecimal openingBalance = user.getAccountBalance();
         BigDecimal closingBalance = openingBalance.subtract(cost.finalFee());
@@ -209,6 +243,21 @@ public class PaymentServiceImpl implements PaymentService {
                 "Đẩy tin thành công. Tin \"" + post.getTitle()
                         + "\" đã được cập nhật thời gian đẩy tin lúc " + post.getPushTime()
                         + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
+        );
+
+        auditLogService.log(
+                user.getId(),
+                "PAYMENT_PUSH_SUCCESS",
+                AuditLog.TargetType.TRANSACTION,
+                payment.getId(),
+                "User #" + user.getId()
+                        + " đẩy tin #" + post.getId()
+                        + ". Thời gian đẩy tin mới: " + post.getPushTime()
+                        + ". Phí gốc: " + baseFee
+                        + "đ. Giảm giá: " + cost.discountPercent()
+                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "đ. Số dư trước: " + openingBalance
+                        + "đ. Số dư sau: " + closingBalance + "đ."
         );
 
         return mapResponse(payment, post);
@@ -255,10 +304,21 @@ public class PaymentServiceImpl implements PaymentService {
         return new PaymentCost(discountPercent, finalFee);
     }
 
-    private void ensureEnoughBalance(User user, BigDecimal finalFee) {
+    private void ensureEnoughBalance(User user, BigDecimal finalFee, String action, Post post) {
         BigDecimal balance = nullSafe(user.getAccountBalance());
 
         if (balance.compareTo(finalFee) < 0) {
+            auditLogService.log(
+                    user.getId(),
+                    action,
+                    AuditLog.TargetType.POST,
+                    post.getId(),
+                    "Thanh toán thất bại cho tin #" + post.getId()
+                            + ". Lý do: số dư ví không đủ. "
+                            + "Số dư hiện tại: " + balance
+                            + "đ. Phí cần thanh toán: " + finalFee + "đ."
+            );
+
             throw AppException.badRequest("Số dư ví không đủ");
         }
     }

@@ -1,5 +1,7 @@
 package com.roomrental.api.service.impl;
 
+import com.roomrental.api.dto.response.audit.AuditLogPageResponse;
+import com.roomrental.api.dto.response.audit.AuditLogResponse;
 import com.roomrental.api.entity.AuditLog;
 import com.roomrental.api.entity.User;
 import com.roomrental.api.exception.AppException;
@@ -7,10 +9,15 @@ import com.roomrental.api.repository.AuditLogRepository;
 import com.roomrental.api.repository.UserRepository;
 import com.roomrental.api.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -38,5 +45,62 @@ public class AuditLogServiceImpl implements AuditLogService {
         auditLog.setCreatedAt(LocalDateTime.now());
 
         auditLogRepository.save(auditLog);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AuditLogPageResponse getAuditLogs(
+            String action,
+            Integer actorId,
+            AuditLog.TargetType targetType,
+            Integer targetId,
+            int page,
+            int size
+    ) {
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Order.desc("createdAt"))
+        );
+
+        Page<AuditLog> result;
+
+        if (action != null && !action.isBlank()) {
+            result = auditLogRepository.findByAction(action, pageable);
+        } else if (actorId != null) {
+            result = auditLogRepository.findByUser_Id(actorId, pageable);
+        } else if (targetType != null && targetId != null) {
+            result = auditLogRepository.findByTargetTypeAndTargetId(targetType, targetId, pageable);
+        } else {
+            result = auditLogRepository.findAll(pageable);
+        }
+
+        List<AuditLogResponse> logs = result.getContent()
+                .stream()
+                .map(this::mapResponse)
+                .toList();
+
+        return AuditLogPageResponse.builder()
+                .logs(logs)
+                .currentPage(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
+    }
+
+    private AuditLogResponse mapResponse(AuditLog auditLog) {
+        User actor = auditLog.getUser();
+
+        return AuditLogResponse.builder()
+                .id(auditLog.getId())
+                .action(auditLog.getAction())
+                .targetType(auditLog.getTargetType() != null ? auditLog.getTargetType().name() : null)
+                .targetId(auditLog.getTargetId())
+                .reason(auditLog.getReason())
+                .createdAt(auditLog.getCreatedAt())
+                .actorId(actor != null ? actor.getId() : null)
+                .actorName(actor != null ? actor.getFullName() : null)
+                .actorEmail(actor != null ? actor.getEmail() : null)
+                .build();
     }
 }

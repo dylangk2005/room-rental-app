@@ -110,8 +110,7 @@ public class VnPayServiceImpl implements VnPayService {
     }
 
     private String urlEncode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8)
-                .replace("+", "%20");
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private String hmacSha512(String key, String data) {

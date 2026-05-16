@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/post-types/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/wallet/deposit/callback").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/deposit/callback").permitAll()
 
                         // User
                         .requestMatchers("/api/favorites/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")

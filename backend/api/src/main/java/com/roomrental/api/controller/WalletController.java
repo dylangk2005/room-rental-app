@@ -87,4 +87,16 @@ public class WalletController {
                 null
         ));
     }
+
+    @GetMapping("/deposit/callback")
+    public ResponseEntity<ApiResponse<Void>> handleVnPayCallbackGet(
+            @RequestParam Map<String, String> params
+    ) {
+        walletService.handleVnPayCallback(params);
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Xử lý callback VNPAY thành công",
+                null
+        ));
+    }
 }

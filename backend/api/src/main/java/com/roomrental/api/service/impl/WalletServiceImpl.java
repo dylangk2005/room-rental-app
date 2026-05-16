@@ -5,14 +5,12 @@ import com.roomrental.api.dto.response.wallet.DepositInitResponse;
 import com.roomrental.api.dto.response.wallet.WalletBalanceResponse;
 import com.roomrental.api.dto.response.wallet.WalletTransactionPageResponse;
 import com.roomrental.api.dto.response.wallet.WalletTransactionResponse;
-import com.roomrental.api.entity.Deposit;
-import com.roomrental.api.entity.Notification;
-import com.roomrental.api.entity.Payment;
-import com.roomrental.api.entity.User;
+import com.roomrental.api.entity.*;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.DepositRepository;
 import com.roomrental.api.repository.PaymentRepository;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.NotificationService;
 import com.roomrental.api.service.VnPayService;
 import com.roomrental.api.service.WalletService;
@@ -34,6 +32,7 @@ public class WalletServiceImpl implements WalletService {
     private final PaymentRepository paymentRepository;
     private final VnPayService vnPayService;
     private final NotificationService notificationService;
+    private final AuditLogService auditLogService;
 
     @Override
     public WalletBalanceResponse getBalance(Integer userId) {
@@ -106,6 +105,18 @@ public class WalletServiceImpl implements WalletService {
 
         Deposit saved = depositRepository.save(deposit);
 
+        auditLogService.log(
+                user.getId(),
+                "DEPOSIT_INIT",
+                AuditLog.TargetType.DEPOSIT,
+                saved.getId(),
+                "User #" + user.getId()
+                        + " khởi tạo giao dịch nạp tiền qua VNPAY. "
+                        + "Số tiền: " + saved.getAmount()
+                        + "đ. Mã giao dịch: " + saved.getTransactionRef()
+                        + ". IP client: " + clientIp + "."
+        );
+
         String paymentUrl = vnPayService.createPaymentUrl(
                 saved.getTransactionRef(),
                 saved.getAmount(),
@@ -151,6 +162,19 @@ public class WalletServiceImpl implements WalletService {
             deposit.setStatus(Deposit.DepositStatus.FAILED);
             deposit.setGatewayTransactionNo(gatewayTransactionNo);
             deposit.setNote("Nạp tiền thất bại: số tiền callback không khớp");
+
+            auditLogService.log(
+                    deposit.getUser().getId(),
+                    "DEPOSIT_FAILED",
+                    AuditLog.TargetType.DEPOSIT,
+                    deposit.getId(),
+                    "Nạp tiền thất bại do số tiền callback không khớp. "
+                            + "Mã giao dịch: " + deposit.getTransactionRef()
+                            + ". Số tiền yêu cầu: " + deposit.getAmount()
+                            + "đ. Số tiền callback: " + callbackAmount
+                            + "đ. Gateway transaction no: " + gatewayTransactionNo + "."
+            );
+
             return;
         }
 
@@ -160,6 +184,19 @@ public class WalletServiceImpl implements WalletService {
             deposit.setStatus(Deposit.DepositStatus.FAILED);
             deposit.setGatewayTransactionNo(gatewayTransactionNo);
             deposit.setNote("Nạp tiền thất bại, mã phản hồi VNPAY: " + responseCode);
+
+            auditLogService.log(
+                    deposit.getUser().getId(),
+                    "DEPOSIT_FAILED",
+                    AuditLog.TargetType.DEPOSIT,
+                    deposit.getId(),
+                    "Nạp tiền thất bại do VNPAY trả về trạng thái không thành công. "
+                            + "Mã giao dịch: " + deposit.getTransactionRef()
+                            + ". Response code: " + responseCode
+                            + ". Transaction status: " + transactionStatus
+                            + ". Gateway transaction no: " + gatewayTransactionNo + "."
+            );
+
             return;
         }
 
@@ -189,6 +226,21 @@ public class WalletServiceImpl implements WalletService {
                         + deposit.getTransactionRef()
                         + "."
         );
+
+        auditLogService.log(
+                user.getId(),
+                "DEPOSIT_SUCCESS",
+                AuditLog.TargetType.DEPOSIT,
+                deposit.getId(),
+                "Nạp tiền thành công qua VNPAY. "
+                        + "User #" + user.getId()
+                        + ". Số tiền nạp: " + deposit.getNetAmount()
+                        + "đ. Số dư trước: " + openingBalance
+                        + "đ. Số dư sau: " + closingBalance
+                        + "đ. Mã giao dịch: " + deposit.getTransactionRef()
+                        + ". Gateway transaction no: " + gatewayTransactionNo + "."
+        );
+
     }
 
     private String generateTransactionRef() {

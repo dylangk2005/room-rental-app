@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/post-types/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/wallet/deposit/callback").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/wallet/deposit/callback").permitAll()
 
                         // User
                         .requestMatchers("/api/favorites/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
@@ -58,6 +60,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/deposits/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/posts/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/wallet/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
 
                         // Moderator
                         .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")

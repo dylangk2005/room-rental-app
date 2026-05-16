@@ -31,6 +31,18 @@ public class Deposit {
     @Column(name = "status")
     private DepositStatus status = DepositStatus.PENDING;
 
+    @Column(name = "transaction_ref", length = 100, unique = true)
+    private String transactionRef;
+
+    @Column(name = "gateway_transaction_no", length = 100)
+    private String gatewayTransactionNo;
+
+    @Column(name = "opening_balance", precision = 12, scale = 2, columnDefinition = "DECIMAL(12,2)")
+    private BigDecimal openingBalance;
+
+    @Column(name = "closing_balance", precision = 12, scale = 2, columnDefinition = "DECIMAL(12,2)")
+    private BigDecimal closingBalance;
+
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 

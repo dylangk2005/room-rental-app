@@ -4,18 +4,14 @@ import com.roomrental.api.dto.request.payment.BoostPaymentRequest;
 import com.roomrental.api.dto.request.payment.PayPostRequest;
 import com.roomrental.api.dto.request.payment.RenewPaymentRequest;
 import com.roomrental.api.dto.response.payment.PaymentResponse;
-import com.roomrental.api.entity.MembershipLevel;
-import com.roomrental.api.entity.Payment;
-import com.roomrental.api.entity.Post;
+import com.roomrental.api.entity.*;
 import com.roomrental.api.entity.Post.PostStatus;
-import com.roomrental.api.entity.PostTypePrice;
-import com.roomrental.api.entity.PostTypePriceId;
-import com.roomrental.api.entity.User;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.PaymentRepository;
 import com.roomrental.api.repository.PostRepository;
 import com.roomrental.api.repository.PostTypePriceRepository;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.NotificationService;
 import com.roomrental.api.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,6 +29,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PostRepository postRepository;
     private final PostTypePriceRepository postTypePriceRepository;
     private final PaymentRepository paymentRepository;
+    private final NotificationService notificationService;
 
     @Override
     @Transactional
@@ -63,22 +60,31 @@ public class PaymentServiceImpl implements PaymentService {
         user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
 
         post.setStatus(PostStatus.PENDING);
-        post.setEndAt(now.plusDays(request.getDurationDays()));
-        post.setPushTime(now);
-        post.setUpdatedAt(now);
+        post.setEndAt(null);
+        post.setPushTime(null);
 
         Payment payment = createPayment(
                 user,
                 post,
                 Payment.PaymentType.POST_PAYMENT,
                 request.getDurationDays(),
-                post.getEndAt(),
+                null,
                 baseFee,
                 cost.discountPercent(),
                 cost.finalFee(),
                 openingBalance,
                 closingBalance,
                 now
+        );
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.POST_INFORMATION,
+                "Thanh toán đăng tin thành công. Tin \"" + post.getTitle()
+                        + "\" đã được chuyển sang trạng thái chờ duyệt. "
+                        + "Thời hạn hiển thị " + request.getDurationDays()
+                        + " ngày sẽ bắt đầu tính sau khi tin được moderator duyệt. "
+                        + "Phí đã thanh toán: " + cost.finalFee() + "đ."
         );
 
         return mapResponse(payment, post);
@@ -117,7 +123,6 @@ public class PaymentServiceImpl implements PaymentService {
                 : now;
 
         post.setEndAt(baseEndAt.plusDays(request.getDurationDays()));
-        post.setUpdatedAt(now);
 
         if (post.getStatus() == PostStatus.EXPIRED) {
             post.setStatus(PostStatus.ACTIVE);
@@ -135,6 +140,15 @@ public class PaymentServiceImpl implements PaymentService {
                 openingBalance,
                 closingBalance,
                 now
+        );
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.POST_INFORMATION,
+                "Gia hạn tin thành công. Tin \"" + post.getTitle()
+                        + "\" đã được gia hạn thêm " + request.getDurationDays()
+                        + " ngày. Ngày hết hạn mới: " + post.getEndAt()
+                        + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
         );
 
         return mapResponse(payment, post);
@@ -173,8 +187,7 @@ public class PaymentServiceImpl implements PaymentService {
         user.setAccountBalance(closingBalance);
         user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
 
-        post.setPushTime(now);
-        post.setUpdatedAt(now);
+        post.setPushTime(now); // Cập nhật thời gian đẩy tin lên thời điểm hiện tại
 
         Payment payment = createPayment(
                 user,
@@ -188,6 +201,14 @@ public class PaymentServiceImpl implements PaymentService {
                 openingBalance,
                 closingBalance,
                 now
+        );
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.POST_INFORMATION,
+                "Đẩy tin thành công. Tin \"" + post.getTitle()
+                        + "\" đã được cập nhật thời gian đẩy tin lúc " + post.getPushTime()
+                        + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
         );
 
         return mapResponse(payment, post);

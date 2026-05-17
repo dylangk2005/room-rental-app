@@ -1,5 +1,6 @@
 package com.roomrental.api.service.impl;
 
+import com.roomrental.api.dto.request.moderation.BanUserRequest;
 import com.roomrental.api.dto.response.moderation.ModerationPostPageResponse;
 import com.roomrental.api.dto.response.moderation.ModerationPostSummaryResponse;
 import com.roomrental.api.dto.response.post.PostDetailResponse;
@@ -26,6 +27,7 @@ public class ModerationServiceImpl implements ModerationService {
     private final ModerationLogService moderationLogService;
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
+    private final UserPenaltyRepository userPenaltyRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -196,5 +198,72 @@ public class ModerationServiceImpl implements ModerationService {
 
     private BigDecimal nullSafe(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
+    }
+
+    @Override
+    @Transactional
+    public void banUser(Integer moderatorId, Integer userId, BanUserRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        if (user.getRole() != null && !"USER".equals(user.getRole().getName())) {
+            throw AppException.badRequest("Không thể xử lý tài khoản nhân sự");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (request.getType() == UserPenalty.PenaltyType.LOCK_POST
+                && (request.getDurationDays() == null || request.getDurationDays() <= 0)) {
+            throw AppException.badRequest("Khóa đăng tin cần số ngày hợp lệ");
+        }
+
+        UserPenalty penalty = new UserPenalty();
+        penalty.setUser(user);
+        penalty.setType(request.getType());
+        penalty.setReason(request.getReason());
+        penalty.setStartDate(now);
+        penalty.setCreatedAt(now);
+
+        if (request.getType() == UserPenalty.PenaltyType.LOCK_POST) {
+            penalty.setEndDate(now.plusDays(request.getDurationDays()));
+        }
+
+        if (request.getType() == UserPenalty.PenaltyType.BAN_ACCOUNT) {
+            user.setStatus(User.UserStatus.BANNED);
+            penalty.setEndDate(null);
+        }
+
+        userPenaltyRepository.save(penalty);
+
+        moderationLogService.log(
+                moderatorId,
+                mapPenaltyAction(request.getType()),
+                ModerationLog.TargetType.USER,
+                user.getId(),
+                request.getReason()
+        );
+
+        auditLogService.log(
+                moderatorId,
+                "BAN_USER_" + request.getType().name(),
+                AuditLog.TargetType.USER,
+                user.getId(),
+                request.getReason()
+        );
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.SYSTEM_INFORMATION,
+                "Tài khoản của bạn bị xử lý: " + request.getType().name()
+                        + ". Lý do: " + request.getReason()
+        );
+    }
+
+    private ModerationLog.ModerationAction mapPenaltyAction(UserPenalty.PenaltyType type) {
+        return switch (type) {
+            case WARNING -> ModerationLog.ModerationAction.WARNING;
+            case LOCK_POST -> ModerationLog.ModerationAction.LOCK_POST;
+            case BAN_ACCOUNT -> ModerationLog.ModerationAction.BAN_ACCOUNT;
+        };
     }
 }

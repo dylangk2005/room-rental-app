@@ -1,5 +1,6 @@
 package com.roomrental.api.controller;
 
+import com.roomrental.api.dto.request.moderation.BanUserRequest;
 import com.roomrental.api.dto.request.moderation.RejectPostRequest;
 import com.roomrental.api.dto.response.common.ApiResponse;
 import com.roomrental.api.dto.response.moderation.ModerationPostPageResponse;
@@ -59,5 +60,15 @@ public class ModerationController {
                 "Từ chối tin thành công, đã hoàn tiền cho người đăng",
                 moderationService.rejectPost(authHelper.getCurrentUserId(), id, request.getReason())
         ));
+    }
+
+    @PutMapping("/users/{id}/ban")
+    @PreAuthorize("hasAnyRole('MODERATOR', 'MANAGER', 'ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> banUser(
+            @PathVariable Integer id,
+            @Valid @RequestBody BanUserRequest request) {
+
+        moderationService.banUser(authHelper.getCurrentUserId(), id, request);
+        return ResponseEntity.ok(ApiResponse.success("Xử lý tài khoản thành công", null));
     }
 }

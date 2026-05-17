@@ -62,6 +62,7 @@ public class PaymentServiceImpl implements PaymentService {
         user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
 
         post.setStatus(PostStatus.PENDING);
+        post.setDurationDays(request.getDurationDays());
         post.setEndAt(null);
         post.setPushTime(null);
 

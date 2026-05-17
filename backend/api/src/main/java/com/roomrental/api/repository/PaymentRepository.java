@@ -6,7 +6,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
     Page<Payment> findByUserId(Integer userId, Pageable pageable);
+    Optional<Payment> findTopByPostIdAndPaymentTypeOrderByCreatedAtDesc(
+            Integer postId,
+            Payment.PaymentType paymentType
+    );
 }

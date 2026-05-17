@@ -59,6 +59,9 @@ public class Post {
     @JoinColumn(name = "post_type_id")
     private PostType postType;
 
+    @Column(name = "duration_days")
+    private Integer durationDays;
+
     public enum PostStatus {
         DRAFT, PENDING, ACTIVE, EXPIRED, REJECTED, HIDDEN, DELETED
     }

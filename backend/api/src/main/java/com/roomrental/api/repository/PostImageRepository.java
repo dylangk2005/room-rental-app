@@ -27,4 +27,6 @@ public interface PostImageRepository extends JpaRepository<PostImage, Integer> {
         )
     """)
     List<PostImage> findThumbnailsByPostIdIn(@Param("postIds") List<Integer> postIds);
+
+    int countByPostId(Integer postId);
 }

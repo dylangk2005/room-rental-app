@@ -76,11 +76,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
                         // Moderation logs
-                        .requestMatchers("/api/moderation-logs/my-history")
-                        .hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/moderation-logs/my-history").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
-                        .requestMatchers("/api/moderation-logs/**")
-                        .hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/moderation-logs/**").hasAnyRole("MANAGER", "ADMIN")
+
+                        .requestMatchers("/api/moderation/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
                         // Manager
                         .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")

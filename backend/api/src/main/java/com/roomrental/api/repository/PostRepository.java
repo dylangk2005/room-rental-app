@@ -65,4 +65,26 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 """)
     Optional<Post> findByIdForPayment(@Param("id") Integer id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+    SELECT p FROM Post p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.postType
+    WHERE p.id = :id
+""")
+    Optional<Post> findByIdForModeration(@Param("id") Integer id);
+
+    @Query("""
+    SELECT p FROM Post p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.postType
+    WHERE p.status = :status
+      AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
+""")
+    Page<Post> findModerationQueue(
+            @Param("status") Post.PostStatus status,
+            @Param("postTypeId") Integer postTypeId,
+            Pageable pageable
+    );
+
 }

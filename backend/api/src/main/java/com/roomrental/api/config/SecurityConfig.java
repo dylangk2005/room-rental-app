@@ -52,9 +52,19 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/wallet/deposit/callback").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/wallet/deposit/callback").permitAll()
 
+                        // Reports - User được gửi report và xem lịch sử của mình
+                        .requestMatchers(HttpMethod.POST, "/api/reports").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/reports/my-history").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+
+                        // Reports - Moderator trở lên mới được xem/xử lý report
+                        .requestMatchers(HttpMethod.GET, "/api/reports").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.GET, "/api/reports/*").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/reports/*/resolve").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+
                         // User
                         .requestMatchers("/api/favorites/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
-                        .requestMatchers("/api/reports/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/notifications/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/payments/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/deposits/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
@@ -65,17 +75,18 @@ public class SecurityConfig {
                         // Moderator
                         .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
+                        // Moderation logs
+                        .requestMatchers("/api/moderation-logs/my-history")
+                        .hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+
+                        .requestMatchers("/api/moderation-logs/**")
+                        .hasAnyRole("MANAGER", "ADMIN")
+
                         // Manager
                         .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
 
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-                        // Moderator, Manager, Admin mới được xem lịch sử kiểm duyệt của chính mình
-                        .requestMatchers("/api/moderation-logs/my-history").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
-
-                        // Chỉ Manager và Admin mới được xem tất cả lịch sử kiểm duyệt
-                        .requestMatchers("/api/moderation-logs/**").hasAnyRole("MANAGER", "ADMIN")
 
                         // Còn lại phải đăng nhập
                         .anyRequest().authenticated()

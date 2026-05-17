@@ -5,6 +5,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 public interface ModerationLogRepository extends JpaRepository<ModerationLog, Integer> {
 
@@ -23,4 +28,48 @@ public interface ModerationLogRepository extends JpaRepository<ModerationLog, In
             Integer targetId,
             Pageable pageable
     );
+
+    interface ModeratorStatsView { // Giao diện projection để lấy thống kê hoạt động của moderator
+        Integer getModeratorId();
+        String getModeratorName();
+        Long getApprovedPosts();
+        Long getRejectedPosts();
+        Long getResolvedReports();
+        Long getRejectedReports();
+        Long getWarnings();
+        Long getLockedPosts();
+        Long getBannedAccounts();
+        Long getTotalActions();
+    }
+
+    long countByActionAndCreatedAtBetween(
+            ModerationLog.ModerationAction action,
+            LocalDateTime from,
+            LocalDateTime to
+    );
+
+    long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+
+    @Query("""
+    SELECT
+        u.id AS moderatorId,
+        u.fullName AS moderatorName,
+        SUM(CASE WHEN m.action = 'ACCEPT_POST' THEN 1 ELSE 0 END) AS approvedPosts,
+        SUM(CASE WHEN m.action = 'REJECT_POST' THEN 1 ELSE 0 END) AS rejectedPosts,
+        SUM(CASE WHEN m.action = 'ACCEPT_REPORT' THEN 1 ELSE 0 END) AS resolvedReports,
+        SUM(CASE WHEN m.action = 'REJECT_REPORT' THEN 1 ELSE 0 END) AS rejectedReports,
+        SUM(CASE WHEN m.action = 'WARNING' THEN 1 ELSE 0 END) AS warnings,
+        SUM(CASE WHEN m.action = 'LOCK_POST' THEN 1 ELSE 0 END) AS lockedPosts,
+        SUM(CASE WHEN m.action = 'BAN_ACCOUNT' THEN 1 ELSE 0 END) AS bannedAccounts,
+        COUNT(m) AS totalActions
+    FROM ModerationLog m
+    JOIN m.user u
+    WHERE m.createdAt BETWEEN :from AND :to
+    GROUP BY u.id, u.fullName
+""")
+    List<ModeratorStatsView> getModeratorStats(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
 }

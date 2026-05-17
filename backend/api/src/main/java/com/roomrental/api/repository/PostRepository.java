@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -87,4 +89,23 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             Pageable pageable
     );
 
+    interface PostTypeStatsView {
+        String getPostTypeName();
+        Long getTotalPosts();
+    }
+
+    long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+
+    long countByStatus(Post.PostStatus status);
+
+    @Query("""
+    SELECT p.postType.name AS postTypeName, COUNT(p) AS totalPosts
+    FROM Post p
+    WHERE p.createdAt BETWEEN :from AND :to
+    GROUP BY p.postType.name
+""")
+    List<PostTypeStatsView> countPostsByType(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
 }

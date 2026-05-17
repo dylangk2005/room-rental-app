@@ -31,6 +31,7 @@ public class PostServiceImpl implements PostService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
     private final AuditLogService auditLogService;
+    private final UserPenaltyRepository userPenaltyRepository;
 
     // ─── Pageable sort theo priority ASC, pushTime DESC ──────────────────
     private Pageable buildSortedPageable(int page, int size) {
@@ -163,9 +164,7 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
-        if (user.getStatus() == User.UserStatus.BANNED) {
-            throw AppException.forbidden("Tài khoản của bạn đã bị cấm đăng tin");
-        }
+       ensureUserCanPost(user);
 
         PostType postType = postTypeRepository.findById(request.getPostTypeId())
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy loại bài đăng"));
@@ -311,5 +310,21 @@ public class PostServiceImpl implements PostService {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
         Page<Post> result = postRepository.findByUserId(userId, pageable);
         return mapToPageResponse(result);
+    }
+
+    private void ensureUserCanPost(User user) {
+        if (user.getStatus() == User.UserStatus.BANNED) {
+            throw AppException.forbidden("Tài khoản của bạn đã bị khóa");
+        }
+
+        boolean locked = !userPenaltyRepository.findByUserIdAndTypeInAndEndDateAfter(
+                user.getId(),
+                List.of(UserPenalty.PenaltyType.LOCK_POST),
+                LocalDateTime.now()
+        ).isEmpty();
+
+        if (locked) {
+            throw AppException.forbidden("Tài khoản của bạn đang bị khóa đăng tin");
+        }
     }
 }

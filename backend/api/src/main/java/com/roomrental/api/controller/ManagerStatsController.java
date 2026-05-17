@@ -1,10 +1,14 @@
 package com.roomrental.api.controller;
 
+import com.roomrental.api.dto.request.manager.StatsExportType;
 import com.roomrental.api.dto.response.common.ApiResponse;
 import com.roomrental.api.dto.response.manager.*;
+import com.roomrental.api.service.ManagerStatsExportService;
 import com.roomrental.api.service.ManagerStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +21,7 @@ import java.time.LocalDate;
 public class ManagerStatsController {
 
     private final ManagerStatsService managerStatsService;
+    private final ManagerStatsExportService managerStatsExportService;
 
     @GetMapping("/users")
     @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
@@ -81,4 +86,30 @@ public class ManagerStatsController {
                 managerStatsService.getModerationStats(from, to)
         ));
     }
+
+    @GetMapping("/export")
+    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    public ResponseEntity<byte[]> exportStats(
+            @RequestParam StatsExportType type,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate from,
+
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate to) {
+
+        byte[] file = managerStatsExportService.exportStats(type, from, to);
+
+        String fileName = type.name().toLowerCase() + "-stats.xlsx";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + fileName)
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                ))
+                .body(file);
+    }
+
 }

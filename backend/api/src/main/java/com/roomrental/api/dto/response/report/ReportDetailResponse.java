@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 @Builder
-public class ReportResponse {
+public class ReportDetailResponse {
     private Integer id;
     private String reason;
     private String description;

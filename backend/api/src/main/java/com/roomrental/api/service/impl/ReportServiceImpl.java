@@ -3,7 +3,8 @@ package com.roomrental.api.service.impl;
 import com.roomrental.api.dto.request.report.CreateReportRequest;
 import com.roomrental.api.dto.request.report.ResolveReportRequest;
 import com.roomrental.api.dto.response.report.ReportPageResponse;
-import com.roomrental.api.dto.response.report.ReportResponse;
+import com.roomrental.api.dto.response.report.ReportDetailResponse;
+import com.roomrental.api.dto.response.report.ReportSummaryResponse;
 import com.roomrental.api.entity.*;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.PostRepository;
@@ -42,7 +43,7 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional
-    public ReportResponse createReport(Integer userId, CreateReportRequest request, List<MultipartFile> images) {
+    public ReportDetailResponse createReport(Integer userId, CreateReportRequest request, List<MultipartFile> images) {
         User reporter = userRepository.findById(userId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
@@ -98,7 +99,7 @@ public class ReportServiceImpl implements ReportService {
                 request.getReason()
         );
 
-        return mapResponse(saved);
+        return mapDetailResponse(saved);
     }
 
     @Override
@@ -115,16 +116,16 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     @Transactional(readOnly = true)
-    public ReportResponse getReportDetail(Integer reportId) {
+    public ReportDetailResponse getReportDetail(Integer reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy báo cáo"));
 
-        return mapResponse(report);
+        return mapDetailResponse(report);
     }
 
     @Override
     @Transactional
-    public ReportResponse resolveReport(Integer moderatorId, Integer reportId, ResolveReportRequest request) {
+    public ReportDetailResponse resolveReport(Integer moderatorId, Integer reportId, ResolveReportRequest request) {
         if (request.getDecision() == Report.ReportStatus.PENDING) {
             throw AppException.badRequest("Kết quả xử lý không thể là PENDING");
         }
@@ -195,7 +196,7 @@ public class ReportServiceImpl implements ReportService {
             );
         }
 
-        return mapResponse(saved);
+        return mapDetailResponse(saved);
     }
 
     @Override
@@ -207,9 +208,9 @@ public class ReportServiceImpl implements ReportService {
     }
 
     private ReportPageResponse mapPage(Page<Report> page) {
-        List<ReportResponse> reports = page.getContent()
+        List<ReportSummaryResponse> reports = page.getContent()
                 .stream()
-                .map(this::mapResponse)
+                .map(this::mapSummaryResponse)
                 .toList();
 
         return ReportPageResponse.builder()
@@ -219,8 +220,27 @@ public class ReportServiceImpl implements ReportService {
                 .totalElements(page.getTotalElements())
                 .build();
     }
+    private ReportSummaryResponse mapSummaryResponse(Report report) {
+        User reporter = report.getUser();
+        Post post = report.getPost();
 
-    private ReportResponse mapResponse(Report report) {
+        int imageCount = reportImageRepository.findByReportId(report.getId()).size();
+
+        return ReportSummaryResponse.builder()
+                .id(report.getId())
+                .reason(report.getReason())
+                .status(report.getStatus() != null ? report.getStatus().name() : null)
+                .createdAt(report.getCreatedAt())
+                .reporterId(reporter != null ? reporter.getId() : null)
+                .reporterName(reporter != null ? reporter.getFullName() : null)
+                .postId(post != null ? post.getId() : null)
+                .postTitle(post != null ? post.getTitle() : null)
+                .postStatus(post != null && post.getStatus() != null ? post.getStatus().name() : null)
+                .imageCount(imageCount)
+                .build();
+    }
+
+    private ReportDetailResponse mapDetailResponse(Report report) {
         User reporter = report.getUser();
         Post post = report.getPost();
         User postOwner = post != null ? post.getUser() : null;
@@ -231,7 +251,7 @@ public class ReportServiceImpl implements ReportService {
                 .map(ReportImage::getImageUrl)
                 .toList();
 
-        return ReportResponse.builder()
+        return ReportDetailResponse.builder()
                 .id(report.getId())
                 .reason(report.getReason())
                 .description(report.getDescription())

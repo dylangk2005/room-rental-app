@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -24,4 +25,8 @@ public interface UserRepository extends JpaRepository <User, Integer>{
     Optional<User> findByIdForPayment(@Param("id") Integer id);
 
     List<User> findByRole_Name(String roleName);
+
+    long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+
+    long countByStatus(User.UserStatus status);
 }

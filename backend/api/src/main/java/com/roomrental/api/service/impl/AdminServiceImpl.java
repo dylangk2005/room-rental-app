@@ -1,6 +1,7 @@
 package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
+import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
 import com.roomrental.api.dto.response.admin.InternalUserResponse;
 import com.roomrental.api.entity.AuditLog;
 import com.roomrental.api.entity.Role;
@@ -12,12 +13,16 @@ import com.roomrental.api.service.AdminService;
 import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.EmailService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -86,6 +91,37 @@ public class AdminServiceImpl implements AdminService {
         );
 
         return mapResponse(savedUser);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public InternalUserPageResponse getInternalUsers(
+            String role,
+            User.UserStatus status,
+            int page,
+            int size
+    ) {
+        String roleName = role != null && !role.isBlank()
+                ? role.trim().toUpperCase()
+                : null;
+
+        if (roleName != null && !INTERNAL_ROLES.contains(roleName)) {
+            throw AppException.badRequest("Vai trò nội bộ không hợp lệ");
+        }
+
+        Page<User> result = userRepository.findInternalUsers(
+                List.copyOf(INTERNAL_ROLES),
+                roleName,
+                status,
+                PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
+        );
+
+        return InternalUserPageResponse.builder()
+                .users(result.getContent().stream().map(this::mapResponse).toList())
+                .currentPage(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
     }
 
     private String generateTemporaryPassword() {

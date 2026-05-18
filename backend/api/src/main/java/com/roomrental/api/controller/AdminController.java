@@ -2,8 +2,10 @@ package com.roomrental.api.controller;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
 import com.roomrental.api.dto.response.admin.BackupResponse;
+import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
 import com.roomrental.api.dto.response.admin.InternalUserResponse;
 import com.roomrental.api.dto.response.common.ApiResponse;
+import com.roomrental.api.entity.User;
 import com.roomrental.api.service.AdminService;
 import com.roomrental.api.service.BackupService;
 import com.roomrental.api.util.AuthHelper;
@@ -38,5 +40,25 @@ public class AdminController {
         BackupResponse response = backupService.runBackup(authHelper.getCurrentUserId());
 
         return ResponseEntity.ok(ApiResponse.success("Sao lưu dữ liệu thành công", response));
+    }
+
+    @GetMapping("/internal-users")
+    public ResponseEntity<ApiResponse<InternalUserPageResponse>> getInternalUsers(
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) User.UserStatus status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        InternalUserPageResponse response = adminService.getInternalUsers(
+                role,
+                status,
+                page,
+                size
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Lấy danh sách tài khoản nội bộ thành công",
+                response
+        ));
     }
 }

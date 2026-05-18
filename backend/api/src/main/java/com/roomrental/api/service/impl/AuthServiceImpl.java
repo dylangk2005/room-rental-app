@@ -40,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisTemplate<String, String> redisTemplate;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+    private Boolean mustChangePassword;
 
     @Override
     public void register(RegisterRequest request) {
@@ -212,6 +213,7 @@ public class AuthServiceImpl implements AuthService {
                 .avatar(user.getAvatar())
                 .role(user.getRole().getName())
                 .membershipLevel(user.getMembershipLevel().getName())
+                .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
 
@@ -316,6 +318,7 @@ public class AuthServiceImpl implements AuthService {
                 .status(user.getStatus().name())
                 .role(user.getRole().getName())
                 .membershipLevel(user.getMembershipLevel().getName())
+                .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
 
@@ -404,6 +407,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setMustChangePassword(false);
         userRepository.save(user);
 
         auditLogService.log(

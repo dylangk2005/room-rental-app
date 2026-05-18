@@ -49,6 +49,9 @@ public class User {
     @JoinColumn(name = "membership_level_id")
     private MembershipLevel membershipLevel;
 
+    @Column(name = "must_change_password")
+    private Boolean mustChangePassword = false;
+
     public enum UserStatus {
         ACTIVE, INACTIVE, BANNED
     }

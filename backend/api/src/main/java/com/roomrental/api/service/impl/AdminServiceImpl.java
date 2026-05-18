@@ -65,6 +65,7 @@ public class AdminServiceImpl implements AdminService {
         user.setRole(role);
         user.setMembershipLevel(null);
         user.setCreatedAt(LocalDateTime.now());
+        user.setMustChangePassword(true);
 
         User savedUser = userRepository.save(user);
 

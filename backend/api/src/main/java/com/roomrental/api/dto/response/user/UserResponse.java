@@ -15,4 +15,5 @@ public class UserResponse {
     private String role;
     private String membershipLevel;
 
+    private Boolean mustChangePassword;
 }

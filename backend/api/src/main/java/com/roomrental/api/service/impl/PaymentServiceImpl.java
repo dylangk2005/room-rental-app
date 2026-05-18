@@ -12,6 +12,7 @@ import com.roomrental.api.repository.PostRepository;
 import com.roomrental.api.repository.PostTypePriceRepository;
 import com.roomrental.api.repository.UserRepository;
 import com.roomrental.api.service.AuditLogService;
+import com.roomrental.api.service.MembershipService;
 import com.roomrental.api.service.NotificationService;
 import com.roomrental.api.service.PaymentService;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final NotificationService notificationService;
     private final AuditLogService auditLogService;
+    private final MembershipService membershipService;
 
     @Override
     @Transactional
@@ -59,7 +61,7 @@ public class PaymentServiceImpl implements PaymentService {
         BigDecimal closingBalance = openingBalance.subtract(cost.finalFee());
 
         user.setAccountBalance(closingBalance);
-        user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
+        // user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee())); Bỏ vì tin còn có thể bị reject, không chắc chắn sẽ phát sinh chi phí
 
         post.setStatus(PostStatus.PENDING);
         post.setDurationDays(request.getDurationDays());
@@ -136,6 +138,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         user.setAccountBalance(closingBalance);
         user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
+        membershipService.refreshUserMembership(user);
 
         LocalDateTime baseEndAt = post.getEndAt() != null && post.getEndAt().isAfter(now)
                 ? post.getEndAt()
@@ -221,6 +224,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         user.setAccountBalance(closingBalance);
         user.setTotalSpent(nullSafe(user.getTotalSpent()).add(cost.finalFee()));
+        membershipService.refreshUserMembership(user);
 
         post.setPushTime(now); // Cập nhật thời gian đẩy tin lên thời điểm hiện tại
 

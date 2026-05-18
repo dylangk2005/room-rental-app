@@ -34,6 +34,6 @@ public class AuditLog {
     private User user;
 
     public enum TargetType {
-        USER, POST, TRANSACTION, REPORT, DEPOSIT, MEMBERSHIP
+        SYSTEM, USER, POST, TRANSACTION, REPORT, DEPOSIT, MEMBERSHIP
     }
 }

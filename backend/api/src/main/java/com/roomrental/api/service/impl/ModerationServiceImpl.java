@@ -28,6 +28,7 @@ public class ModerationServiceImpl implements ModerationService {
     private final AuditLogService auditLogService;
     private final NotificationService notificationService;
     private final UserPenaltyRepository userPenaltyRepository;
+    private final MembershipService membershipService;
 
     @Override
     @Transactional(readOnly = true)
@@ -72,6 +73,21 @@ public class ModerationServiceImpl implements ModerationService {
         post.setEndAt(now.plusDays(post.getDurationDays()));
         post.setPushTime(now);
         post.setUpdatedAt(now);
+
+        Payment originalPayment = paymentRepository
+                .findTopByPostIdAndPaymentTypeOrderByCreatedAtDesc(postId, Payment.PaymentType.POST_PAYMENT)
+                .orElseThrow(() -> AppException.badRequest("Không tìm thấy giao dịch thanh toán của tin này"));
+
+        User owner = userRepository.findByIdForPayment(post.getUser().getId())
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy chủ tin"));
+
+        BigDecimal finalFee = originalPayment.getFinalFee();
+        if (finalFee == null || finalFee.compareTo(BigDecimal.ZERO) <= 0) {
+            throw AppException.badRequest("Số tiền thanh toán không hợp lệ");
+        }
+
+        owner.setTotalSpent(nullSafe(owner.getTotalSpent()).add(finalFee));
+        membershipService.refreshUserMembership(owner);
 
         Post saved = postRepository.save(post);
 

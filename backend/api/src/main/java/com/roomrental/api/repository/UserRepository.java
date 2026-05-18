@@ -29,4 +29,6 @@ public interface UserRepository extends JpaRepository <User, Integer>{
     long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
 
     long countByStatus(User.UserStatus status);
+
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Integer id); // Kiểm tra số điện thoại đã tồn tại cho người dùng khác (trừ chính nó)
 }

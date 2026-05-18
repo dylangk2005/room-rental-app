@@ -1,6 +1,7 @@
 package com.roomrental.api.service;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
+import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
 import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
 import com.roomrental.api.dto.response.admin.InternalUserResponse;
 import com.roomrental.api.entity.User;
@@ -13,5 +14,11 @@ public interface AdminService {
             User.UserStatus status,
             int page,
             int size
+    );
+
+    InternalUserResponse updateUserStatus(
+            Integer adminId,
+            Integer userId,
+            UpdateUserStatusRequest request
     );
 }

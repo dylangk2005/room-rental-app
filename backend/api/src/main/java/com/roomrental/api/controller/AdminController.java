@@ -1,6 +1,7 @@
 package com.roomrental.api.controller;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
+import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
 import com.roomrental.api.dto.response.admin.BackupResponse;
 import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
 import com.roomrental.api.dto.response.admin.InternalUserResponse;
@@ -58,6 +59,23 @@ public class AdminController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Lấy danh sách tài khoản nội bộ thành công",
+                response
+        ));
+    }
+
+    @PutMapping("/users/{id}/status")
+    public ResponseEntity<ApiResponse<InternalUserResponse>> updateUserStatus(
+            @PathVariable Integer id,
+            @Valid @RequestBody UpdateUserStatusRequest request
+    ) {
+        InternalUserResponse response = adminService.updateUserStatus(
+                authHelper.getCurrentUserId(),
+                id,
+                request
+        );
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Cập nhật trạng thái tài khoản thành công",
                 response
         ));
     }

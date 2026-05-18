@@ -1,6 +1,7 @@
 package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
+import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
 import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
 import com.roomrental.api.dto.response.admin.InternalUserResponse;
 import com.roomrental.api.entity.AuditLog;
@@ -122,6 +123,41 @@ public class AdminServiceImpl implements AdminService {
                 .totalPages(result.getTotalPages())
                 .totalElements(result.getTotalElements())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public InternalUserResponse updateUserStatus(
+            Integer adminId,
+            Integer userId,
+            UpdateUserStatusRequest request
+    ) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tài khoản"));
+
+        String roleName = user.getRole() != null ? user.getRole().getName() : null;
+
+        if ("ADMIN".equals(roleName)) {
+            throw AppException.badRequest("Không thể cập nhật trạng thái tài khoản ADMIN");
+        }
+
+        if (adminId.equals(userId) && request.getStatus() == User.UserStatus.BANNED) {
+            throw AppException.badRequest("Không thể tự khóa tài khoản của chính mình");
+        }
+
+        User.UserStatus oldStatus = user.getStatus();
+        user.setStatus(request.getStatus());
+
+        auditLogService.log(
+                adminId,
+                "UPDATE_USER_STATUS",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                "Admin #" + adminId + " cập nhật trạng thái tài khoản #"
+                        + user.getId() + " từ " + oldStatus + " sang " + request.getStatus() + "."
+        );
+
+        return mapResponse(user);
     }
 
     private String generateTemporaryPassword() {

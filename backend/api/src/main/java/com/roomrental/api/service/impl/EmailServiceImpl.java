@@ -47,4 +47,24 @@ public class EmailServiceImpl implements EmailService {
         );
         mailSender.send(message);
     }
+
+    @Override
+    public void sendInternalAccountCredentials(String toEmail, String fullName, String role, String temporaryPassword) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("TayTro <" + fromEmail + ">");
+        message.setTo(toEmail);
+        message.setSubject("[TayTro] Tài khoản nội bộ đã được tạo");
+        message.setText(
+                "Xin chào " + fullName + ",\n\n" +
+                        "Tài khoản nội bộ của bạn trên hệ thống TayTro đã được tạo.\n\n" +
+                        "Vai trò: " + role + "\n" +
+                        "Email đăng nhập: " + toEmail + "\n" +
+                        "Mật khẩu tạm thời: " + temporaryPassword + "\n\n" +
+                        "Vui lòng đăng nhập và đổi mật khẩu ngay sau khi nhận được email này.\n\n" +
+                        "Trân trọng,\n" +
+                        "Đội ngũ TayTro"
+        );
+        mailSender.send(message);
+    }
+
 }

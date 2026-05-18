@@ -1,19 +1,18 @@
-package com.roomrental.api.dto.response.user;
+package com.roomrental.api.dto.response.admin;
 
 import lombok.Builder;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 @Builder
-public class UserResponse {
+public class AdminUserResponse {
     private Integer id;
     private String fullName;
     private String email;
     private String phoneNumber;
-    private String avatar;
     private String status;
     private String role;
-    private String membershipLevel;
-
-    private Boolean mustChangePassword;
+    private LocalDateTime createdAt;
 }

@@ -2,7 +2,7 @@ package com.roomrental.api.controller;
 
 import com.roomrental.api.dto.request.auth.*;
 import com.roomrental.api.dto.response.common.ApiResponse;
-import com.roomrental.api.dto.response.auth.UserResponse;
+import com.roomrental.api.dto.response.user.UserResponse;
 import com.roomrental.api.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

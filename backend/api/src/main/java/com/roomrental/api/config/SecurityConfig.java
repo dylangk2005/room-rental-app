@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/posts/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers("/api/wallet/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/membership/my-level").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/users/profile").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
 
                         // Moderator
                         .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")

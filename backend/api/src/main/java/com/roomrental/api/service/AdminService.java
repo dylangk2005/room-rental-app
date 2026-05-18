@@ -2,23 +2,31 @@ package com.roomrental.api.service;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
 import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
-import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
-import com.roomrental.api.dto.response.admin.InternalUserResponse;
+import com.roomrental.api.dto.response.admin.AdminUserResponse;
+import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
 import com.roomrental.api.entity.User;
 
 public interface AdminService {
-    InternalUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request);
+    AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request);
 
-    InternalUserPageResponse getInternalUsers(
+    AdminUserPageResponse getInternalUsers(
             String role,
             User.UserStatus status,
             int page,
             int size
     );
 
-    InternalUserResponse updateUserStatus(
+    AdminUserResponse updateUserStatus(
             Integer adminId,
             Integer userId,
             UpdateUserStatusRequest request
+    );
+
+    AdminUserPageResponse getUsers(
+            String role,
+            User.UserStatus status,
+            String keyword,
+            int page,
+            int size
     );
 }

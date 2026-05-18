@@ -47,4 +47,23 @@ public interface UserRepository extends JpaRepository <User, Integer>{
             @Param("status") User.UserStatus status,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.role r
+    WHERE (:roleName IS NULL OR r.name = :roleName)
+      AND (:status IS NULL OR u.status = :status)
+      AND (
+            :keyword IS NULL
+            OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR u.phoneNumber LIKE CONCAT('%', :keyword, '%')
+      )
+""")
+    Page<User> searchAdminUsers(
+            @Param("roleName") String roleName,
+            @Param("status") User.UserStatus status,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 }

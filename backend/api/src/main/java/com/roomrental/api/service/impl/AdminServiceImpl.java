@@ -2,8 +2,8 @@ package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
 import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
-import com.roomrental.api.dto.response.admin.InternalUserPageResponse;
-import com.roomrental.api.dto.response.admin.InternalUserResponse;
+import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
+import com.roomrental.api.dto.response.admin.AdminUserResponse;
 import com.roomrental.api.entity.AuditLog;
 import com.roomrental.api.entity.Role;
 import com.roomrental.api.entity.User;
@@ -42,7 +42,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
-    public InternalUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request) {
+    public AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request) {
         String roleName = request.getRole().trim().toUpperCase();
 
         if (!INTERNAL_ROLES.contains(roleName)) {
@@ -96,7 +96,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional(readOnly = true)
-    public InternalUserPageResponse getInternalUsers(
+    public AdminUserPageResponse getInternalUsers(
             String role,
             User.UserStatus status,
             int page,
@@ -117,7 +117,7 @@ public class AdminServiceImpl implements AdminService {
                 PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
         );
 
-        return InternalUserPageResponse.builder()
+        return AdminUserPageResponse.builder()
                 .users(result.getContent().stream().map(this::mapResponse).toList())
                 .currentPage(result.getNumber())
                 .totalPages(result.getTotalPages())
@@ -127,7 +127,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
-    public InternalUserResponse updateUserStatus(
+    public AdminUserResponse updateUserStatus(
             Integer adminId,
             Integer userId,
             UpdateUserStatusRequest request
@@ -160,6 +160,38 @@ public class AdminServiceImpl implements AdminService {
         return mapResponse(user);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AdminUserPageResponse getUsers(
+            String role,
+            User.UserStatus status,
+            String keyword,
+            int page,
+            int size
+    ) {
+        String roleName = role != null && !role.isBlank()
+                ? role.trim().toUpperCase()
+                : null;
+
+        String searchKeyword = keyword != null && !keyword.isBlank()
+                ? keyword.trim()
+                : null;
+
+        Page<User> result = userRepository.searchAdminUsers(
+                roleName,
+                status,
+                searchKeyword,
+                PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
+        );
+
+        return AdminUserPageResponse.builder()
+                .users(result.getContent().stream().map(this::mapResponse).toList())
+                .currentPage(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
+    }
+
     private String generateTemporaryPassword() {
         SecureRandom random = new SecureRandom();
         StringBuilder password = new StringBuilder();
@@ -172,13 +204,12 @@ public class AdminServiceImpl implements AdminService {
         return password.toString();
     }
 
-    private InternalUserResponse mapResponse(User user) {
-        return InternalUserResponse.builder()
+    private AdminUserResponse mapResponse(User user) {
+        return AdminUserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
-                .avatar(user.getAvatar())
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .role(user.getRole() != null ? user.getRole().getName() : null)
                 .createdAt(user.getCreatedAt())

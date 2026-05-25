@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -115,6 +116,22 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 
     // Thống kê số lượng bài đăng theo trạng thái
     long countByStatus(Post.PostStatus status);
+
+    // Chuyển các bài đăng đang hoạt động nhưng đã qua thời hạn sang hết hạn
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    UPDATE Post p
+    SET p.status = :expiredStatus,
+        p.updatedAt = :now
+    WHERE p.status = :activeStatus
+      AND p.endAt IS NOT NULL
+      AND p.endAt <= :now
+""")
+    int expireActivePosts(
+            @Param("activeStatus") Post.PostStatus activeStatus,
+            @Param("expiredStatus") Post.PostStatus expiredStatus,
+            @Param("now") LocalDateTime now
+    );
 
     // Thống kê số lượng bài đăng theo loại trong khoảng thời gian
     @Query("""

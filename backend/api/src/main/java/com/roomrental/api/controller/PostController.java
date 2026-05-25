@@ -26,6 +26,7 @@ public class PostController {
 
     // ─── PUBLIC ───────────────────────────────────────────────────────────
 
+    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
     @GetMapping
     public ResponseEntity<ApiResponse<PostPageResponse>> getActivePosts(
             @RequestParam(defaultValue = "0") int page,
@@ -34,6 +35,7 @@ public class PostController {
                 postService.getActivePosts(page, size)));
     }
 
+    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PostPageResponse>> searchPosts(
             @RequestParam(required = false) String province,
@@ -49,6 +51,7 @@ public class PostController {
                         minPrice, maxPrice, minArea, maxArea, page, size)));
     }
 
+    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<PostDetailResponse>> getPostDetail(
             @PathVariable Integer id) {
@@ -56,6 +59,7 @@ public class PostController {
                 postService.getPostDetail(id)));
     }
 
+    // Xem thông tin liên hệ của phòng trọ
     @GetMapping("/{id}/contact")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostContactResponse>> getPostContact(
@@ -66,6 +70,7 @@ public class PostController {
 
     // ─── USER ─────────────────────────────────────────────────────────────
 
+    // Tạo mới bài đăng, có thể upload nhiều ảnh
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostDetailResponse>> createPost(
@@ -96,6 +101,7 @@ public class PostController {
                 postService.createPost(authHelper.getCurrentUserId(), request, images)));
     }
 
+    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostDetailResponse>> updatePost(
@@ -125,6 +131,7 @@ public class PostController {
                 postService.updatePost(authHelper.getCurrentUserId(), id, request, newImages)));
     }
 
+    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable Integer id) {
@@ -132,6 +139,7 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success("Xóa tin thành công", null));
     }
 
+    // Lấy danh sách bài đăng của người dùng, có phân trang
     @GetMapping("/my-posts")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostPageResponse>> getMyPosts(

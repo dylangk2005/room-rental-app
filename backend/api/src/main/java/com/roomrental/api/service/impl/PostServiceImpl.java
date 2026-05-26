@@ -10,6 +10,7 @@ import com.roomrental.api.repository.*;
 import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.CloudinaryService;
 import com.roomrental.api.service.PostService;
+import com.roomrental.api.util.AuthHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,8 @@ public class PostServiceImpl implements PostService {
     private final CloudinaryService cloudinaryService;
     private final AuditLogService auditLogService;
     private final UserPenaltyRepository userPenaltyRepository;
+    private final AuthHelper authHelper;
+    private final FavoriteRepository favoriteRepository;
 
     // ─── Pageable sort theo priority ASC, pushTime DESC ──────────────────
     private Pageable buildSortedPageable(int page, int size) {
@@ -108,6 +111,7 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
+    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
     @Override
     public PostPageResponse getActivePosts(int page, int size) {
         Page<Post> result = postRepository.findByStatus(
@@ -115,34 +119,59 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
+    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
     @Override
     public PostPageResponse searchPosts(String province, String district,
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         BigDecimal minArea, BigDecimal maxArea,
                                         int page, int size) {
+        // Chú ý: chỉ tìm kiếm bài đăng đang hoạt động
         Page<Post> result = postRepository.searchPosts(
                 province, district, minPrice, maxPrice, minArea, maxArea,
                 buildSortedPageable(page, size));
         return mapToPageResponse(result);
     }
 
+    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
     @Override
     public PostDetailResponse getPostDetail(Integer postId) {
-        Post post = postRepository.findById(postId)
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
+        Post post = postRepository.findDetailById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        // Lấy thông tin người dùng hiện tại, nếu có. Nếu không có (chưa đăng nhập) sẽ trả về null
+        AuthHelper.CurrentUser currentUser = authHelper.getCurrentUserOrNull();
+
+        // Nếu bài đăng không ở trạng thái ACTIVE
+        // chỉ cho phép xem nếu người dùng là chủ bài đăng, đã yêu thích bài đăng này hoặc có quyền quản trị
+        if (!canViewPostDetail(post, currentUser)) {
+            throw AppException.notFound("Không tìm thấy tin đăng");
+        }
+
+        // Lấy danh sách URL ảnh của bài đăng
         List<String> imageUrls = postImageRepository.findByPostId(postId)
-                .stream().map(PostImage::getImageUrl).toList();
+                .stream()
+                .map(PostImage::getImageUrl)
+                .toList();
+
         return mapToDetail(post, imageUrls);
     }
 
+    // Xem thông tin liên hệ của phòng trọ
     @Override
     public PostContactResponse getPostContact(Integer postId) {
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        // Nếu bài đăng không ở trạng thái ACTIVE thì không cho phép xem thông tin liên hệ
         if (post.getStatus() != PostStatus.ACTIVE) {
             throw AppException.badRequest("Tin đăng không còn hiệu lực");
         }
+
+        // Lấy thông tin người dùng là chủ bài đăng
         User owner = post.getUser();
+
         return PostContactResponse.builder()
                 .ownerId(owner.getId())
                 .ownerName(owner.getFullName())
@@ -150,10 +179,12 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
+    // Tạo mới bài đăng, có thể upload nhiều ảnh
     @Override
     @Transactional
     public PostDetailResponse createPost(Integer userId, CreatePostRequest request,
                                          List<MultipartFile> images) {
+
         if (images == null || images.isEmpty()) {
             throw AppException.badRequest("Phải tải lên ít nhất 1 ảnh");
         }
@@ -164,11 +195,13 @@ public class PostServiceImpl implements PostService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
+        // Kiểm tra xem người dùng có bị cấm đăng tin không
        ensureUserCanPost(user);
 
         PostType postType = postTypeRepository.findById(request.getPostTypeId())
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy loại bài đăng"));
 
+        // Tạo bản ghi bài đăng mới với trạng thái DRAFT
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setDescription(request.getDescription());
@@ -187,6 +220,7 @@ public class PostServiceImpl implements PostService {
 
         Post saved = postRepository.save(post);
 
+        // Upload ảnh lên Cloudinary và lưu URL vào PostImage
         List<String> imageUrls = new ArrayList<>();
         for (MultipartFile image : images) {
             String url = cloudinaryService.uploadImage(image);
@@ -198,6 +232,7 @@ public class PostServiceImpl implements PostService {
             imageUrls.add(url);
         }
 
+        // Ghi log hoạt động tạo bài đăng
         auditLogService.log(
                 user.getId(),
                 "POST_CREATED",
@@ -213,11 +248,14 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls);
     }
 
+    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
     @Override
     @Transactional
     public PostDetailResponse updatePost(Integer userId, Integer postId,
                                          UpdatePostRequest request,
                                          List<MultipartFile> newImages) {
+
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
@@ -234,6 +272,7 @@ public class PostServiceImpl implements PostService {
         post.setRentalPrice(request.getRentalPrice());
         post.setUpdatedAt(LocalDateTime.now());
 
+        // Xử lý xóa ảnh cũ nếu có
         if (request.getDeleteImageUrls() != null && !request.getDeleteImageUrls().isEmpty()) {
             for (String url : request.getDeleteImageUrls()) {
                 PostImage image = postImageRepository.findByImageUrl(url)
@@ -246,6 +285,7 @@ public class PostServiceImpl implements PostService {
             }
         }
 
+        // Xử lý upload ảnh mới nếu có
         if (newImages != null && !newImages.isEmpty()) {
             int currentCount = postImageRepository.findByPostId(postId).size();
             if (currentCount + newImages.size() > 7) {
@@ -261,6 +301,7 @@ public class PostServiceImpl implements PostService {
             }
         }
 
+        // Lưu lại thông tin bài đăng sau khi cập nhật
         Post saved = postRepository.save(post);
         List<String> imageUrls = postImageRepository.findByPostId(postId)
                 .stream().map(PostImage::getImageUrl).toList();
@@ -279,15 +320,23 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls);
     }
 
+    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
     @Override
     @Transactional
     public void deletePost(Integer userId, Integer postId) {
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        // Chỉ cho phép xóa nếu người dùng là chủ bài đăng
         if (!post.getUser().getId().equals(userId)) {
             throw AppException.forbidden("Bạn không có quyền xóa tin này");
         }
+
+        // Thay vì xóa bản ghi, chỉ cần cập nhật trạng thái thành DELETED
         post.setStatus(PostStatus.DELETED);
+
+        // Xóa ảnh trên Cloudinary và xóa bản ghi PostImage tương ứng
         post.setUpdatedAt(LocalDateTime.now());
 
         Post saved = postRepository.save(post);
@@ -305,6 +354,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
+    // Lấy danh sách bài đăng của người dùng, có phân trang
     @Override
     public PostPageResponse getMyPosts(Integer userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
@@ -312,6 +362,7 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
+    // Hàm tiện ích: Kiểm tra xem người dùng có bị cấm đăng tin không
     private void ensureUserCanPost(User user) {
         if (user.getStatus() == User.UserStatus.BANNED) {
             throw AppException.forbidden("Tài khoản của bạn đã bị khóa");
@@ -327,4 +378,70 @@ public class PostServiceImpl implements PostService {
             throw AppException.forbidden("Tài khoản của bạn đang bị khóa đăng tin");
         }
     }
+
+    // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
+    private boolean canViewPostDetail(Post post, AuthHelper.CurrentUser currentUser) {
+        // Nếu bài đăng đang hoạt động và chưa hết hạn thì cho phép xem chi tiết mà không cần kiểm tra quyền
+        if (isActiveAndNotExpired(post)) {
+            return true;
+        }
+
+        // Nếu bài dăng không ở trạng thái ACTIVE thì chỉ cho phép xem nếu người dùng là chủ bài đăng
+        // hoặc đã yêu thích bài đăng này hoặc có quyền quản trị
+        if (currentUser == null) {
+            return false;
+        }
+
+        // Nếu người dùng là nhân viên (MODERATOR, MANAGER, ADMIN) thì cho phép xem chi tiết
+        if (isStaff(currentUser)) {
+            return true;
+        }
+
+        // Nếu người dùng là chủ bài đăng thì cho phép xem chi tiết
+        if (isPostOwner(post, currentUser)) {
+            return true;
+        }
+
+        // Nếu người dùng đã yêu thích bài đăng này thì cho phép xem chi tiết
+        return isFavoritedViewablePost(post, currentUser);
+    }
+
+    // Hàm tiện ích: Kiểm tra xem bài đăng có đang hoạt động và chưa hết hạn không
+    private boolean isActiveAndNotExpired(Post post) {
+        // Trả về true nếu bài đăng đang hoạt động và chưa hết hạn, ngược lại trả về false
+        return post.getStatus() == PostStatus.ACTIVE
+                && post.getEndAt() != null
+                && post.getEndAt().isAfter(LocalDateTime.now());
+    }
+
+    // Hàm tiện ích: Kiểm tra xem người dùng đã yêu thích bài đăng này chưa và bài đăng có đang ở trạng thái có thể xem chi tiết không
+    private boolean isFavoritedViewablePost(Post post, AuthHelper.CurrentUser currentUser) {
+        boolean viewableStatus = post.getStatus() == PostStatus.ACTIVE
+                || post.getStatus() == PostStatus.EXPIRED;
+
+        if (!viewableStatus) {
+            return false;
+        }
+
+        // Trả về true nếu người dùng đã yêu thích bài đăng này, ngược lại trả về false
+        return favoriteRepository.existsByUser_IdAndPost_Id(
+                currentUser.id(),
+                post.getId()
+        );
+    }
+
+    // Hàm tiện ích: Kiểm tra xem người dùng có phải là chủ bài đăng không
+    private boolean isPostOwner(Post post, AuthHelper.CurrentUser currentUser) {
+        return post.getUser() != null
+                && post.getUser().getId().equals(currentUser.id());
+    }
+
+    // Hàm tiện ích: Kiểm tra xem người dùng có phải là nhân viên (MODERATOR, MANAGER, ADMIN) không
+    private boolean isStaff(AuthHelper.CurrentUser currentUser) {
+        return switch (String.valueOf(currentUser.role())) {
+            case "MODERATOR", "MANAGER", "ADMIN" -> true;
+            default -> false;
+        };
+    }
+
 }

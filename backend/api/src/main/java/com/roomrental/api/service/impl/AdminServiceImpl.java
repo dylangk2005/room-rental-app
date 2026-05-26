@@ -40,6 +40,7 @@ public class AdminServiceImpl implements AdminService {
     private final EmailService emailService;
     private final AuditLogService auditLogService;
 
+    // Tạo tài khoản nội bộ (manager, moderator)
     @Override
     @Transactional
     public AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request) {

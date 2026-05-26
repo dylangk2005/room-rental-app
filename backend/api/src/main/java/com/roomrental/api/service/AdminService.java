@@ -7,8 +7,10 @@ import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
 import com.roomrental.api.entity.User;
 
 public interface AdminService {
+    // Tạo tài khoản nội bộ (manager, moderator)
     AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request);
 
+    // Lấy danh sách tài khoản nội bộ với phân trang
     AdminUserPageResponse getInternalUsers(
             String role,
             User.UserStatus status,
@@ -16,12 +18,14 @@ public interface AdminService {
             int size
     );
 
+    // Cập nhật trạng thái tài khoản (khoá, mở khóa)
     AdminUserResponse updateUserStatus(
             Integer adminId,
             Integer userId,
             UpdateUserStatusRequest request
     );
 
+    // Lấy danh sách tài khoản với phân trang
     AdminUserPageResponse getUsers(
             String role,
             User.UserStatus status,

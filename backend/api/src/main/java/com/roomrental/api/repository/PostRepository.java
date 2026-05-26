@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -19,12 +20,24 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
+    //Tìm kiếm bài đăng theo trạng thái, có phân trang
     @EntityGraph(attributePaths = "postType")
     Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
+    // Tìm kiếm bài đăng của người dùng, có phân trang
     @EntityGraph(attributePaths = "postType")
     Page<Post> findByUserId(Integer userId, Pageable pageable);
 
+    // Lấy thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
+    @Query("""
+    SELECT p FROM Post p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.postType
+    WHERE p.id = :id
+""")
+    Optional<Post> findDetailById(@Param("id") Integer id);
+
+    // Tìm kiếm bài đăng theo tiêu chí, có phân trang
     @Query(
             value = """
         SELECT p FROM Post p
@@ -58,6 +71,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             Pageable pageable
     );
 
+    // Tìm bài đăng của ngời dùng để thanh toán, cần khóa bản ghi để tránh xung đột
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
     SELECT p FROM Post p
@@ -67,6 +81,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 """)
     Optional<Post> findByIdForPayment(@Param("id") Integer id);
 
+    // Tìm bài đăng để duyệt, cần khóa bản ghi để tránh xung đột
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
     SELECT p FROM Post p
@@ -76,6 +91,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 """)
     Optional<Post> findByIdForModeration(@Param("id") Integer id);
 
+    // Lấy danh sách bài đăng để duyệt, có phân trang
     @Query("""
     SELECT p FROM Post p
     JOIN FETCH p.user
@@ -89,15 +105,35 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             Pageable pageable
     );
 
+    // Giao diện dự án để lấy thông tin thống kê số lượng bài đăng theo loại trong khoảng thời gian
     interface PostTypeStatsView {
         String getPostTypeName();
         Long getTotalPosts();
     }
 
+    // Thống kê số lượng bài đăng được tạo ra trong khoảng thời gian
     long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
 
+    // Thống kê số lượng bài đăng theo trạng thái
     long countByStatus(Post.PostStatus status);
 
+    // Chuyển các bài đăng đang hoạt động nhưng đã qua thời hạn sang hết hạn
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+    UPDATE Post p
+    SET p.status = :expiredStatus,
+        p.updatedAt = :now
+    WHERE p.status = :activeStatus
+      AND p.endAt IS NOT NULL
+      AND p.endAt <= :now
+""")
+    int expireActivePosts(
+            @Param("activeStatus") Post.PostStatus activeStatus,
+            @Param("expiredStatus") Post.PostStatus expiredStatus,
+            @Param("now") LocalDateTime now
+    );
+
+    // Thống kê số lượng bài đăng theo loại trong khoảng thời gian
     @Query("""
     SELECT p.postType.name AS postTypeName, COUNT(p) AS totalPosts
     FROM Post p

@@ -1,6 +1,6 @@
 const ProfilePage = () => {
     return (
-        <div> Profile Page</div>
+        <div>Trang hồ sơ cá nhân</div>
     )
 }
 

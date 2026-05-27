@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import ROUTES from './constants/routes'
 
 import LoginPage from './pages/auth/LoginPage'
@@ -14,23 +14,18 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Mặc định vào / thì redirect sang /posts */}
-        <Route path={ROUTES.HOME} element={<Navigate to={ROUTES.POSTS} />} />
+        <Route path={ROUTES.HOME} element={<PostListPage />} />
 
-        {/* Auth */}
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
 
-        {/* Posts */}
         <Route path={ROUTES.POSTS} element={<PostListPage />} />
         <Route path={ROUTES.POST_DETAIL} element={<PostDetailPage />} />
         <Route path={ROUTES.CREATE_POST} element={<CreatePostPage />} />
 
-        {/* User */}
         <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
         <Route path={ROUTES.WALLET} element={<WalletPage />} />
 
-        {/* Admin */}
         <Route path={ROUTES.ADMIN_DASHBOARD} element={<DashboardPage />} />
       </Routes>
     </BrowserRouter>

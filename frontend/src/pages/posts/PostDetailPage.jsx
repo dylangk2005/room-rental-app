@@ -1,6 +1,6 @@
 const PostDetailPage = () => {
     return (
-        <div>Post Detail Page</div>
+        <div>Trang chi tiết tin đăng</div>
     )
 }
 

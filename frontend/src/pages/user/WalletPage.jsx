@@ -1,6 +1,6 @@
 const WalletPage = () => {
     return (
-        <div> Wallet Page</div>
+        <div>Trang ví của tôi</div>
     )
 }
 

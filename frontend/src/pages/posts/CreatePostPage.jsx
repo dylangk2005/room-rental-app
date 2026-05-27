@@ -1,5 +1,5 @@
 const CreatePostPage = () => {
-    return <div>Create Post Page</div>
+    return <div>Trang đăng tin cho thuê</div>
 }
 
 export default CreatePostPage

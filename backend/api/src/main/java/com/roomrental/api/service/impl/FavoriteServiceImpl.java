@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -94,17 +95,18 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .map(Post::getId)
                 .toList();
 
-        Map<Integer, String> thumbnailMap = postIds.isEmpty()
+        Map<Integer, List<String>> imageMap = postIds.isEmpty()
                 ? Map.of()
-                : postImageRepository.findThumbnailsByPostIdIn(postIds)
+                : postImageRepository.findByPostIdInOrderByPostIdAndId(postIds)
                 .stream()
-                .collect(Collectors.toMap(
+                .collect(Collectors.groupingBy(
                         image -> image.getPost().getId(),
-                        PostImage::getImageUrl
+                        LinkedHashMap::new,
+                        Collectors.mapping(PostImage::getImageUrl, Collectors.toList())
                 ));
 
         List<PostSummaryResponse> postResponses = posts.stream()
-                .map(post -> mapToSummary(post, thumbnailMap.get(post.getId())))
+                .map(post -> mapToSummary(post, imageMap.getOrDefault(post.getId(), List.of())))
                 .toList();
 
         return PostPageResponse.builder()
@@ -115,8 +117,9 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .build();
     }
 
-    private PostSummaryResponse mapToSummary(Post post, String thumbnailUrl) {
+    private PostSummaryResponse mapToSummary(Post post, List<String> imageUrls) {
         PostType postType = post.getPostType();
+        String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
 
         return PostSummaryResponse.builder()
                 .id(post.getId())
@@ -125,12 +128,16 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .district(post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
+                .status(post.getStatus() != null ? post.getStatus().name() : null)
                 .endAt(post.getEndAt())
+                .pushTime(post.getPushTime())
                 .postTypeName(postType != null ? postType.getName() : null)
                 .postTypeTitleColor(postType != null ? postType.getTitleColor() : null)
                 .postTypeTitleSize(postType != null ? postType.getTitleSize() : null)
                 .postTypePriority(postType != null ? postType.getPriority() : null)
+                .postTypePushPrice(postType != null ? postType.getPushPrice() : null)
                 .thumbnailUrl(thumbnailUrl)
+                .imageUrls(imageUrls)
                 .build();
     }
 }

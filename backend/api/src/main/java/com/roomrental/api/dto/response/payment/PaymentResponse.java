@@ -20,6 +20,8 @@ public class PaymentResponse {
 
     private BigDecimal baseFee;
 
+    private BigDecimal tax;
+
     private Integer discountPercent;
 
     private BigDecimal finalFee;

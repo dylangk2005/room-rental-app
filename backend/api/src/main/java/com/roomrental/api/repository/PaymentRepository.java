@@ -3,6 +3,7 @@ package com.roomrental.api.repository;
 import com.roomrental.api.entity.Payment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,7 +16,9 @@ import java.util.Optional;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Integer> {
-    Page<Payment> findByUserId(Integer userId, Pageable pageable);
+    @EntityGraph(attributePaths = "post")
+    @Query("SELECT p FROM Payment p WHERE p.user.id = :userId")
+    Page<Payment> findByUserId(@Param("userId") Integer userId, Pageable pageable);
 
     Optional<Payment> findTopByPostIdAndPaymentTypeOrderByCreatedAtDesc(
             Integer postId,

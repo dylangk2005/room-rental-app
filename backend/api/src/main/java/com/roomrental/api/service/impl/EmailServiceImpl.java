@@ -49,6 +49,24 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendChangePasswordOtp(String toEmail, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom("TayTro <" + fromEmail + ">");
+        message.setTo(toEmail);
+        message.setSubject("[TayTro] Mã xác thực đổi mật khẩu");
+        message.setText(
+                "Xin chào,\n\n" +
+                        "Chúng tôi nhận được yêu cầu đổi mật khẩu cho tài khoản của bạn.\n\n" +
+                        "Mã OTP đổi mật khẩu: " + otp + "\n\n" +
+                        "Mã có hiệu lực trong 5 phút.\n" +
+                        "Nếu bạn không thực hiện yêu cầu này, vui lòng đổi mật khẩu hoặc liên hệ quản trị viên.\n\n" +
+                        "Trân trọng,\n" +
+                        "Đội ngũ TayTro"
+        );
+        mailSender.send(message);
+    }
+
+    @Override
     public void sendInternalAccountCredentials(String toEmail, String fullName, String role, String temporaryPassword) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("TayTro <" + fromEmail + ">");

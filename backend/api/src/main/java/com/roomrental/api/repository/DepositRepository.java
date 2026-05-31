@@ -15,7 +15,8 @@ import java.util.Optional;
 
 @Repository
 public interface DepositRepository extends JpaRepository <Deposit, Integer>{
-    Page<Deposit> findByUserId(Integer userId, Pageable pageable);
+    @Query("SELECT d FROM Deposit d WHERE d.user.id = :userId")
+    Page<Deposit> findByUserId(@Param("userId") Integer userId, Pageable pageable);
 
     Optional<Deposit> findByTransactionRef(String transactionRef);
 

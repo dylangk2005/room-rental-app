@@ -9,10 +9,11 @@ INSERT INTO roles (role_id, name, description) VALUES
 (4, 'USER', 'Nguoi dung thong thuong');
 
 INSERT INTO membership_levels (id, name, min_spent, discount_percent, updated_at) VALUES
-(1, 'Dong', 0, 0, NOW()),
-(2, 'Bac', 1000000, 5, NOW()),
-(3, 'Vang', 5000000, 10, NOW()),
-(4, 'Kim cuong', 20000000, 15, NOW());
+(1, 'Sat', 0, 0, NOW()),
+(2, 'Dong', 500000, 5, NOW()),
+(3, 'Bac', 2000000, 10, NOW()),
+(4, 'Vang', 7000000, 15, NOW()),
+(5, 'Kim cuong', 15000000, 25, NOW());
 
 INSERT INTO users
 (id, full_name, email, password, phone_number, avatar, status, account_balance, total_spent, created_at, role_id, membership_level_id, must_change_password)
@@ -20,13 +21,13 @@ VALUES
 (1, 'Nguyen Van Admin', 'admin@phongtro.vn', @seed_password, '0901111111', 'https://picsum.photos/seed/admin/240/240', 'ACTIVE', 50000000, 0, '2024-01-01 08:00:00', 1, 1, FALSE),
 (2, 'Tran Thi Manager', 'manager@phongtro.vn', @seed_password, '0902222222', 'https://picsum.photos/seed/manager/240/240', 'ACTIVE', 10000000, 0, '2024-01-02 09:00:00', 2, 1, FALSE),
 (3, 'Le Van Moderator', 'mod@phongtro.vn', @seed_password, '0903333333', 'https://picsum.photos/seed/mod/240/240', 'ACTIVE', 5000000, 0, '2024-01-03 10:00:00', 3, 1, FALSE),
-(4, 'Pham Thi Hoa', 'hoa.pham@gmail.com', @seed_password, '0904444444', 'https://picsum.photos/seed/hoa/240/240', 'ACTIVE', 2500000, 7200000, '2024-02-10 11:00:00', 4, 3, FALSE),
+(4, 'Pham Thi Hoa', 'hoa.pham@gmail.com', @seed_password, '0904444444', 'https://picsum.photos/seed/hoa/240/240', 'ACTIVE', 2500000, 7200000, '2024-02-10 11:00:00', 4, 4, FALSE),
 (5, 'Nguyen Minh Tuan', 'tuan.nguyen@gmail.com', @seed_password, '0905555555', NULL, 'ACTIVE', 800000, 1500000, '2024-03-05 08:30:00', 4, 2, FALSE),
-(6, 'Tran Thi Lan', 'lan.tran@gmail.com', @seed_password, '0906666666', 'https://picsum.photos/seed/lan/240/240', 'ACTIVE', 3200000, 25000000, '2024-01-20 14:00:00', 4, 4, FALSE),
+(6, 'Tran Thi Lan', 'lan.tran@gmail.com', @seed_password, '0906666666', 'https://picsum.photos/seed/lan/240/240', 'ACTIVE', 3200000, 25000000, '2024-01-20 14:00:00', 4, 5, FALSE),
 (7, 'Vo Van Binh', 'binh.vo@gmail.com', @seed_password, '0907777777', NULL, 'ACTIVE', 500000, 300000, '2024-04-01 09:00:00', 4, 1, FALSE),
-(8, 'Do Thi Mai', 'mai.do@gmail.com', @seed_password, '0908888888', 'https://picsum.photos/seed/mai/240/240', 'BANNED', 0, 900000, '2024-02-15 16:00:00', 4, 1, FALSE),
-(9, 'Hoang Van Duc', 'duc.hoang@gmail.com', @seed_password, '0909999999', NULL, 'ACTIVE', 1200000, 4500000, '2024-03-20 07:00:00', 4, 2, FALSE),
-(10, 'Bui Thi Thuy', 'thuy.bui@gmail.com', @seed_password, '0910000000', 'https://picsum.photos/seed/thuy/240/240', 'ACTIVE', 650000, 600000, '2024-04-10 10:30:00', 4, 1, FALSE);
+(8, 'Do Thi Mai', 'mai.do@gmail.com', @seed_password, '0908888888', 'https://picsum.photos/seed/mai/240/240', 'BANNED', 0, 900000, '2024-02-15 16:00:00', 4, 2, FALSE),
+(9, 'Hoang Van Duc', 'duc.hoang@gmail.com', @seed_password, '0909999999', NULL, 'ACTIVE', 1200000, 4500000, '2024-03-20 07:00:00', 4, 3, FALSE),
+(10, 'Bui Thi Thuy', 'thuy.bui@gmail.com', @seed_password, '0910000000', 'https://picsum.photos/seed/thuy/240/240', 'ACTIVE', 650000, 600000, '2024-04-10 10:30:00', 4, 2, FALSE);
 
 INSERT INTO user_penalties (id, type, reason, start_date, end_date, created_at, user_id) VALUES
 (1, 'WARNING', 'Dang tin voi thong tin gia thue khong chinh xac', '2024-05-01 09:00:00', NULL, '2024-05-01 09:00:00', 7),
@@ -48,20 +49,28 @@ VALUES
 (10, 300000, 0, 300000, 'VNPAY', 'PENDING', 'VNPAY-20240411-0010', NULL, 650000, 650000, 'Cho xac nhan tu cong VNPAY', '2024-04-11 10:45:00', 10);
 
 INSERT INTO post_types (id, name, title_color, title_size, priority, push_price, updated_at) VALUES
-(1, 'Thuong', '#333333', 14, 3, 10000, NOW()),
-(2, 'VIP', '#E65C00', 16, 2, 30000, NOW()),
-(3, 'Noi bat', '#CC0000', 18, 1, 50000, NOW());
+(1, 'Tin thường', '#111827', 14, 4, 2000, NOW()),
+(2, 'Tin VIP2', '#0F766E', 15, 3, 2000, NOW()),
+(3, 'Tin VIP1', '#DB2777', 16, 2, 3000, NOW()),
+(4, 'Tin Vip Nổi Bật', '#DC2626', 18, 1, 5000, NOW());
 
 INSERT INTO post_type_prices (post_type_id, day, price) VALUES
-(1, 7, 35000),
-(1, 15, 60000),
-(1, 30, 100000),
-(2, 7, 100000),
-(2, 15, 180000),
-(2, 30, 300000),
-(3, 7, 200000),
-(3, 15, 360000),
-(3, 30, 600000);
+(1, 5, 12000),
+(1, 10, 24000),
+(1, 15, 36000),
+(1, 30, 70000),
+(2, 5, 50000),
+(2, 10, 100000),
+(2, 15, 130000),
+(2, 30, 250000),
+(3, 5, 100000),
+(3, 10, 200000),
+(3, 15, 280000),
+(3, 30, 550000),
+(4, 5, 180000),
+(4, 10, 360000),
+(4, 15, 500000),
+(4, 30, 900000);
 
 INSERT INTO posts
 (id, title, description, address, province, district, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
@@ -77,7 +86,9 @@ VALUES
 (9, 'Phong tro binh dan, sach se, Hoc Mon', 'Phong don gian, sach, co quat tran va cua so. Chu nha than thien.', '5 Duong Ba Diem 5', 'TP. Ho Chi Minh', 'Hoc Mon', 14.0, 1200000, 'ACTIVE', '2024-04-12 07:00:00', '2024-04-12 07:00:00', '2024-04-12 08:00:00', '2024-05-12 08:00:00', 10, 1, 30),
 (10, 'Phong tro dang an de sua chua', 'Dang sua chua, tam an khoi danh sach.', '10 Cach Mang Thang 8', 'TP. Ho Chi Minh', 'Quan 3', 18.0, 3000000, 'HIDDEN', '2024-04-03 09:00:00', '2024-04-14 08:00:00', '2024-04-03 10:00:00', '2024-05-03 10:00:00', 5, 1, 30),
 (11, 'Tin nhap chua thanh toan', 'Bai dang dang o trang thai nhap de test luong thanh toan.', '18 Duong D1', 'TP. Ho Chi Minh', 'Binh Thanh', 21.0, 3200000, 'DRAFT', '2024-04-20 09:00:00', '2024-04-20 09:00:00', NULL, NULL, 5, 2, NULL),
-(12, 'Tin da xoa do vi pham nghiem trong', 'Bai dang bi xoa sau khi xu ly bao cao.', '100 Duong Khong Ton Tai', 'TP. Ho Chi Minh', 'Quan 5', 12.0, 1000000, 'DELETED', '2024-03-05 09:00:00', '2024-03-06 09:00:00', NULL, NULL, 8, 1, 7);
+(12, 'Tin da xoa do vi pham nghiem trong', 'Bai dang bi xoa sau khi xu ly bao cao.', '100 Duong Khong Ton Tai', 'TP. Ho Chi Minh', 'Quan 5', 12.0, 1000000, 'DELETED', '2024-03-05 09:00:00', '2024-03-06 09:00:00', NULL, NULL, 8, 1, 7),
+(13, 'Phong studio gan Cau Giay, day du noi that', 'Phong studio rieng tu, co bep nho, may giat chung va bao ve 24/7. Phu hop nguoi di lam hoac sinh vien can khu vuc trung tam.', '20 Tran Thai Tong', 'Ha Noi', 'Cau Giay', 24.0, 4200000, 'ACTIVE', '2024-04-16 09:00:00', '2024-04-16 09:00:00', '2024-04-16 10:00:00', '2024-05-16 10:00:00', 5, 2, 30),
+(14, 'Phong dep gan bien My Khe, co ban cong', 'Phong thoang sang, co ban cong, noi that co ban va cho de xe. Di bo ra bien My Khe, gan khu an uong va sieu thi.', '12 Vo Nguyen Giap', 'Da Nang', 'Son Tra', 26.0, 3600000, 'ACTIVE', '2024-04-17 09:00:00', '2024-04-17 09:00:00', '2024-04-17 10:00:00', '2024-05-17 10:00:00', 10, 1, 30);
 
 INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
 (1, 'https://picsum.photos/seed/post-1-main/900/600', NOW(), 1),
@@ -91,7 +102,9 @@ INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
 (9, 'https://picsum.photos/seed/post-8-main/900/600', NOW(), 8),
 (10, 'https://picsum.photos/seed/post-9-main/900/600', NOW(), 9),
 (11, 'https://picsum.photos/seed/post-10-main/900/600', NOW(), 10),
-(12, 'https://picsum.photos/seed/post-11-main/900/600', NOW(), 11);
+(12, 'https://picsum.photos/seed/post-11-main/900/600', NOW(), 11),
+(13, 'https://picsum.photos/seed/post-13-hanoi/900/600', NOW(), 13),
+(14, 'https://picsum.photos/seed/post-14-danang/900/600', NOW(), 14);
 
 INSERT INTO payments
 (id, payment_type, days, day_end, base_fee, tax, discount_percent, final_fee, opening_balance, closing_balance, created_at, user_id, post_id)

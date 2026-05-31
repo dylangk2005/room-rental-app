@@ -58,6 +58,6 @@ public class Deposit {
     }
 
     public enum DepositStatus {
-        PENDING, SUCCESS, FAILED
+        PENDING, SUCCESS, FAILED, CANCELLED
     }
 }

@@ -1,7 +1,7 @@
 const DashboardPage = () => {
     return (
         <div>
-            Admin Dashboard Page
+            Trang quản trị hệ thống
         </div>
     )
 }

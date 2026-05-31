@@ -27,6 +27,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
 
+    private static final BigDecimal VAT_RATE_PERCENT = BigDecimal.valueOf(8);
+
     private final UserRepository userRepository;
     private final PostRepository postRepository;
     private final PostTypePriceRepository postTypePriceRepository;
@@ -75,6 +77,7 @@ public class PaymentServiceImpl implements PaymentService {
                 request.getDurationDays(),
                 null,
                 baseFee,
+                cost.tax(),
                 cost.discountPercent(),
                 cost.finalFee(),
                 openingBalance,
@@ -103,7 +106,8 @@ public class PaymentServiceImpl implements PaymentService {
                         + "Số ngày mua: " + request.getDurationDays()
                         + ". Phí gốc: " + baseFee
                         + "đ. Giảm giá: " + cost.discountPercent()
-                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "%. VAT: " + cost.tax()
+                        + "đ. Phí thanh toán: " + cost.finalFee()
                         + "đ. Số dư trước: " + openingBalance
                         + "đ. Số dư sau: " + closingBalance + "đ."
         );
@@ -157,6 +161,7 @@ public class PaymentServiceImpl implements PaymentService {
                 request.getDurationDays(),
                 post.getEndAt(),
                 baseFee,
+                cost.tax(),
                 cost.discountPercent(),
                 cost.finalFee(),
                 openingBalance,
@@ -184,7 +189,8 @@ public class PaymentServiceImpl implements PaymentService {
                         + ". Ngày hết hạn mới: " + post.getEndAt()
                         + ". Phí gốc: " + baseFee
                         + "đ. Giảm giá: " + cost.discountPercent()
-                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "%. VAT: " + cost.tax()
+                        + "đ. Phí thanh toán: " + cost.finalFee()
                         + "đ. Số dư trước: " + openingBalance
                         + "đ. Số dư sau: " + closingBalance + "đ."
         );
@@ -235,6 +241,7 @@ public class PaymentServiceImpl implements PaymentService {
                 null,
                 post.getEndAt(),
                 baseFee,
+                cost.tax(),
                 cost.discountPercent(),
                 cost.finalFee(),
                 openingBalance,
@@ -260,7 +267,8 @@ public class PaymentServiceImpl implements PaymentService {
                         + ". Thời gian đẩy tin mới: " + post.getPushTime()
                         + ". Phí gốc: " + baseFee
                         + "đ. Giảm giá: " + cost.discountPercent()
-                        + "%. Phí thanh toán: " + cost.finalFee()
+                        + "%. VAT: " + cost.tax()
+                        + "đ. Phí thanh toán: " + cost.finalFee()
                         + "đ. Số dư trước: " + openingBalance
                         + "đ. Số dư sau: " + closingBalance + "đ."
         );
@@ -304,9 +312,13 @@ public class PaymentServiceImpl implements PaymentService {
                 .multiply(BigDecimal.valueOf(discountPercent))
                 .divide(BigDecimal.valueOf(100));
 
-        BigDecimal finalFee = baseFee.subtract(discountAmount);
+        BigDecimal subtotal = baseFee.subtract(discountAmount);
+        BigDecimal tax = subtotal
+                .multiply(VAT_RATE_PERCENT)
+                .divide(BigDecimal.valueOf(100));
+        BigDecimal finalFee = subtotal.add(tax);
 
-        return new PaymentCost(discountPercent, finalFee);
+        return new PaymentCost(discountPercent, tax, finalFee);
     }
 
     private void ensureEnoughBalance(User user, BigDecimal finalFee, String action, Post post) {
@@ -335,6 +347,7 @@ public class PaymentServiceImpl implements PaymentService {
             Integer days,
             LocalDateTime endAt,
             BigDecimal baseFee,
+            BigDecimal tax,
             Integer discountPercent,
             BigDecimal finalFee,
             BigDecimal openingBalance,
@@ -348,7 +361,7 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setDays(days);
         payment.setDayEnd(endAt != null ? endAt.toLocalDate() : null);
         payment.setBaseFee(baseFee);
-        payment.setTax(BigDecimal.ZERO);
+        payment.setTax(tax);
         payment.setDiscountPercent(discountPercent);
         payment.setFinalFee(finalFee);
         payment.setOpeningBalance(openingBalance);
@@ -365,6 +378,7 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentType(payment.getPaymentType().name())
                 .durationDays(payment.getDays())
                 .baseFee(payment.getBaseFee())
+                .tax(payment.getTax())
                 .discountPercent(payment.getDiscountPercent())
                 .finalFee(payment.getFinalFee())
                 .openingBalance(payment.getOpeningBalance())
@@ -379,6 +393,6 @@ public class PaymentServiceImpl implements PaymentService {
         return value != null ? value : BigDecimal.ZERO;
     }
 
-    private record PaymentCost(Integer discountPercent, BigDecimal finalFee) {
+    private record PaymentCost(Integer discountPercent, BigDecimal tax, BigDecimal finalFee) {
     }
 }

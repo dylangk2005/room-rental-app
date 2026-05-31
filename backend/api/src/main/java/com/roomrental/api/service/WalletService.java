@@ -10,7 +10,7 @@ import java.util.Map;
 public interface WalletService {
     WalletBalanceResponse getBalance(Integer userId);
 
-    WalletTransactionPageResponse getTransactions(Integer userId, int page, int size);
+    WalletTransactionPageResponse getTransactions(Integer userId, int page, int size, String type);
 
     DepositInitResponse initDeposit(Integer userId, DepositRequest request, String clientIp);
 

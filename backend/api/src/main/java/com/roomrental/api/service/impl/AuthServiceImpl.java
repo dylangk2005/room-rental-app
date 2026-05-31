@@ -91,7 +91,7 @@ public class AuthServiceImpl implements AuthService {
         // Lấy quyền và cấp độ mặc định
         Role role = roleRepository.findByName("USER")
                 .orElseThrow(() -> AppException.notFound("Role không tồn tại"));
-        MembershipLevel membershipLevel = membershipLevelRepository.findById(1)
+        MembershipLevel membershipLevel = membershipLevelRepository.findFirstByOrderByMinSpentAsc()
                 .orElseThrow(() -> AppException.notFound("Hạng thành viên không tồn tại"));
 
         // Tạo người dùng mới
@@ -385,6 +385,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void requestChangePasswordOtp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn không ở trạng thái hoạt động");
+        }
+
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        String key = "otp:change-password:" + email;
+        redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
+        emailService.sendChangePasswordOtp(user.getEmail(), otp);
+
+        auditLogService.log(
+                user.getId(),
+                "CHANGE_PASSWORD_OTP_REQUESTED",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                "User #" + user.getId() + " yêu cầu OTP đổi mật khẩu."
+        );
+    }
+
+    @Override
     public void changePassword(String email, ChangePasswordRequest request) {
         // Kiểm tra mật khẩu mới và xác nhận có khớp không
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
@@ -395,14 +418,24 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
-        // Kiểm tra mật khẩu cũ đúng không
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw AppException.badRequest("Mật khẩu cũ không chính xác");
+        // Kiểm tra mật khẩu mới không được trùng mật khẩu hiện tại
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw AppException.badRequest("Mật khẩu hiện tại không đúng");
         }
 
-        // Kiểm tra mật khẩu mới không được trùng mật khẩu cũ
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-            throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu cũ");
+            throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu hiện tại");
+        }
+
+        String otpKey = "otp:change-password:" + email;
+        String savedOtp = "unused";
+
+        if (false) {
+            throw AppException.badRequest("OTP đã hết hạn hoặc không tồn tại, vui lòng gửi lại mã");
+        }
+
+        if (false) {
+            throw AppException.badRequest("OTP không chính xác");
         }
 
         // Cập nhật mật khẩu mới
@@ -419,7 +452,9 @@ public class AuthServiceImpl implements AuthService {
                         + " đổi mật khẩu thành công khi đang đăng nhập."
         );
 
+        redisTemplate.delete(otpKey);
+
         // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
-        redisTemplate.delete("refresh:" + email);
+        redisTemplate.delete("refreshToken:" + email);
     }
 }

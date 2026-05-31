@@ -44,8 +44,9 @@ public class PostServiceImpl implements PostService {
     }
 
     // ─── map Post → PostSummaryResponse ──────────────────────────────────
-    private PostSummaryResponse mapToSummary(Post post, String thumbnailUrl) {
+    private PostSummaryResponse mapToSummary(Post post, List<String> imageUrls) {
         PostType pt = post.getPostType();
+        String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -53,17 +54,21 @@ public class PostServiceImpl implements PostService {
                 .district(post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
+                .status(post.getStatus() != null ? post.getStatus().name() : null)
                 .endAt(post.getEndAt())
+                .pushTime(post.getPushTime())
                 .postTypeName(pt != null ? pt.getName() : null)
                 .postTypeTitleColor(pt != null ? pt.getTitleColor() : null)
                 .postTypeTitleSize(pt != null ? pt.getTitleSize() : null)
                 .postTypePriority(pt != null ? pt.getPriority() : null)
+                .postTypePushPrice(pt != null ? pt.getPushPrice() : null)
                 .thumbnailUrl(thumbnailUrl)
+                .imageUrls(imageUrls)
                 .build();
     }
 
     // ─── map Post → PostDetailResponse ───────────────────────────────────
-    private PostDetailResponse mapToDetail(Post post, List<String> imageUrls) {
+    private PostDetailResponse mapToDetail(Post post, List<String> imageUrls, Boolean isFavorited) {
         PostType pt = post.getPostType();
         return PostDetailResponse.builder()
                 .id(post.getId())
@@ -75,6 +80,7 @@ public class PostServiceImpl implements PostService {
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus())
+                .ownerId(post.getUser() != null ? post.getUser().getId() : null)
                 .createdAt(post.getCreatedAt())
                 .endAt(post.getEndAt())
                 .postTypeName(pt != null ? pt.getName() : null)
@@ -82,6 +88,7 @@ public class PostServiceImpl implements PostService {
                 .postTypeTitleSize(pt != null ? pt.getTitleSize() : null)
                 .postTypePriority(pt != null ? pt.getPriority() : null)
                 .imageUrls(imageUrls)
+                .isFavorited(isFavorited)
                 .build();
     }
 
@@ -91,16 +98,20 @@ public class PostServiceImpl implements PostService {
         List<Integer> postIds = page.getContent().stream()
                 .map(Post::getId).toList();
 
-        Map<Integer, String> thumbnailMap = postImageRepository
-                .findThumbnailsByPostIdIn(postIds)
+        Map<Integer, List<String>> imageMap = postIds.isEmpty()
+                ? Map.of()
+                : postImageRepository.findByPostIdInOrderByPostIdAndId(postIds)
                 .stream()
-                .collect(Collectors.toMap(
+                .collect(Collectors.groupingBy(
                         img -> img.getPost().getId(),
-                        PostImage::getImageUrl
+                        LinkedHashMap::new,
+                        Collectors.mapping(
+                                PostImage::getImageUrl,
+                                Collectors.toList())
                 ));
 
         List<PostSummaryResponse> posts = page.getContent().stream()
-                .map(p -> mapToSummary(p, thumbnailMap.get(p.getId())))
+                .map(p -> mapToSummary(p, imageMap.getOrDefault(p.getId(), List.of())))
                 .toList();
 
         return PostPageResponse.builder()
@@ -132,6 +143,32 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<PostLocationResponse> getActiveLocations() {
+        Map<String, List<String>> districtMap = postRepository.findActiveLocations()
+                .stream()
+                .collect(Collectors.groupingBy(
+                        PostRepository.PostLocationView::getProvince,
+                        TreeMap::new,
+                        Collectors.mapping(
+                                PostRepository.PostLocationView::getDistrict,
+                                Collectors.collectingAndThen(
+                                        Collectors.toCollection(TreeSet::new),
+                                        ArrayList::new
+                                )
+                        )
+                ));
+
+        return districtMap.entrySet()
+                .stream()
+                .map(entry -> PostLocationResponse.builder()
+                        .province(entry.getKey())
+                        .districts(entry.getValue())
+                        .build())
+                .toList();
+    }
+
     // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
     @Override
     public PostDetailResponse getPostDetail(Integer postId) {
@@ -154,7 +191,11 @@ public class PostServiceImpl implements PostService {
                 .map(PostImage::getImageUrl)
                 .toList();
 
-        return mapToDetail(post, imageUrls);
+        Boolean isFavorited = currentUser != null
+                ? favoriteRepository.existsByUser_IdAndPost_Id(currentUser.id(), post.getId())
+                : false;
+
+        return mapToDetail(post, imageUrls, isFavorited);
     }
 
     // Xem thông tin liên hệ của phòng trọ
@@ -164,8 +205,11 @@ public class PostServiceImpl implements PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
-        // Nếu bài đăng không ở trạng thái ACTIVE thì không cho phép xem thông tin liên hệ
-        if (post.getStatus() != PostStatus.ACTIVE) {
+        AuthHelper.CurrentUser currentUser = authHelper.getCurrentUserOrNull();
+
+        // Nếu bài đăng không ở trạng thái ACTIVE thì chỉ chủ tin hoặc nhân viên được xem liên hệ
+        if (post.getStatus() != PostStatus.ACTIVE
+                && (currentUser == null || (!isPostOwner(post, currentUser) && !isStaff(currentUser)))) {
             throw AppException.badRequest("Tin đăng không còn hiệu lực");
         }
 
@@ -245,7 +289,7 @@ public class PostServiceImpl implements PostService {
                         + ". Số ảnh tải lên: " + imageUrls.size() + "."
         );
 
-        return mapToDetail(saved, imageUrls);
+        return mapToDetail(saved, imageUrls, false);
     }
 
     // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
@@ -317,7 +361,7 @@ public class PostServiceImpl implements PostService {
                         + "\". Số ảnh hiện tại: " + imageUrls.size() + "."
         );
 
-        return mapToDetail(saved, imageUrls);
+        return mapToDetail(saved, imageUrls, favoriteRepository.existsByUser_IdAndPost_Id(userId, postId));
     }
 
     // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
@@ -382,7 +426,7 @@ public class PostServiceImpl implements PostService {
     // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
     private boolean canViewPostDetail(Post post, AuthHelper.CurrentUser currentUser) {
         // Nếu bài đăng đang hoạt động và chưa hết hạn thì cho phép xem chi tiết mà không cần kiểm tra quyền
-        if (isActiveAndNotExpired(post)) {
+        if (post.getStatus() == PostStatus.ACTIVE) {
             return true;
         }
 

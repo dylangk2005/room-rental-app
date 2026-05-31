@@ -11,7 +11,8 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -21,13 +22,15 @@ public class VnPayServiceImpl implements VnPayService {
 
     private static final DateTimeFormatter VNPAY_DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+    private static final ZoneId VNPAY_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final VnPayConfig vnpayConfig;
 
     @Override
     public String createPaymentUrl(String transactionRef, BigDecimal amount, String clientIp) {
-        String createDate = LocalDateTime.now().format(VNPAY_DATE_FORMAT);
-        String expireDate = LocalDateTime.now().plusMinutes(15).format(VNPAY_DATE_FORMAT);
+        ZonedDateTime now = ZonedDateTime.now(VNPAY_ZONE);
+        String createDate = now.format(VNPAY_DATE_FORMAT);
+        String expireDate = now.plusMinutes(15).format(VNPAY_DATE_FORMAT);
 
         Map<String, String> params = new HashMap<>();
         params.put("vnp_Version", "2.1.0");

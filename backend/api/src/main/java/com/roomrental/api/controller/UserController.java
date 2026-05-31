@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -27,5 +28,11 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserProfileResponse>> updateProfile(
             @Valid @RequestBody UpdateUserProfileRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Cập nhật hồ sơ thành công", userService.updateProfile(authHelper.getCurrentUserId(), request)));
+    }
+
+    @PostMapping("/profile/avatar")
+    public ResponseEntity<ApiResponse<UserProfileResponse>> updateAvatar(
+            @RequestParam("avatar") MultipartFile avatar) {
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật ảnh đại diện thành công", userService.updateAvatar(authHelper.getCurrentUserId(), avatar)));
     }
 }

@@ -27,6 +27,8 @@ import java.util.*;
 @RequiredArgsConstructor
 public class WalletServiceImpl implements WalletService {
 
+    private static final long DEPOSIT_PAYMENT_TIMEOUT_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final DepositRepository depositRepository;
     private final PaymentRepository paymentRepository;
@@ -45,12 +47,41 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public WalletTransactionPageResponse getTransactions(Integer userId, int page, int size) {
+    @Transactional(readOnly = true)
+    public WalletTransactionPageResponse getTransactions(Integer userId, int page, int size, String type) {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
                 Sort.by(Sort.Order.desc("createdAt"))
         );
+
+        String normalizedType = type != null ? type.trim().toUpperCase() : "";
+
+        if ("DEPOSIT".equals(normalizedType)) {
+            Page<Deposit> deposits = depositRepository.findByUserId(userId, pageable);
+
+            return WalletTransactionPageResponse.builder()
+                    .transactions(deposits.getContent().stream().map(this::mapDeposit).toList())
+                    .currentPage(deposits.getNumber())
+                    .totalPages(deposits.getTotalPages())
+                    .totalElements(deposits.getTotalElements())
+                    .build();
+        }
+
+        if ("PAYMENT".equals(normalizedType)) {
+            Page<Payment> payments = paymentRepository.findByUserId(userId, pageable);
+
+            return WalletTransactionPageResponse.builder()
+                    .transactions(payments.getContent().stream().map(this::mapPayment).toList())
+                    .currentPage(payments.getNumber())
+                    .totalPages(payments.getTotalPages())
+                    .totalElements(payments.getTotalElements())
+                    .build();
+        }
+
+        if (!normalizedType.isBlank()) {
+            throw AppException.badRequest("Loại lịch sử giao dịch không hợp lệ");
+        }
 
         Page<Deposit> deposits = depositRepository.findByUserId(userId, pageable);
         Page<Payment> payments = paymentRepository.findByUserId(userId, pageable);
@@ -155,6 +186,13 @@ public class WalletServiceImpl implements WalletService {
             return;
         }
 
+        if (isDepositExpired(deposit)) {
+            deposit.setStatus(Deposit.DepositStatus.CANCELLED);
+            deposit.setGatewayTransactionNo(gatewayTransactionNo);
+            deposit.setNote("Giao dịch nạp tiền đã hủy do quá thời hạn thanh toán VNPAY");
+            return;
+        }
+
         BigDecimal callbackAmount = new BigDecimal(vnpAmount)
                 .divide(BigDecimal.valueOf(100));
 
@@ -248,28 +286,59 @@ public class WalletServiceImpl implements WalletService {
                 UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
+    private void cancelExpiredPendingDeposits(List<Deposit> deposits) {
+        List<Deposit> expiredDeposits = deposits.stream()
+                .filter(this::isDepositExpired)
+                .toList();
+
+        if (expiredDeposits.isEmpty()) {
+            return;
+        }
+
+        expiredDeposits.forEach(deposit -> {
+            deposit.setStatus(Deposit.DepositStatus.CANCELLED);
+            deposit.setNote("Giao dịch nạp tiền đã hủy do quá thời hạn thanh toán VNPAY");
+        });
+
+        depositRepository.saveAll(expiredDeposits);
+    }
+
+    private boolean isDepositExpired(Deposit deposit) {
+        return deposit.getStatus() == Deposit.DepositStatus.PENDING
+                && deposit.getCreatedAt() != null
+                && deposit.getCreatedAt().plusMinutes(DEPOSIT_PAYMENT_TIMEOUT_MINUTES).isBefore(LocalDateTime.now());
+    }
+
     private WalletTransactionResponse mapDeposit(Deposit deposit) {
+        boolean expiredPending = isDepositExpired(deposit);
+
         return WalletTransactionResponse.builder()
                 .id(deposit.getId())
                 .transactionType("DEPOSIT")
-                .status(deposit.getStatus().name())
+                .status(expiredPending ? Deposit.DepositStatus.CANCELLED.name() : deposit.getStatus().name())
                 .amount(nullSafe(deposit.getNetAmount()))
                 .openingBalance(deposit.getOpeningBalance())
                 .closingBalance(deposit.getClosingBalance())
-                .description(deposit.getNote())
+                .description(expiredPending ? "Giao dich nap tien da qua han thanh toan VNPAY" : deposit.getNote())
                 .createdAt(deposit.getCreatedAt())
                 .build();
     }
 
     private WalletTransactionResponse mapPayment(Payment payment) {
+        Post post = payment.getPost();
+        boolean isRefund = payment.getPaymentType() == Payment.PaymentType.REFUND;
+
         return WalletTransactionResponse.builder()
                 .id(payment.getId())
                 .transactionType(payment.getPaymentType().name())
                 .status("SUCCESS")
-                .amount(nullSafe(payment.getFinalFee()).negate())
+                .amount(isRefund ? nullSafe(payment.getFinalFee()) : nullSafe(payment.getFinalFee()).negate())
                 .openingBalance(payment.getOpeningBalance())
                 .closingBalance(payment.getClosingBalance())
                 .description(buildPaymentDescription(payment))
+                .postId(post != null ? post.getId() : null)
+                .postTitle(post != null ? post.getTitle() : null)
+                .postStatus(post != null && post.getStatus() != null ? post.getStatus().name() : null)
                 .createdAt(payment.getCreatedAt())
                 .build();
     }
@@ -283,7 +352,7 @@ public class WalletServiceImpl implements WalletService {
             case POST_PAYMENT -> "Thanh toán đăng tin";
             case EXTEND -> "Thanh toán gia hạn tin";
             case PUSH -> "Thanh toán đẩy tin";
-            case REFUND -> "Hoàn tiền";
+            case REFUND -> "Hoàn tiền do tin bị từ chối";
         };
     }
 

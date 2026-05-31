@@ -10,9 +10,13 @@ import com.roomrental.api.util.AuthHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.Map;
 
@@ -23,6 +27,9 @@ public class WalletController {
 
     private final WalletService walletService;
     private final AuthHelper authHelper;
+
+    @Value("${frontend.url:http://localhost:5173}")
+    private String frontendUrl;
 
     @GetMapping("/balance")
     @PreAuthorize("isAuthenticated()")
@@ -38,12 +45,14 @@ public class WalletController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<WalletTransactionPageResponse>> getTransactions(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String type
     ) {
         WalletTransactionPageResponse response = walletService.getTransactions(
                 authHelper.getCurrentUserId(),
                 page,
-                size
+                size,
+                type
         );
 
         return ResponseEntity.ok(ApiResponse.success(response));
@@ -89,14 +98,29 @@ public class WalletController {
     }
 
     @GetMapping("/deposit/callback")
-    public ResponseEntity<ApiResponse<Void>> handleVnPayCallbackGet(
+    public ResponseEntity<Void> handleVnPayCallbackGet(
             @RequestParam Map<String, String> params
     ) {
-        walletService.handleVnPayCallback(params);
+        String result = "success";
 
-        return ResponseEntity.ok(ApiResponse.success(
-                "Xử lý callback VNPAY thành công",
-                null
-        ));
+        try {
+            walletService.handleVnPayCallback(params);
+            if (!"00".equals(params.get("vnp_ResponseCode")) || !"00".equals(params.get("vnp_TransactionStatus"))) {
+                result = "failed";
+            }
+        } catch (RuntimeException ex) {
+            result = "failed";
+        }
+
+        String redirectUrl = UriComponentsBuilder
+                .fromHttpUrl(frontendUrl)
+                .path("/user/wallet")
+                .queryParam("deposit", result)
+                .build()
+                .toUriString();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.LOCATION, redirectUrl);
+        return new ResponseEntity<>(headers, HttpStatus.FOUND);
     }
 }

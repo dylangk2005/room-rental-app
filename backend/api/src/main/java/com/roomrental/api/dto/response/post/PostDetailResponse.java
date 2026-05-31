@@ -3,6 +3,7 @@ package com.roomrental.api.dto.response.post;
 import com.roomrental.api.entity.Post.PostStatus;
 import lombok.Builder;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -19,15 +20,15 @@ public class PostDetailResponse {
     private BigDecimal area;
     private BigDecimal rentalPrice;
     private PostStatus status;
+    private Integer ownerId;
     private LocalDateTime createdAt;
     private LocalDateTime endAt;
 
-    // PostType
     private String postTypeName;
     private String postTypeTitleColor;
     private Integer postTypeTitleSize;
     private Integer postTypePriority;
 
-    // Tất cả ảnh
     private List<String> imageUrls;
+    private Boolean isFavorited;
 }

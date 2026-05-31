@@ -24,5 +24,11 @@ public class WalletTransactionResponse {
 
     private String description;
 
+    private Integer postId;
+
+    private String postTitle;
+
+    private String postStatus;
+
     private LocalDateTime createdAt;
 }

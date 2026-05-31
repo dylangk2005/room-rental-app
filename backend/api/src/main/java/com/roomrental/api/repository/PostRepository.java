@@ -71,6 +71,23 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             Pageable pageable
     );
 
+    interface PostLocationView {
+        String getProvince();
+        String getDistrict();
+    }
+
+    @Query("""
+    SELECT DISTINCT p.province AS province, p.district AS district
+    FROM Post p
+    WHERE p.status = 'ACTIVE'
+      AND p.province IS NOT NULL
+      AND p.province <> ''
+      AND p.district IS NOT NULL
+      AND p.district <> ''
+    ORDER BY p.province ASC, p.district ASC
+""")
+    List<PostLocationView> findActiveLocations();
+
     // Tìm bài đăng của ngời dùng để thanh toán, cần khóa bản ghi để tránh xung đột
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""

@@ -45,6 +45,9 @@ public class SecurityConfig {
 
                 // 4. Phân quyền endpoint
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/auth/change-password/otp").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/auth/change-password").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
+
                         // Public
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()

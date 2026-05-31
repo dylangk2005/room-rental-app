@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS deposits (
     tax DECIMAL(12,2),
     net_amount DECIMAL(12,2),
     method ENUM('BANK_TRANSFER', 'VNPAY'),
-    status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
+    status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED') DEFAULT 'PENDING',
     transaction_ref VARCHAR(100) UNIQUE,
     gateway_transaction_no VARCHAR(100),
     opening_balance DECIMAL(12,2),

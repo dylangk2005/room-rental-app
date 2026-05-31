@@ -5,10 +5,12 @@ import com.roomrental.api.dto.response.user.UserProfileResponse;
 import com.roomrental.api.entity.User;
 import com.roomrental.api.exception.AppException;
 import com.roomrental.api.repository.UserRepository;
+import com.roomrental.api.service.CloudinaryService;
 import com.roomrental.api.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 
@@ -17,6 +19,7 @@ import java.math.BigDecimal;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public UserProfileResponse getProfile(Integer userId) {
@@ -36,6 +39,20 @@ public class UserServiceImpl implements UserService {
         user.setFullName(request.getFullName());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setAvatar(request.getAvatar());
+
+        return mapProfile(user);
+    }
+
+    @Override
+    @Transactional
+    public UserProfileResponse updateAvatar(Integer userId, MultipartFile avatar) {
+        if (avatar == null || avatar.isEmpty()) {
+            throw AppException.badRequest("Vui lòng chọn ảnh đại diện");
+        }
+
+        User user = getUser(userId);
+        String avatarUrl = cloudinaryService.uploadImage(avatar);
+        user.setAvatar(avatarUrl);
 
         return mapProfile(user);
     }

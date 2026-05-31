@@ -11,9 +11,11 @@ import java.util.Optional;
 @Repository
 public interface MembershipLevelRepository extends JpaRepository<MembershipLevel, Integer> {
 
-    Optional<MembershipLevel> findTopByMinSpentLessThanEqualOrderByMinSpentDesc(BigDecimal totalSpent); // Tìm cấp độ thành viên cao nhất mà tổng chi tiêu của khách hàng đã đạt được
+    Optional<MembershipLevel> findTopByMinSpentLessThanEqualOrderByMinSpentDesc(BigDecimal totalSpent);
 
-    List<MembershipLevel> findAllByOrderByMinSpentAsc(); // Lấy tất cả cấp độ thành viên, sắp xếp theo minSpent tăng dần
+    List<MembershipLevel> findAllByOrderByMinSpentAsc();
 
-    Optional<MembershipLevel> findFirstByMinSpentGreaterThanOrderByMinSpentAsc(BigDecimal totalSpent); // Tìm cấp độ thành viên tiếp theo mà tổng chi tiêu của khách hàng chưa đạt được
+    Optional<MembershipLevel> findFirstByOrderByMinSpentAsc();
+
+    Optional<MembershipLevel> findFirstByMinSpentGreaterThanOrderByMinSpentAsc(BigDecimal totalSpent);
 }

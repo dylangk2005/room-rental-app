@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import authApi from '../../api/authApi'
 import ROUTES from '../../constants/routes'
 
@@ -19,6 +19,7 @@ const getErrorMessage = (error) => {
 
 const LoginPage = () => {
     const navigate = useNavigate()
+    const location = useLocation()
     const [form, setForm] = useState({
         email: '',
         password: '',
@@ -53,7 +54,8 @@ const LoginPage = () => {
             const user = response.data
 
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
-            navigate(ADMIN_ROLES.has(user?.role) ? ROUTES.ADMIN_DASHBOARD : ROUTES.HOME, { replace: true })
+            const nextPath = location.state?.from || ROUTES.HOME
+            navigate(ADMIN_ROLES.has(user?.role) ? ROUTES.ADMIN_DASHBOARD : nextPath, { replace: true })
         } catch (loginError) {
             setError(getErrorMessage(loginError))
         } finally {
@@ -132,7 +134,12 @@ const LoginPage = () => {
                             </label>
 
                             <label className="block">
-                                <span className="mb-2 block text-sm font-bold text-slate-800">Mật khẩu</span>
+                                <span className="mb-2 flex items-center justify-between gap-3 text-sm font-bold text-slate-800">
+                                    <span>Mật khẩu</span>
+                                    <Link className="text-emerald-700 hover:text-emerald-800" to={ROUTES.FORGOT_PASSWORD}>
+                                        Quên mật khẩu?
+                                    </Link>
+                                </span>
                                 <div className="flex h-12 overflow-hidden rounded-lg border border-slate-300 bg-white transition-within focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-100">
                                     <input
                                         className="min-w-0 flex-1 px-4 text-slate-950 outline-none"

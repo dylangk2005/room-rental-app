@@ -3,14 +3,24 @@ package com.roomrental.api.controller;
 import com.roomrental.api.dto.request.post.CreatePostRequest;
 import com.roomrental.api.dto.request.post.UpdatePostRequest;
 import com.roomrental.api.dto.response.common.ApiResponse;
-import com.roomrental.api.dto.response.post.*;
+import com.roomrental.api.dto.response.post.PostContactResponse;
+import com.roomrental.api.dto.response.post.PostDetailResponse;
+import com.roomrental.api.dto.response.post.PostLocationResponse;
+import com.roomrental.api.dto.response.post.PostPageResponse;
 import com.roomrental.api.service.PostService;
 import com.roomrental.api.util.AuthHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -24,18 +34,13 @@ public class PostController {
     private final PostService postService;
     private final AuthHelper authHelper;
 
-    // ─── PUBLIC ───────────────────────────────────────────────────────────
-
-    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
     @GetMapping
     public ResponseEntity<ApiResponse<PostPageResponse>> getActivePosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponse.success(
-                postService.getActivePosts(page, size)));
+        return ResponseEntity.ok(ApiResponse.success(postService.getActivePosts(page, size)));
     }
 
-    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PostPageResponse>> searchPosts(
             @RequestParam(required = false) String province,
@@ -47,30 +52,25 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.success(
-                postService.searchPosts(province, district,
-                        minPrice, maxPrice, minArea, maxArea, page, size)));
+                postService.searchPosts(province, district, minPrice, maxPrice, minArea, maxArea, page, size)));
     }
 
-    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
+    @GetMapping("/locations")
+    public ResponseEntity<ApiResponse<List<PostLocationResponse>>> getActiveLocations() {
+        return ResponseEntity.ok(ApiResponse.success(postService.getActiveLocations()));
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<PostDetailResponse>> getPostDetail(
-            @PathVariable Integer id) {
-        return ResponseEntity.ok(ApiResponse.success(
-                postService.getPostDetail(id)));
+    public ResponseEntity<ApiResponse<PostDetailResponse>> getPostDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(postService.getPostDetail(id)));
     }
 
-    // Xem thông tin liên hệ của phòng trọ
     @GetMapping("/{id}/contact")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<PostContactResponse>> getPostContact(
-            @PathVariable Integer id) {
-        return ResponseEntity.ok(ApiResponse.success(
-                postService.getPostContact(id)));
+    public ResponseEntity<ApiResponse<PostContactResponse>> getPostContact(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(postService.getPostContact(id)));
     }
 
-    // ─── USER ─────────────────────────────────────────────────────────────
-
-    // Tạo mới bài đăng, có thể upload nhiều ảnh
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostDetailResponse>> createPost(
@@ -97,11 +97,10 @@ public class PostController {
         request.setDurationDays(durationDays);
 
         return ResponseEntity.ok(ApiResponse.success(
-                "Đã lưu tin nháp, vui lòng thanh toán để đăng tin",
+                "Đã lưu tin nháp, vui lòng thanh toán để đăng tin",
                 postService.createPost(authHelper.getCurrentUserId(), request, images)));
     }
 
-    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostDetailResponse>> updatePost(
@@ -131,7 +130,6 @@ public class PostController {
                 postService.updatePost(authHelper.getCurrentUserId(), id, request, newImages)));
     }
 
-    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Void>> deletePost(@PathVariable Integer id) {
@@ -139,14 +137,11 @@ public class PostController {
         return ResponseEntity.ok(ApiResponse.success("Xóa tin thành công", null));
     }
 
-    // Lấy danh sách bài đăng của người dùng, có phân trang
     @GetMapping("/my-posts")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostPageResponse>> getMyPosts(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseEntity.ok(ApiResponse.success(
-                postService.getMyPosts(authHelper.getCurrentUserId(), page, size)));
+        return ResponseEntity.ok(ApiResponse.success(postService.getMyPosts(authHelper.getCurrentUserId(), page, size)));
     }
-
 }

@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
+import AppHeader from '../../components/AppHeader'
+import PostCard from '../../components/PostCard'
 import ROUTES from '../../constants/routes'
 
 const USER_STORAGE_KEY = 'taytro_user'
@@ -31,23 +33,6 @@ const areaRanges = [
     { label: 'Trên 60 m2', minArea: '60', maxArea: '' },
 ]
 
-const formatCurrency = (value) => {
-    const number = Number(value || 0)
-    if (number >= 1000000) {
-        return `${(number / 1000000).toLocaleString('vi-VN', { maximumFractionDigits: 1 })} triệu/tháng`
-    }
-    return `${number.toLocaleString('vi-VN')} đ/tháng`
-}
-
-const formatDate = (value) => {
-    if (!value) return 'Đang cập nhật'
-    return new Intl.DateTimeFormat('vi-VN', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-    }).format(new Date(value))
-}
-
 const readStoredUser = () => {
     try {
         return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
@@ -59,73 +44,21 @@ const readStoredUser = () => {
 const getErrorMessage = (error) =>
     error.response?.data?.message || 'Không tải được dữ liệu. Vui lòng kiểm tra backend và thử lại.'
 
-const PostCard = ({ post }) => (
-    <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-        <Link to={`/posts/${post.id}`} className="block">
-            <div className="aspect-[4/3] bg-slate-100">
-                <img
-                    className="h-full w-full object-cover"
-                    src={post.thumbnailUrl || `https://picsum.photos/seed/taytro-${post.id}/900/650`}
-                    alt={post.title}
-                    loading="lazy"
-                />
-            </div>
-        </Link>
-        <div className="space-y-4 p-4">
-            <div className="flex items-start justify-between gap-3">
-                <Link to={`/posts/${post.id}`} className="min-w-0">
-                    <h3
-                        className="line-clamp-2 text-base font-black leading-6 hover:text-emerald-700"
-                        style={{
-                            color: post.postTypeTitleColor || undefined,
-                            fontSize: post.postTypeTitleSize ? `${Math.min(post.postTypeTitleSize + 2, 20)}px` : undefined,
-                        }}
-                    >
-                        {post.title}
-                    </h3>
-                </Link>
-                <span className="shrink-0 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
-                    {post.postTypeName || 'Tin thường'}
-                </span>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                    <span className="block text-slate-500">Giá thuê</span>
-                    <strong className="text-base text-emerald-700">{formatCurrency(post.rentalPrice)}</strong>
-                </div>
-                <div>
-                    <span className="block text-slate-500">Diện tích</span>
-                    <strong className="text-base text-slate-950">{post.area} m2</strong>
-                </div>
-            </div>
-
-            <div className="space-y-2 text-sm text-slate-600">
-                <p className="line-clamp-1 font-semibold text-slate-800">
-                    {post.district}, {post.province}
-                </p>
-                <p>Hết hạn: {formatDate(post.endAt)}</p>
-            </div>
-
-            <Link
-                className="inline-flex h-10 w-full items-center justify-center rounded-lg border border-emerald-600 px-4 text-sm font-black text-emerald-700 transition hover:bg-emerald-50"
-                to={`/posts/${post.id}`}
-            >
-                Xem chi tiết
-            </Link>
-        </div>
-    </article>
-)
-
 const LoadingGrid = () => (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid grid-cols-1 gap-5">
         {Array.from({ length: 6 }).map((_, index) => (
             <div className="overflow-hidden rounded-lg border border-slate-200 bg-white" key={index}>
-                <div className="aspect-[4/3] animate-pulse bg-slate-200" />
-                <div className="space-y-4 p-4">
-                    <div className="h-5 w-4/5 animate-pulse rounded bg-slate-200" />
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
-                    <div className="h-10 animate-pulse rounded bg-slate-200" />
+                <div className="grid grid-cols-1 md:grid-cols-[340px_minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)]">
+                    <div className="min-h-64 animate-pulse bg-slate-200 md:min-h-72" />
+                    <div className="space-y-4 p-4 sm:p-5">
+                        <div className="h-6 w-4/5 animate-pulse rounded bg-slate-200" />
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            <div className="h-20 animate-pulse rounded-lg bg-slate-200" />
+                            <div className="h-20 animate-pulse rounded-lg bg-slate-200" />
+                            <div className="col-span-2 h-20 animate-pulse rounded-lg bg-slate-200 sm:col-span-1" />
+                        </div>
+                        <div className="h-11 w-full animate-pulse rounded-lg bg-slate-200 sm:w-36" />
+                    </div>
                 </div>
             </div>
         ))}
@@ -133,9 +66,9 @@ const LoadingGrid = () => (
 )
 
 const PostListPage = () => {
-    const navigate = useNavigate()
     const [user, setUser] = useState(readStoredUser)
     const [filters, setFilters] = useState(initialFilters)
+    const [locations, setLocations] = useState([])
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({
         currentPage: 0,
@@ -168,6 +101,11 @@ const PostListPage = () => {
             ),
         [filters.maxArea, filters.minArea]
     )
+    const selectedProvince = useMemo(
+        () => locations.find((location) => location.province === filters.province),
+        [filters.province, locations]
+    )
+    const districtOptions = selectedProvince?.districts || []
 
     const loadPosts = async (params = { page: 0, size: 9 }, useSearch = false) => {
         await Promise.resolve()
@@ -209,6 +147,19 @@ const PostListPage = () => {
             }
         }
 
+        const loadLocations = async () => {
+            try {
+                const response = await postApi.getLocations()
+                if (!ignore) {
+                    setLocations(response.data || [])
+                }
+            } catch {
+                if (!ignore) {
+                    setLocations([])
+                }
+            }
+        }
+
         const loadInitialPosts = async () => {
             try {
                 const response = await postApi.getPosts({ page: 0, size: 9 })
@@ -232,6 +183,7 @@ const PostListPage = () => {
         }
 
         refreshUser()
+        loadLocations()
         loadInitialPosts()
 
         return () => {
@@ -239,11 +191,19 @@ const PostListPage = () => {
         }
     }, [])
 
-    const handleFilterChange = (event) => {
-        const { name, value } = event.target
+    const handleProvinceChange = (event) => {
+        const province = event.target.value
         setFilters((current) => ({
             ...current,
-            [name]: value,
+            province,
+            district: '',
+        }))
+    }
+
+    const handleDistrictChange = (event) => {
+        setFilters((current) => ({
+            ...current,
+            district: event.target.value,
         }))
     }
 
@@ -277,16 +237,6 @@ const PostListPage = () => {
         loadPosts({ page: 0, size: 9 }, false)
     }
 
-    const handleLogout = async () => {
-        try {
-            await authApi.logout()
-        } finally {
-            localStorage.removeItem(USER_STORAGE_KEY)
-            setUser(null)
-            navigate(ROUTES.HOME)
-        }
-    }
-
     const loadPage = (nextPage) => {
         if (nextPage < 0 || nextPage >= pageInfo.totalPages) return
         loadPosts({ ...(hasSearched ? filters : {}), page: nextPage, size: 9 }, hasSearched)
@@ -294,69 +244,20 @@ const PostListPage = () => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
-                <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-                    <Link to={ROUTES.HOME} className="flex items-center gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 font-black text-white">
-                            T
-                        </span>
-                        <span className="text-xl font-black text-slate-950">TAYTRO</span>
-                    </Link>
-
-                    <nav className="hidden items-center gap-6 text-sm font-bold text-slate-600 md:flex">
-                        <a href="#search" className="hover:text-emerald-700">
-                            Tìm phòng
-                        </a>
-                        <Link to={ROUTES.POSTS} className="hover:text-emerald-700">
-                            Tin đăng
-                        </Link>
-                        <Link to={ROUTES.CREATE_POST} className="hover:text-emerald-700">
-                            Đăng tin
-                        </Link>
-                    </nav>
-
-                    <div className="flex items-center gap-2">
-                        {user ? (
-                            <>
-                                <Link
-                                    className="hidden max-w-40 truncate rounded-lg bg-slate-100 px-3 py-2 text-sm font-bold text-slate-800 sm:block"
-                                    to={ROUTES.PROFILE}
-                                    title={user.fullName}
-                                >
-                                    {user.fullName}
-                                </Link>
-                                <button
-                                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100"
-                                    type="button"
-                                    onClick={handleLogout}
-                                >
-                                    Đăng xuất
-                                </button>
-                            </>
-                        ) : (
-                            <Link
-                                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-black text-white hover:bg-emerald-700"
-                                to={ROUTES.LOGIN}
-                            >
-                                Đăng nhập
-                            </Link>
-                        )}
-                    </div>
-                </div>
-            </header>
+            <AppHeader user={user} onUserChange={setUser} />
 
             <section className="border-b border-slate-200 bg-white">
-                <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-14">
+                <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.85fr] lg:px-8 lg:py-14">
                     <div>
                         <p className="mb-4 inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">
-                            Phòng trọ rõ thông tin, tìm kiếm nhanh
+                            Phòng trọ rõ thông tin, xem ảnh nhanh
                         </p>
                         <h1 className="max-w-3xl text-4xl font-black leading-tight text-slate-950 sm:text-5xl">
                             Tìm phòng phù hợp ngân sách và khu vực của bạn.
                         </h1>
                         <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-                            TAYTRO ưu tiên tin đăng đang hoạt động, hiển thị giá, diện tích và khu vực để người thuê
-                            ra quyết định nhanh hơn.
+                            TAYTRO ưu tiên tin đăng đang hoạt động, hiển thị giá, diện tích, khu vực và ảnh phòng rõ ràng
+                            để người thuê ra quyết định nhanh hơn.
                         </p>
                         <div className="mt-7 flex flex-wrap gap-3">
                             <a
@@ -374,22 +275,12 @@ const PostListPage = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                            <strong className="block text-3xl text-slate-950">{pageInfo.totalElements || posts.length}</strong>
-                            <span className="text-sm font-semibold text-slate-500">Tin đăng phù hợp</span>
-                        </div>
-                        <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
-                            <strong className="block text-3xl text-slate-950">3</strong>
-                            <span className="text-sm font-semibold text-slate-500">Gói ưu tiên</span>
-                        </div>
-                        <div className="col-span-2 overflow-hidden rounded-lg border border-slate-200">
-                            <img
-                                className="h-56 w-full object-cover"
-                                src="https://picsum.photos/seed/taytro-home/1000/520"
-                                alt="Phòng trọ sạch sáng"
-                            />
-                        </div>
+                    <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-100 lg:self-end">
+                        <img
+                            className="h-64 w-full object-cover sm:h-80 lg:h-72"
+                            src="https://picsum.photos/seed/taytro-home/1000/520"
+                            alt="Phòng trọ sạch sáng"
+                        />
                     </div>
                 </div>
             </section>
@@ -399,23 +290,34 @@ const PostListPage = () => {
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                         <label>
                             <span className="mb-2 block text-sm font-black text-slate-800">Tỉnh thành</span>
-                            <input
+                            <select
                                 className="h-11 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                                name="province"
                                 value={filters.province}
-                                onChange={handleFilterChange}
-                                placeholder="VD: TP. Ho Chi Minh"
-                            />
+                                onChange={handleProvinceChange}
+                            >
+                                <option value="">Tất cả tỉnh thành</option>
+                                {locations.map((location) => (
+                                    <option key={location.province} value={location.province}>
+                                        {location.province}
+                                    </option>
+                                ))}
+                            </select>
                         </label>
                         <label>
                             <span className="mb-2 block text-sm font-black text-slate-800">Quận huyện</span>
-                            <input
-                                className="h-11 w-full rounded-lg border border-slate-300 px-3 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                                name="district"
+                            <select
+                                className="h-11 w-full rounded-lg border border-slate-300 px-3 outline-none disabled:bg-slate-100 disabled:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
                                 value={filters.district}
-                                onChange={handleFilterChange}
-                                placeholder="VD: Binh Thanh"
-                            />
+                                onChange={handleDistrictChange}
+                                disabled={!filters.province}
+                            >
+                                <option value="">{filters.province ? 'Tất cả quận huyện' : 'Chọn tỉnh thành trước'}</option>
+                                {districtOptions.map((district) => (
+                                    <option key={district} value={district}>
+                                        {district}
+                                    </option>
+                                ))}
+                            </select>
                         </label>
                         <label>
                             <span className="mb-2 block text-sm font-black text-slate-800">Khoảng giá</span>
@@ -469,7 +371,7 @@ const PostListPage = () => {
                         <p className="mt-1 text-sm text-slate-500">
                             {hasSearched
                                 ? `${pageInfo.totalElements} kết quả tìm kiếm, ${activeFilterCount} bộ lọc đang áp dụng`
-                                : 'Danh sách tin đang hoạt động mới nhất từ backend'}
+                                : 'Tin nổi bật hiển thị nhiều ảnh hơn để bạn xem phòng nhanh hơn'}
                         </p>
                     </div>
                     {error && (
@@ -501,7 +403,7 @@ const PostListPage = () => {
                     )}
 
                     {!isLoading && !error && posts.length > 0 && (
-                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-5">
                             {posts.map((post) => (
                                 <PostCard key={post.id} post={post} />
                             ))}

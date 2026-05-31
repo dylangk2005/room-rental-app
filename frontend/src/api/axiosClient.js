@@ -27,8 +27,9 @@ axiosClient.interceptors.response.use(
     async (error) => {
         const originalRequest = error.config
         const status = error.response?.status
+        const skipAuthRedirect = originalRequest?.skipAuthRedirect
 
-        if (status === 401 && originalRequest && !originalRequest._retry && !isAuthUrl(originalRequest.url)) {
+        if (status === 401 && originalRequest && !originalRequest._retry && !isAuthUrl(originalRequest.url) && !skipAuthRedirect) {
             originalRequest._retry = true
 
             try {
@@ -43,7 +44,7 @@ axiosClient.interceptors.response.use(
             }
         }
 
-        if (status === 401 && !isAuthUrl(originalRequest?.url) && window.location.pathname !== '/login') {
+        if (status === 401 && !isAuthUrl(originalRequest?.url) && !skipAuthRedirect && window.location.pathname !== '/login') {
             localStorage.removeItem('taytro_user')
             window.location.href = '/login'
         }

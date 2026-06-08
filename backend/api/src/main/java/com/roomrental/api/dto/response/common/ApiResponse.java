@@ -14,7 +14,7 @@ public class ApiResponse <T>{
     private String message;
     private T data;
 
-    // Tra ve khi thanh cong
+    // Trả về khi thành công
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
                 .success(true)
@@ -31,7 +31,7 @@ public class ApiResponse <T>{
                 .build();
     }
 
-    // Tra ve khi that bai
+    // Trả về khi thất bại
     public static <T> ApiResponse<T> error(String message) {
         return ApiResponse.<T>builder()
                 .success(false)

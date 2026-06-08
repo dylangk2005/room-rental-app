@@ -60,12 +60,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/reports").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/reports/my-history").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
 
-                        // Reports - Moderator trở lên mới được xem/xử lý report
-                        .requestMatchers(HttpMethod.GET, "/api/reports").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        // Reports - moderator xử lý nghiệp vụ báo cáo
+                        .requestMatchers(HttpMethod.GET, "/api/reports").hasRole("MODERATOR")
 
-                        .requestMatchers(HttpMethod.GET, "/api/reports/*").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/reports/*").hasRole("MODERATOR")
 
-                        .requestMatchers(HttpMethod.PUT, "/api/reports/*/resolve").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/reports/*/resolve").hasRole("MODERATOR")
 
                         // User
                         .requestMatchers("/api/favorites/**").hasAnyRole("USER", "MODERATOR", "MANAGER", "ADMIN")
@@ -82,14 +82,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/moderator/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
 
                         // Moderation logs
-                        .requestMatchers("/api/moderation-logs/my-history").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/moderation-logs/my-history/**").hasRole("MODERATOR")
+                        .requestMatchers("/api/moderation-logs/my-history").hasRole("MODERATOR")
 
-                        .requestMatchers("/api/moderation-logs/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/moderation-logs/**").hasRole("MANAGER")
 
-                        .requestMatchers("/api/moderation/**").hasAnyRole("MODERATOR", "MANAGER", "ADMIN")
+                        .requestMatchers("/api/moderation/**").hasRole("MODERATOR")
 
                         // Manager
-                        .requestMatchers("/api/manager/**").hasAnyRole("MANAGER", "ADMIN")
+                        .requestMatchers("/api/manager/**").hasRole("MANAGER")
 
                         // Admin only
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

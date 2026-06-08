@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { normalizeApiText } from '../utils/textEncoding'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
 
@@ -23,8 +24,12 @@ const refreshClient = axios.create({
 const isAuthUrl = (url = '') => url.includes('/auth/login') || url.includes('/auth/refresh')
 
 axiosClient.interceptors.response.use(
-    (response) => response.data,
+    (response) => normalizeApiText(response.data),
     async (error) => {
+        if (error.response?.data) {
+            error.response.data = normalizeApiText(error.response.data)
+        }
+
         const originalRequest = error.config
         const status = error.response?.status
         const skipAuthRedirect = originalRequest?.skipAuthRedirect

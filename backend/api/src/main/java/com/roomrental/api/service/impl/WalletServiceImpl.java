@@ -141,7 +141,7 @@ public class WalletServiceImpl implements WalletService {
                 "DEPOSIT_INIT",
                 AuditLog.TargetType.DEPOSIT,
                 saved.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " khởi tạo giao dịch nạp tiền qua VNPAY. "
                         + "Số tiền: " + saved.getAmount()
                         + "đ. Mã giao dịch: " + saved.getTransactionRef()
@@ -271,7 +271,7 @@ public class WalletServiceImpl implements WalletService {
                 AuditLog.TargetType.DEPOSIT,
                 deposit.getId(),
                 "Nạp tiền thành công qua VNPAY. "
-                        + "User #" + user.getId()
+                        + "Người dùng #" + user.getId()
                         + ". Số tiền nạp: " + deposit.getNetAmount()
                         + "đ. Số dư trước: " + openingBalance
                         + "đ. Số dư sau: " + closingBalance
@@ -319,7 +319,7 @@ public class WalletServiceImpl implements WalletService {
                 .amount(nullSafe(deposit.getNetAmount()))
                 .openingBalance(deposit.getOpeningBalance())
                 .closingBalance(deposit.getClosingBalance())
-                .description(expiredPending ? "Giao dich nap tien da qua han thanh toan VNPAY" : deposit.getNote())
+                .description(expiredPending ? "Giao dịch nạp tiền đã quá hạn thanh toán VNPAY" : deposit.getNote())
                 .createdAt(deposit.getCreatedAt())
                 .build();
     }

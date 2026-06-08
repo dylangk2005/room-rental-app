@@ -2,6 +2,7 @@ package com.roomrental.api.controller;
 
 import com.roomrental.api.dto.response.common.ApiResponse;
 import com.roomrental.api.dto.response.moderation.ModerationLogPageResponse;
+import com.roomrental.api.dto.response.moderation.ModerationTargetDetailResponse;
 import com.roomrental.api.entity.ModerationLog;
 import com.roomrental.api.service.ModerationLogService;
 import com.roomrental.api.util.AuthHelper;
@@ -18,7 +19,7 @@ public class ModerationLogController {
     private final AuthHelper authHelper;
 
     @GetMapping("/api/moderation-logs/my-history")
-    @PreAuthorize("hasAnyRole('MODERATOR', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ModerationLogPageResponse>> getMyHistory(
             @RequestParam(required = false) ModerationLog.ModerationAction action,
             @RequestParam(required = false) ModerationLog.TargetType targetType,
@@ -38,8 +39,23 @@ public class ModerationLogController {
         ));
     }
 
+    @GetMapping("/api/moderation-logs/my-history/target-detail")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<ModerationTargetDetailResponse>> getMyTargetDetail(
+            @RequestParam ModerationLog.TargetType targetType,
+            @RequestParam Integer targetId) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                moderationLogService.getTargetDetail(
+                        authHelper.getCurrentUserId(),
+                        targetType,
+                        targetId
+                )
+        ));
+    }
+
     @GetMapping("/api/moderation-logs")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<ModerationLogPageResponse>> getLogs(
             @RequestParam(required = false) Integer moderatorId,
             @RequestParam(required = false) ModerationLog.ModerationAction action,
@@ -56,6 +72,21 @@ public class ModerationLogController {
                         targetId,
                         page,
                         size
+                )
+        ));
+    }
+
+    @GetMapping("/api/moderation-logs/target-detail")
+    @PreAuthorize("hasRole('MANAGER')")
+    public ResponseEntity<ApiResponse<ModerationTargetDetailResponse>> getTargetDetail(
+            @RequestParam ModerationLog.TargetType targetType,
+            @RequestParam Integer targetId) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                moderationLogService.getTargetDetail(
+                        null,
+                        targetType,
+                        targetId
                 )
         ));
     }

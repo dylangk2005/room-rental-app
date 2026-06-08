@@ -42,6 +42,29 @@ public interface ModerationLogRepository extends JpaRepository<ModerationLog, In
         Long getTotalActions();
     }
 
+    @EntityGraph(attributePaths = "user")
+    @Query("""
+            SELECT log
+            FROM ModerationLog log
+            WHERE (:moderatorId IS NULL OR log.user.id = :moderatorId)
+              AND (:action IS NULL OR log.action = :action)
+              AND (:targetType IS NULL OR log.targetType = :targetType)
+              AND (:targetId IS NULL OR log.targetId = :targetId)
+            """)
+    Page<ModerationLog> search(
+            @Param("moderatorId") Integer moderatorId,
+            @Param("action") ModerationLog.ModerationAction action,
+            @Param("targetType") ModerationLog.TargetType targetType,
+            @Param("targetId") Integer targetId,
+            Pageable pageable
+    );
+
+    boolean existsByUser_IdAndTargetTypeAndTargetId(
+            Integer userId,
+            ModerationLog.TargetType targetType,
+            Integer targetId
+    );
+
     long countByActionAndCreatedAtBetween(
             ModerationLog.ModerationAction action,
             LocalDateTime from,

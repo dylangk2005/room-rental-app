@@ -1,5 +1,10 @@
 import axiosClient from './axiosClient'
 
+const cleanParams = (params = {}) =>
+    Object.fromEntries(
+        Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined)
+    )
+
 const reportApi = {
     createReport: ({ postId, reason, description, images = [] }) => {
         const formData = new FormData()
@@ -18,6 +23,10 @@ const reportApi = {
             },
         })
     },
+    getReports: (params = {}) => axiosClient.get('/reports', { params: cleanParams(params) }),
+    getMyReports: (params = {}) => axiosClient.get('/reports/my-history', { params: cleanParams(params) }),
+    getReportDetail: (id) => axiosClient.get(`/reports/${id}`),
+    resolveReport: (id, payload) => axiosClient.put(`/reports/${id}/resolve`, payload),
 }
 
 export default reportApi

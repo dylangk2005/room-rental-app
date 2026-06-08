@@ -1,6 +1,7 @@
 package com.roomrental.api.service;
 
 import com.roomrental.api.dto.response.moderation.ModerationLogPageResponse;
+import com.roomrental.api.dto.response.moderation.ModerationTargetDetailResponse;
 import com.roomrental.api.entity.ModerationLog;
 
 public interface ModerationLogService {
@@ -20,6 +21,12 @@ public interface ModerationLogService {
             Integer targetId,
             int page,
             int size
+    );
+
+    ModerationTargetDetailResponse getTargetDetail(
+            Integer moderatorId,
+            ModerationLog.TargetType targetType,
+            Integer targetId
     );
 
 }

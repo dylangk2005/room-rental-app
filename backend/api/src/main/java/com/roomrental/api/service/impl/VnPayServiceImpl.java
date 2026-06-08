@@ -39,7 +39,7 @@ public class VnPayServiceImpl implements VnPayService {
         params.put("vnp_Amount", amount.multiply(BigDecimal.valueOf(100)).toBigInteger().toString());
         params.put("vnp_CurrCode", "VND");
         params.put("vnp_TxnRef", transactionRef);
-        params.put("vnp_OrderInfo", "Nap tien vi RoomRental " + transactionRef);
+        params.put("vnp_OrderInfo", "Nạp tiền ví TAYTRO " + transactionRef);
         params.put("vnp_OrderType", "other");
         params.put("vnp_Locale", "vn");
         params.put("vnp_ReturnUrl", vnpayConfig.getReturnUrl());

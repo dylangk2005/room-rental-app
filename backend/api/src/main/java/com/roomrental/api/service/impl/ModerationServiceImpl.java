@@ -1,6 +1,8 @@
 package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.moderation.BanUserRequest;
+import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
+import com.roomrental.api.dto.response.admin.AdminUserResponse;
 import com.roomrental.api.dto.response.moderation.ModerationPostPageResponse;
 import com.roomrental.api.dto.response.moderation.ModerationPostSummaryResponse;
 import com.roomrental.api.dto.response.post.PostDetailResponse;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -184,11 +187,13 @@ public class ModerationServiceImpl implements ModerationService {
                 .postTypePriority(postType != null ? postType.getPriority() : null)
                 .ownerName(owner != null ? owner.getFullName() : null)
                 .createdAt(post.getCreatedAt())
+                .imageCount(postImageRepository.countByPostId(post.getId()))
                 .build();
     }
 
     private PostDetailResponse mapDetail(Post post) {
         PostType postType = post.getPostType();
+        User owner = post.getUser();
 
         return PostDetailResponse.builder()
                 .id(post.getId())
@@ -200,6 +205,10 @@ public class ModerationServiceImpl implements ModerationService {
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus())
+                .ownerId(owner != null ? owner.getId() : null)
+                .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerEmail(owner != null ? owner.getEmail() : null)
+                .ownerPhoneNumber(owner != null ? owner.getPhoneNumber() : null)
                 .createdAt(post.getCreatedAt())
                 .endAt(post.getEndAt())
                 .postTypeName(postType != null ? postType.getName() : null)
@@ -217,6 +226,28 @@ public class ModerationServiceImpl implements ModerationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AdminUserPageResponse getNormalUsers(User.UserStatus status, String keyword, int page, int size) {
+        String searchKeyword = keyword != null && !keyword.isBlank()
+                ? keyword.trim()
+                : null;
+
+        Page<User> result = userRepository.searchAdminUsers(
+                "USER",
+                status,
+                searchKeyword,
+                PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")))
+        );
+
+        return AdminUserPageResponse.builder()
+                .users(result.getContent().stream().map(this::mapUserResponse).toList())
+                .currentPage(result.getNumber())
+                .totalPages(result.getTotalPages())
+                .totalElements(result.getTotalElements())
+                .build();
+    }
+
+    @Override
     @Transactional
     public void banUser(Integer moderatorId, Integer userId, BanUserRequest request) {
         User user = userRepository.findById(userId)
@@ -228,8 +259,12 @@ public class ModerationServiceImpl implements ModerationService {
 
         LocalDateTime now = LocalDateTime.now();
 
+        if (request.getDurationDays() != null && request.getDurationDays() <= 0) {
+            throw AppException.badRequest("Số ngày xử lý phải lớn hơn 0");
+        }
+
         if (request.getType() == UserPenalty.PenaltyType.LOCK_POST
-                && (request.getDurationDays() == null || request.getDurationDays() <= 0)) {
+                && request.getDurationDays() == null) {
             throw AppException.badRequest("Khóa đăng tin cần số ngày hợp lệ");
         }
 
@@ -246,7 +281,7 @@ public class ModerationServiceImpl implements ModerationService {
 
         if (request.getType() == UserPenalty.PenaltyType.BAN_ACCOUNT) {
             user.setStatus(User.UserStatus.BANNED);
-            penalty.setEndDate(null);
+            penalty.setEndDate(request.getDurationDays() != null ? now.plusDays(request.getDurationDays()) : null);
         }
 
         userPenaltyRepository.save(penalty);
@@ -273,6 +308,75 @@ public class ModerationServiceImpl implements ModerationService {
                 "Tài khoản của bạn bị xử lý: " + request.getType().name()
                         + ". Lý do: " + request.getReason()
         );
+    }
+
+    @Override
+    @Transactional
+    public void clearUserPenalties(Integer moderatorId, Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        if (user.getRole() != null && !"USER".equals(user.getRole().getName())) {
+            throw AppException.badRequest("Không thể xử lý tài khoản nhân sự");
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        List<UserPenalty> activePenalties = userPenaltyRepository.findActiveByUserId(userId, now);
+        boolean wasBanned = user.getStatus() == User.UserStatus.BANNED;
+
+        if (activePenalties.isEmpty() && !wasBanned) {
+            return;
+        }
+
+        if (!activePenalties.isEmpty()) {
+            userPenaltyRepository.deleteAll(activePenalties);
+        }
+
+        if (wasBanned) {
+            user.setStatus(User.UserStatus.ACTIVE);
+        }
+
+        String reason = "Gỡ " + activePenalties.size() + " hình phạt hiện hữu của tài khoản";
+
+        auditLogService.log(
+                moderatorId,
+                "CLEAR_USER_PENALTIES",
+                AuditLog.TargetType.USER,
+                user.getId(),
+                reason
+        );
+
+        notificationService.notifyUser(
+                user.getId(),
+                Notification.NotificationType.SYSTEM_INFORMATION,
+                "Các hình phạt hiện tại trên tài khoản của bạn đã được gỡ."
+        );
+    }
+
+    private AdminUserResponse mapUserResponse(User user) {
+        return AdminUserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
+                .role(user.getRole() != null ? user.getRole().getName() : null)
+                .createdAt(user.getCreatedAt())
+                .activePenalties(userPenaltyRepository.findActiveByUserId(user.getId(), LocalDateTime.now()).stream()
+                        .map(this::mapActivePenalty)
+                        .toList())
+                .build();
+    }
+
+    private AdminUserResponse.ActivePenaltyResponse mapActivePenalty(UserPenalty penalty) {
+        return AdminUserResponse.ActivePenaltyResponse.builder()
+                .id(penalty.getId())
+                .type(penalty.getType() != null ? penalty.getType().name() : null)
+                .reason(penalty.getReason())
+                .startDate(penalty.getStartDate())
+                .endDate(penalty.getEndDate())
+                .createdAt(penalty.getCreatedAt())
+                .build();
     }
 
     private ModerationLog.ModerationAction mapPenaltyAction(UserPenalty.PenaltyType type) {

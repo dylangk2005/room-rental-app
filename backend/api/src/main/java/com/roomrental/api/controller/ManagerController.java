@@ -20,14 +20,14 @@ public class ManagerController {
     private final AuthHelper authHelper;
 
     @PutMapping("/users/{id}/unban")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<Void>> unbanUser(@PathVariable Integer id) {
         managerService.unbanUser(authHelper.getCurrentUserId(), id);
         return ResponseEntity.ok(ApiResponse.success("Mở khóa tài khoản thành công", null));
     }
 
     @PutMapping("/post-type-prices")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<Void>> updatePostTypePrice(
             @Valid @RequestBody UpdatePostTypePriceRequest request) {
 
@@ -36,7 +36,7 @@ public class ManagerController {
     }
 
     @PutMapping("/membership-levels/{id}")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<Void>> updateMembershipLevel(
             @PathVariable Integer id,
             @Valid @RequestBody UpdateMembershipLevelRequest request) {

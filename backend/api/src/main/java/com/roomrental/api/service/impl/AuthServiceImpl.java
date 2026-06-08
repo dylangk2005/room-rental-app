@@ -114,7 +114,7 @@ public class AuthServiceImpl implements AuthService {
                 "REGISTER_VERIFIED",
                 AuditLog.TargetType.USER,
                 savedUser.getId(),
-                "User #" + savedUser.getId()
+                "Người dùng #" + savedUser.getId()
                         + " xác thực OTP đăng ký thành công. Tài khoản được kích hoạt."
         );
 
@@ -201,7 +201,7 @@ public class AuthServiceImpl implements AuthService {
                 "LOGIN_SUCCESS",
                 AuditLog.TargetType.USER,
                 user.getId(),
-                "User #" + user.getId() + " đăng nhập thành công."
+                "Người dùng #" + user.getId() + " đăng nhập thành công."
         );
 
         // Trả về thông tin người dùng
@@ -212,7 +212,7 @@ public class AuthServiceImpl implements AuthService {
                 .phoneNumber(user.getPhoneNumber())
                 .avatar(user.getAvatar())
                 .role(user.getRole().getName())
-                .membershipLevel(user.getMembershipLevel().getName())
+                .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
                 .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
@@ -246,7 +246,7 @@ public class AuthServiceImpl implements AuthService {
                                     "LOGOUT_SUCCESS",
                                     AuditLog.TargetType.USER,
                                     user.getId(),
-                                    "User #" + user.getId() + " đăng xuất thành công."
+                                    "Người dùng #" + user.getId() + " đăng xuất thành công."
                             )
                     );
 
@@ -317,7 +317,7 @@ public class AuthServiceImpl implements AuthService {
                 .avatar(user.getAvatar())
                 .status(user.getStatus().name())
                 .role(user.getRole().getName())
-                .membershipLevel(user.getMembershipLevel().getName())
+                .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
                 .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
@@ -373,7 +373,7 @@ public class AuthServiceImpl implements AuthService {
                 "PASSWORD_RESET",
                 AuditLog.TargetType.USER,
                 user.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " đặt lại mật khẩu thành công bằng OTP."
         );
 
@@ -403,7 +403,7 @@ public class AuthServiceImpl implements AuthService {
                 "CHANGE_PASSWORD_OTP_REQUESTED",
                 AuditLog.TargetType.USER,
                 user.getId(),
-                "User #" + user.getId() + " yêu cầu OTP đổi mật khẩu."
+                "Người dùng #" + user.getId() + " yêu cầu OTP đổi mật khẩu."
         );
     }
 
@@ -448,7 +448,7 @@ public class AuthServiceImpl implements AuthService {
                 "CHANGE_PASSWORD",
                 AuditLog.TargetType.USER,
                 user.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " đổi mật khẩu thành công khi đang đăng nhập."
         );
 

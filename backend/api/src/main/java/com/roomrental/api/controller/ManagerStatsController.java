@@ -24,7 +24,7 @@ public class ManagerStatsController {
     private final ManagerStatsExportService managerStatsExportService;
 
     @GetMapping("/users")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<UserStatsResponse>> getUserStats(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -40,7 +40,7 @@ public class ManagerStatsController {
     }
 
     @GetMapping("/posts")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<PostStatsResponse>> getPostStats(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -56,7 +56,7 @@ public class ManagerStatsController {
     }
 
     @GetMapping("/revenue")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<RevenueStatsResponse>> getRevenueStats(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -72,7 +72,7 @@ public class ManagerStatsController {
     }
 
     @GetMapping("/moderation")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<ApiResponse<ModerationStatsResponse>> getModerationStats(
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -88,7 +88,7 @@ public class ManagerStatsController {
     }
 
     @GetMapping("/export")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MANAGER')")
     public ResponseEntity<byte[]> exportStats(
             @RequestParam StatsExportType type,
 

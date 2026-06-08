@@ -1,8 +1,10 @@
 package com.roomrental.api.service;
 
 import com.roomrental.api.dto.request.moderation.BanUserRequest;
+import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
 import com.roomrental.api.dto.response.moderation.ModerationPostPageResponse;
 import com.roomrental.api.dto.response.post.PostDetailResponse;
+import com.roomrental.api.entity.User;
 
 public interface ModerationService {
 
@@ -13,5 +15,8 @@ public interface ModerationService {
     PostDetailResponse approvePost(Integer moderatorId, Integer postId); // Duyệt tin đăng
     PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason);  // Từ chối tin đăng
 
-    void banUser(Integer moderatorId, Integer userId, BanUserRequest request); // Ban user
+    AdminUserPageResponse getNormalUsers(User.UserStatus status, String keyword, int page, int size);
+
+    void banUser(Integer moderatorId, Integer userId, BanUserRequest request); // Xử phạt người dùng
+    void clearUserPenalties(Integer moderatorId, Integer userId);
 }

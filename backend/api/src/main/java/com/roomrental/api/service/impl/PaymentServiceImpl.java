@@ -100,7 +100,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "PAYMENT_POST_SUCCESS",
                 AuditLog.TargetType.TRANSACTION,
                 payment.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " thanh toán đăng tin #" + post.getId()
                         + ". Tin chuyển từ DRAFT sang PENDING. "
                         + "Số ngày mua: " + request.getDurationDays()
@@ -183,7 +183,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "PAYMENT_RENEW_SUCCESS",
                 AuditLog.TargetType.TRANSACTION,
                 payment.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " gia hạn tin #" + post.getId()
                         + ". Số ngày gia hạn: " + request.getDurationDays()
                         + ". Ngày hết hạn mới: " + post.getEndAt()
@@ -262,7 +262,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "PAYMENT_PUSH_SUCCESS",
                 AuditLog.TargetType.TRANSACTION,
                 payment.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " đẩy tin #" + post.getId()
                         + ". Thời gian đẩy tin mới: " + post.getPushTime()
                         + ". Phí gốc: " + baseFee

@@ -76,7 +76,7 @@ public class BackupServiceImpl implements BackupService {
                     "RUN_DATABASE_BACKUP",
                     AuditLog.TargetType.SYSTEM,
                     null,
-                    "Admin #" + adminId + " sao lưu database thành công: " + outputPath
+                    "Quản trị viên #" + adminId + " sao lưu cơ sở dữ liệu thành công: " + outputPath
             );
 
             return BackupResponse.builder()

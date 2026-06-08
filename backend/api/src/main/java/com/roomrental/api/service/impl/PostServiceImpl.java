@@ -282,7 +282,7 @@ public class PostServiceImpl implements PostService {
                 "POST_CREATED",
                 AuditLog.TargetType.POST,
                 saved.getId(),
-                "User #" + user.getId()
+                "Người dùng #" + user.getId()
                         + " tạo tin nháp #" + saved.getId()
                         + ". Tiêu đề: \"" + saved.getTitle()
                         + "\". Loại tin: " + (postType.getName() != null ? postType.getName() : "N/A")
@@ -355,7 +355,7 @@ public class PostServiceImpl implements PostService {
                 "POST_UPDATED",
                 AuditLog.TargetType.POST,
                 saved.getId(),
-                "User #" + userId
+                "Người dùng #" + userId
                         + " cập nhật nội dung tin #" + saved.getId()
                         + ". Tiêu đề hiện tại: \"" + saved.getTitle()
                         + "\". Số ảnh hiện tại: " + imageUrls.size() + "."
@@ -390,7 +390,7 @@ public class PostServiceImpl implements PostService {
                 "POST_DELETED",
                 AuditLog.TargetType.POST,
                 saved.getId(),
-                "User #" + userId
+                "Người dùng #" + userId
                         + " xóa tin #" + saved.getId()
                         + ". Tiêu đề: \"" + saved.getTitle()
                         + "\". Trạng thái mới: " + saved.getStatus() + "."

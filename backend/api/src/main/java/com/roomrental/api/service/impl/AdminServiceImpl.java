@@ -1,6 +1,7 @@
 package com.roomrental.api.service.impl;
 
 import com.roomrental.api.dto.request.admin.CreateInternalUserRequest;
+import com.roomrental.api.dto.request.admin.UpdateInternalUserRequest;
 import com.roomrental.api.dto.request.admin.UpdateUserStatusRequest;
 import com.roomrental.api.dto.response.admin.AdminUserPageResponse;
 import com.roomrental.api.dto.response.admin.AdminUserResponse;
@@ -13,6 +14,8 @@ import com.roomrental.api.repository.UserRepository;
 import com.roomrental.api.service.AdminService;
 import com.roomrental.api.service.AuditLogService;
 import com.roomrental.api.service.EmailService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,7 +24,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -31,14 +33,16 @@ import java.util.Set;
 public class AdminServiceImpl implements AdminService {
 
     private static final Set<String> INTERNAL_ROLES = Set.of("ADMIN", "MANAGER", "MODERATOR");
-    private static final String PASSWORD_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%";
-    private static final int TEMP_PASSWORD_LENGTH = 12;
+    private static final String DEFAULT_INTERNAL_PASSWORD = "123456aA@";
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     // Tạo tài khoản nội bộ (manager, moderator)
     @Override
@@ -61,13 +65,11 @@ public class AdminServiceImpl implements AdminService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> AppException.notFound("Vai trò không tồn tại"));
 
-        String temporaryPassword = generateTemporaryPassword();
-
         User user = new User();
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setPassword(passwordEncoder.encode(temporaryPassword));
+        user.setPassword(passwordEncoder.encode(DEFAULT_INTERNAL_PASSWORD));
         user.setStatus(User.UserStatus.ACTIVE);
         user.setRole(role);
         user.setMembershipLevel(null);
@@ -80,7 +82,7 @@ public class AdminServiceImpl implements AdminService {
                 savedUser.getEmail(),
                 savedUser.getFullName(),
                 roleName,
-                temporaryPassword
+                DEFAULT_INTERNAL_PASSWORD
         );
 
         auditLogService.log(
@@ -88,7 +90,7 @@ public class AdminServiceImpl implements AdminService {
                 "CREATE_INTERNAL_USER",
                 AuditLog.TargetType.USER,
                 savedUser.getId(),
-                "Admin #" + adminId + " tạo tài khoản nội bộ #" + savedUser.getId()
+                "Quản trị viên #" + adminId + " tạo tài khoản nội bộ #" + savedUser.getId()
                         + " với vai trò " + roleName + "."
         );
 
@@ -128,6 +130,191 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
+    public AdminUserResponse updateInternalUser(
+            Integer adminId,
+            Integer userId,
+            UpdateInternalUserRequest request
+    ) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tài khoản nội bộ"));
+
+        String currentRoleName = user.getRole() != null ? user.getRole().getName() : null;
+        if (!INTERNAL_ROLES.contains(currentRoleName)) {
+            throw AppException.badRequest("Chỉ được cập nhật tài khoản nội bộ");
+        }
+
+        StringBuilder changes = new StringBuilder();
+
+        if (hasText(request.getFullName())) {
+            String nextFullName = request.getFullName().trim();
+            if (!nextFullName.equals(user.getFullName())) {
+                user.setFullName(nextFullName);
+                changes.append("fullName; ");
+            }
+        }
+
+        if (hasText(request.getEmail())) {
+            String nextEmail = request.getEmail().trim();
+            if (!nextEmail.equalsIgnoreCase(user.getEmail())) {
+                if (userRepository.existsByEmailAndIdNot(nextEmail, user.getId())) {
+                    throw AppException.badRequest("Email đã tồn tại");
+                }
+                user.setEmail(nextEmail);
+                changes.append("email; ");
+            }
+        }
+
+        if (hasText(request.getPhoneNumber())) {
+            String nextPhoneNumber = request.getPhoneNumber().trim();
+            if (!nextPhoneNumber.equals(user.getPhoneNumber())) {
+                if (userRepository.existsByPhoneNumberAndIdNot(nextPhoneNumber, user.getId())) {
+                    throw AppException.badRequest("Số điện thoại đã tồn tại");
+                }
+                user.setPhoneNumber(nextPhoneNumber);
+                changes.append("phoneNumber; ");
+            }
+        }
+
+        if (hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setMustChangePassword(true);
+            changes.append("password; ");
+        }
+
+        if (hasText(request.getRole())) {
+            String nextRoleName = request.getRole().trim().toUpperCase();
+            if (!INTERNAL_ROLES.contains(nextRoleName)) {
+                throw AppException.badRequest("Vai trò nội bộ không hợp lệ");
+            }
+            if (!nextRoleName.equals(currentRoleName)) {
+                Role role = roleRepository.findByName(nextRoleName)
+                        .orElseThrow(() -> AppException.notFound("Vai trò không tồn tại"));
+                user.setRole(role);
+                changes.append("role; ");
+            }
+        }
+
+        if (request.getStatus() != null && request.getStatus() != user.getStatus()) {
+            if (adminId.equals(userId) && request.getStatus() == User.UserStatus.BANNED) {
+                throw AppException.badRequest("Không thể tự khóa tài khoản của chính mình");
+            }
+            user.setStatus(request.getStatus());
+            changes.append("status; ");
+        }
+
+        if (changes.isEmpty()) {
+            throw AppException.badRequest("Không có thông tin nào để cập nhật");
+        }
+
+        User savedUser = userRepository.save(user);
+
+        auditLogService.log(
+                adminId,
+                "UPDATE_INTERNAL_USER",
+                AuditLog.TargetType.USER,
+                savedUser.getId(),
+                "Quản trị viên #" + adminId + " cập nhật tài khoản nội bộ #"
+                        + savedUser.getId() + ". Trường thay đổi: " + changes
+        );
+
+        return mapResponse(savedUser);
+    }
+
+    @Override
+    @Transactional
+    public void deleteInternalUser(Integer adminId, Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tài khoản nội bộ"));
+
+        String roleName = user.getRole() != null ? user.getRole().getName() : null;
+        if (!INTERNAL_ROLES.contains(roleName)) {
+            throw AppException.badRequest("Chỉ được xóa tài khoản nội bộ");
+        }
+
+        if (adminId.equals(userId)) {
+            throw AppException.badRequest("Không thể xóa tài khoản của chính mình");
+        }
+
+        auditLogService.log(
+                adminId,
+                "DELETE_INTERNAL_USER",
+                AuditLog.TargetType.USER,
+                userId,
+                "Quản trị viên #" + adminId + " xóa tài khoản nội bộ #" + userId
+        );
+
+        forceDeleteUserGraph(userId);
+    }
+
+    private void forceDeleteUserGraph(Integer userId) {
+        entityManager.createNativeQuery("""
+                DELETE ri FROM report_images ri
+                JOIN reports r ON ri.report_id = r.id
+                LEFT JOIN posts p ON r.post_id = p.id
+                WHERE r.user_id = :userId OR r.moderator_id = :userId OR p.user_id = :userId
+                """)
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("""
+                DELETE r FROM reports r
+                LEFT JOIN posts p ON r.post_id = p.id
+                WHERE r.user_id = :userId OR r.moderator_id = :userId OR p.user_id = :userId
+                """)
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("""
+                DELETE pi FROM post_images pi
+                JOIN posts p ON pi.post_id = p.id
+                WHERE p.user_id = :userId
+                """)
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("""
+                DELETE f FROM favorites f
+                LEFT JOIN posts p ON f.post_id = p.id
+                WHERE f.user_id = :userId OR p.user_id = :userId
+                """)
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM payments WHERE user_id = :userId OR post_id IN (SELECT id FROM posts WHERE user_id = :userId)")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM posts WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM deposits WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM user_penalties WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM moderation_logs WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM audit_logs WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM notifications WHERE user_id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+
+        entityManager.createNativeQuery("DELETE FROM users WHERE id = :userId")
+                .setParameter("userId", userId)
+                .executeUpdate();
+    }
+
+    @Override
+    @Transactional
     public AdminUserResponse updateUserStatus(
             Integer adminId,
             Integer userId,
@@ -154,7 +341,7 @@ public class AdminServiceImpl implements AdminService {
                 "UPDATE_USER_STATUS",
                 AuditLog.TargetType.USER,
                 user.getId(),
-                "Admin #" + adminId + " cập nhật trạng thái tài khoản #"
+                "Quản trị viên #" + adminId + " cập nhật trạng thái tài khoản #"
                         + user.getId() + " từ " + oldStatus + " sang " + request.getStatus() + "."
         );
 
@@ -193,16 +380,8 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    private String generateTemporaryPassword() {
-        SecureRandom random = new SecureRandom();
-        StringBuilder password = new StringBuilder();
-
-        for (int i = 0; i < TEMP_PASSWORD_LENGTH; i++) {
-            int index = random.nextInt(PASSWORD_CHARS.length());
-            password.append(PASSWORD_CHARS.charAt(index));
-        }
-
-        return password.toString();
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private AdminUserResponse mapResponse(User user) {

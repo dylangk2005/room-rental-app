@@ -14,5 +14,5 @@ public interface AuthService {
     void forgotPassword(ForgotPasswordRequest request); // Kiểm tra email, nếu tồn tại thì tạo OTP, lưu OTP vào Redis, gửi OTP về email
     void resetPassword(ResetPasswordRequest request); // Kiểm tra email + OTP, nếu đúng thì cập nhật mật khẩu mới cho tài khoản, xóa OTP khỏi Redis
     void requestChangePasswordOtp(String email); // Gửi OTP đổi mật khẩu về email đã đăng ký
-    void changePassword(String email, ChangePasswordRequest request); // Kiểm tra JWT token để lấy thông tin user, kiểm tra mật khẩu cũ, nếu đúng thì cập nhật mật khẩu mới cho tài khoản
+    void changePassword(String email, ChangePasswordRequest request); // Kiểm tra JWT token để lấy thông tin người dùng, kiểm tra mật khẩu cũ, nếu đúng thì cập nhật mật khẩu mới cho tài khoản
 }

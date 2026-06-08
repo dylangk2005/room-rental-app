@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import authApi from '../api/authApi'
 import notificationApi from '../api/notificationApi'
@@ -21,6 +22,22 @@ const accountLinks = [
     { label: 'Quản lý nạp tiền & thanh toán', to: ROUTES.USER_TRANSACTIONS },
     { label: 'Danh sách yêu thích', to: ROUTES.FAVORITES },
 ]
+
+const getBackOfficeLinks = (role) => {
+    if (role === 'ADMIN') {
+        return [{ label: 'Dashboard', to: ROUTES.ADMIN_DASHBOARD }]
+    }
+
+    if (role === 'MANAGER') {
+        return [{ label: 'Dashboard', to: ROUTES.MANAGER_DASHBOARD }]
+    }
+
+    if (role === 'MODERATOR') {
+        return [{ label: 'Dashboard', to: ROUTES.MANAGER_MODERATION_POSTS }]
+    }
+
+    return []
+}
 
 const notificationTypeLabels = {
     POST_INFORMATION: 'Tin đăng',
@@ -105,6 +122,7 @@ const AppHeader = ({ user, onUserChange }) => {
         totalElements: 0,
     })
     const [isAllNotificationsLoading, setIsAllNotificationsLoading] = useState(false)
+    const portalRoot = typeof document !== 'undefined' ? document.body : null
 
     useEffect(() => {
         if (!isMenuOpen) return undefined
@@ -335,7 +353,7 @@ const AppHeader = ({ user, onUserChange }) => {
                                             </p>
                                         </div>
                                         <div className="p-2">
-                                            {accountLinks.map((item) => (
+                                            {[...getBackOfficeLinks(user.role), ...accountLinks].map((item) => (
                                                 <Link
                                                     className="flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100"
                                                     key={item.to}
@@ -370,49 +388,180 @@ const AppHeader = ({ user, onUserChange }) => {
                 </div>
             </div>
 
-            {isNotificationOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-                    <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-                        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-950">Thông báo mới</h2>
-                                <p className="mt-1 text-sm font-semibold text-slate-500">
-                                    {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Bạn đã đọc hết thông báo'}
-                                </p>
-                            </div>
+            {isNotificationOpen && portalRoot && createPortal(
+                <>
+                    <div className="fixed inset-0 z-40 bg-slate-950/45" aria-hidden="true" />
+                    <div className="fixed left-1/2 top-16 z-50 w-full max-w-lg -translate-x-1/2 px-4 pt-3">
+                        <div className="relative w-full rounded-lg bg-white shadow-xl">
                             <button
-                                className="rounded-lg px-3 py-2 text-sm font-black text-slate-500 hover:bg-slate-100"
+                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-xl font-black text-slate-500 hover:bg-slate-100 hover:text-slate-900"
                                 type="button"
                                 onClick={() => setIsNotificationOpen(false)}
+                                aria-label="Đóng thông báo"
                             >
-                                Đóng
+                                ×
                             </button>
-                        </div>
-
-                        {notificationError && (
-                            <div className="mx-5 mt-4 rounded-lg bg-red-50 p-3 text-sm font-bold text-red-700">
-                                {notificationError}
+                            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 pr-14">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-950">Thông báo mới</h2>
+                                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                                        {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Bạn đã đọc hết thông báo'}
+                                    </p>
+                                </div>
                             </div>
-                        )}
 
-                        <div className="p-3">
-                            {isNotificationLoading && (
-                                <div className="space-y-2 p-2">
-                                    {Array.from({ length: 3 }).map((_, index) => (
-                                        <div className="h-16 animate-pulse rounded-lg bg-slate-100" key={index} />
-                                    ))}
+                            {notificationError && (
+                                <div className="mx-5 mt-4 rounded-lg bg-red-50 p-3 text-sm font-bold text-red-700">
+                                    {notificationError}
                                 </div>
                             )}
 
-                            {!isNotificationLoading && notifications.length === 0 && (
-                                <div className="p-8 text-center text-sm font-semibold text-slate-500">
-                                    Chưa có thông báo nào.
+                            <div className="p-3">
+                                {isNotificationLoading && (
+                                    <div className="space-y-2 p-2">
+                                        {Array.from({ length: 3 }).map((_, index) => (
+                                            <div className="h-16 animate-pulse rounded-lg bg-slate-100" key={index} />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {!isNotificationLoading && notifications.length === 0 && (
+                                    <div className="p-8 text-center text-sm font-semibold text-slate-500">
+                                        Chưa có thông báo nào.
+                                    </div>
+                                )}
+
+                                {!isNotificationLoading && (
+                                    <div className="space-y-1">
+                                        {notifications.map((notification) => (
+                                            <NotificationItem
+                                                key={notification.id}
+                                                notification={notification}
+                                                onClick={handleNotificationClick}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
+                                {unreadCount > 0 && (
+                                    <button
+                                        className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100"
+                                        type="button"
+                                        onClick={handleMarkAllAsRead}
+                                    >
+                                        Đọc tất cả
+                                    </button>
+                                )}
+                                <button
+                                    className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white hover:bg-slate-800"
+                                    type="button"
+                                    onClick={openAllNotifications}
+                                >
+                                    Xem tất cả thông báo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>,
+                portalRoot
+            )}
+
+            {selectedNotification && portalRoot && createPortal(
+                <>
+                    <div className="fixed inset-0 z-40 bg-slate-950/45" aria-hidden="true" />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+                        <div className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-lg flex-col rounded-lg bg-white shadow-xl">
+                            <button
+                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-xl font-black text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                type="button"
+                                onClick={() => setSelectedNotification(null)}
+                                aria-label="Đóng thông báo"
+                            >
+                                ×
+                            </button>
+                            <div className="border-b border-slate-200 p-5 pr-14">
+                                <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
+                                    {getNotificationTypeLabel(selectedNotification.type)}
+                                </p>
+                                <h2 className="mt-2 text-xl font-black text-slate-950">Chi tiết thông báo</h2>
+                                <p className="mt-1 text-sm font-semibold text-slate-500">
+                                    {formatNotificationTime(selectedNotification.createdAt)}
+                                </p>
+                            </div>
+                            <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                                <p className="whitespace-pre-wrap break-words text-base font-bold leading-7 text-slate-800">
+                                    {selectedNotification.message}
+                                </p>
+                            </div>
+                            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
+                                <button
+                                    className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100"
+                                    type="button"
+                                    onClick={() => setSelectedNotification(null)}
+                                >
+                                    Đóng
+                                </button>
+                                <button
+                                    className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white hover:bg-slate-800"
+                                    type="button"
+                                    onClick={openAllNotifications}
+                                >
+                                    Xem tất cả thông báo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>,
+                portalRoot
+            )}
+
+            {isAllNotificationsOpen && portalRoot && createPortal(
+                <>
+                    <div className="fixed inset-0 z-40 bg-slate-950/45" aria-hidden="true" />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+                        <div className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
+                            <button
+                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-xl font-black text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                type="button"
+                                onClick={() => setIsAllNotificationsOpen(false)}
+                                aria-label="Đóng thông báo"
+                            >
+                                ×
+                            </button>
+                            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5 pr-14">
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-950">Tất cả thông báo</h2>
+                                    <p className="mt-1 text-sm font-semibold text-slate-500">
+                                        {allPageInfo.totalElements} thông báo trong tài khoản của bạn
+                                    </p>
+                                </div>
+                            </div>
+
+                            {notificationError && (
+                                <div className="mx-5 mt-4 rounded-lg bg-red-50 p-3 text-sm font-bold text-red-700">
+                                    {notificationError}
                                 </div>
                             )}
 
-                            {!isNotificationLoading && (
+                            <div className="min-h-0 flex-1 overflow-y-auto p-3">
+                                {isAllNotificationsLoading && allNotifications.length === 0 && (
+                                    <div className="space-y-2 p-2">
+                                        {Array.from({ length: 4 }).map((_, index) => (
+                                            <div className="h-16 animate-pulse rounded-lg bg-slate-100" key={index} />
+                                        ))}
+                                    </div>
+                                )}
+
+                                {!isAllNotificationsLoading && allNotifications.length === 0 && (
+                                    <div className="p-10 text-center text-sm font-semibold text-slate-500">
+                                        Chưa có thông báo nào.
+                                    </div>
+                                )}
+
                                 <div className="space-y-1">
-                                    {notifications.map((notification) => (
+                                    {allNotifications.map((notification) => (
                                         <NotificationItem
                                             key={notification.id}
                                             notification={notification}
@@ -420,137 +569,28 @@ const AppHeader = ({ user, onUserChange }) => {
                                         />
                                     ))}
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
-                            {unreadCount > 0 && (
-                                <button
-                                    className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100"
-                                    type="button"
-                                    onClick={handleMarkAllAsRead}
-                                >
-                                    Đọc tất cả
-                                </button>
-                            )}
-                            <button
-                                className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white hover:bg-slate-800"
-                                type="button"
-                                onClick={openAllNotifications}
-                            >
-                                Xem tất cả thông báo
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {selectedNotification && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-                    <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
-                        <div className="border-b border-slate-200 p-5">
-                            <p className="text-xs font-black uppercase tracking-wide text-emerald-700">
-                                {getNotificationTypeLabel(selectedNotification.type)}
-                            </p>
-                            <h2 className="mt-2 text-xl font-black text-slate-950">Chi tiết thông báo</h2>
-                            <p className="mt-1 text-sm font-semibold text-slate-500">
-                                {formatNotificationTime(selectedNotification.createdAt)}
-                            </p>
-                        </div>
-                        <div className="p-5">
-                            <p className="text-base font-bold leading-7 text-slate-800">
-                                {selectedNotification.message}
-                            </p>
-                        </div>
-                        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
-                            <button
-                                className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100"
-                                type="button"
-                                onClick={() => setSelectedNotification(null)}
-                            >
-                                Đóng
-                            </button>
-                            <button
-                                className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white hover:bg-slate-800"
-                                type="button"
-                                onClick={openAllNotifications}
-                            >
-                                Xem tất cả thông báo
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isAllNotificationsOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
-                    <div className="flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col rounded-lg bg-white shadow-xl">
-                        <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
-                            <div>
-                                <h2 className="text-xl font-black text-slate-950">Tất cả thông báo</h2>
-                                <p className="mt-1 text-sm font-semibold text-slate-500">
-                                    {allPageInfo.totalElements} thông báo trong tài khoản của bạn
-                                </p>
                             </div>
-                            <button
-                                className="rounded-lg px-3 py-2 text-sm font-black text-slate-500 hover:bg-slate-100"
-                                type="button"
-                                onClick={() => setIsAllNotificationsOpen(false)}
-                            >
-                                Đóng
-                            </button>
-                        </div>
 
-                        {notificationError && (
-                            <div className="mx-5 mt-4 rounded-lg bg-red-50 p-3 text-sm font-bold text-red-700">
-                                {notificationError}
-                            </div>
-                        )}
-
-                        <div className="min-h-0 flex-1 overflow-y-auto p-3">
-                            {isAllNotificationsLoading && allNotifications.length === 0 && (
-                                <div className="space-y-2 p-2">
-                                    {Array.from({ length: 4 }).map((_, index) => (
-                                        <div className="h-16 animate-pulse rounded-lg bg-slate-100" key={index} />
-                                    ))}
-                                </div>
-                            )}
-
-                            {!isAllNotificationsLoading && allNotifications.length === 0 && (
-                                <div className="p-10 text-center text-sm font-semibold text-slate-500">
-                                    Chưa có thông báo nào.
-                                </div>
-                            )}
-
-                            <div className="space-y-1">
-                                {allNotifications.map((notification) => (
-                                    <NotificationItem
-                                        key={notification.id}
-                                        notification={notification}
-                                        onClick={handleNotificationClick}
-                                    />
-                                ))}
+                            <div className="border-t border-slate-200 p-4">
+                                {hasMoreNotifications ? (
+                                    <button
+                                        className="h-11 w-full rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                        type="button"
+                                        onClick={() => loadAllNotifications(allPageInfo.currentPage + 1, true)}
+                                        disabled={isAllNotificationsLoading}
+                                    >
+                                        {isAllNotificationsLoading ? 'Đang tải...' : 'Tải thêm thông báo'}
+                                    </button>
+                                ) : (
+                                    <p className="text-center text-sm font-semibold text-slate-500">
+                                        Bạn đã xem hết thông báo.
+                                    </p>
+                                )}
                             </div>
                         </div>
-
-                        <div className="border-t border-slate-200 p-4">
-                            {hasMoreNotifications ? (
-                                <button
-                                    className="h-11 w-full rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
-                                    type="button"
-                                    onClick={() => loadAllNotifications(allPageInfo.currentPage + 1, true)}
-                                    disabled={isAllNotificationsLoading}
-                                >
-                                    {isAllNotificationsLoading ? 'Đang tải...' : 'Tải thêm thông báo'}
-                                </button>
-                            ) : (
-                                <p className="text-center text-sm font-semibold text-slate-500">
-                                    Bạn đã xem hết thông báo.
-                                </p>
-                            )}
-                        </div>
                     </div>
-                </div>
+                </>,
+                portalRoot
             )}
         </header>
     )

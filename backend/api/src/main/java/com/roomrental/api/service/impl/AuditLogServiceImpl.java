@@ -63,17 +63,14 @@ public class AuditLogServiceImpl implements AuditLogService {
                 Sort.by(Sort.Order.desc("createdAt"))
         );
 
-        Page<AuditLog> result;
-
-        if (action != null && !action.isBlank()) {
-            result = auditLogRepository.findByAction(action, pageable);
-        } else if (actorId != null) {
-            result = auditLogRepository.findByUser_Id(actorId, pageable);
-        } else if (targetType != null && targetId != null) {
-            result = auditLogRepository.findByTargetTypeAndTargetId(targetType, targetId, pageable);
-        } else {
-            result = auditLogRepository.findAll(pageable);
-        }
+        String normalizedAction = action != null && !action.isBlank() ? action.trim() : null;
+        Page<AuditLog> result = auditLogRepository.search(
+                normalizedAction,
+                actorId,
+                targetType,
+                targetId,
+                pageable
+        );
 
         List<AuditLogResponse> logs = result.getContent()
                 .stream()

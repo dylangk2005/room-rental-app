@@ -39,7 +39,7 @@ public class ReportController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('MODERATOR', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ReportPageResponse>> getReports(
             @RequestParam(defaultValue = "PENDING") Report.ReportStatus status,
             @RequestParam(defaultValue = "0") int page,
@@ -62,7 +62,7 @@ public class ReportController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('MODERATOR', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ReportDetailResponse>> getReportDetail(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(
                 reportService.getReportDetail(id)
@@ -70,7 +70,7 @@ public class ReportController {
     }
 
     @PutMapping("/{id}/resolve")
-    @PreAuthorize("hasAnyRole('MODERATOR', 'MANAGER', 'ADMIN')")
+    @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ReportDetailResponse>> resolveReport(
             @PathVariable Integer id,
             @Valid @RequestBody ResolveReportRequest request) {

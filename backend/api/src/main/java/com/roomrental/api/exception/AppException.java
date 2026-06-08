@@ -11,7 +11,7 @@ public class AppException extends RuntimeException{
         this.status = status;
     }
 
-    // Cac loi thuong dung - goi nhanh khong can new
+    // Các lỗi thường dùng, gọi nhanh mà không cần tạo instance mới
     public static AppException badRequest(String message) {
         return new AppException(HttpStatus.BAD_REQUEST, message);
     }

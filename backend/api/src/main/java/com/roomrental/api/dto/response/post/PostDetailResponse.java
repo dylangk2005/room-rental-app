@@ -21,6 +21,9 @@ public class PostDetailResponse {
     private BigDecimal rentalPrice;
     private PostStatus status;
     private Integer ownerId;
+    private String ownerName;
+    private String ownerEmail;
+    private String ownerPhoneNumber;
     private LocalDateTime createdAt;
     private LocalDateTime endAt;
 

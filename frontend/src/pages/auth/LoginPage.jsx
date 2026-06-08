@@ -6,6 +6,13 @@ import ROUTES from '../../constants/routes'
 const ADMIN_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
 const USER_STORAGE_KEY = 'taytro_user'
 
+const getRoleLandingRoute = (role, fallback) => {
+    if (role === 'ADMIN') return ROUTES.ADMIN_DASHBOARD
+    if (role === 'MANAGER') return ROUTES.MANAGER_DASHBOARD
+    if (role === 'MODERATOR') return ROUTES.MANAGER_MODERATION_POSTS
+    return fallback
+}
+
 const getErrorMessage = (error) => {
     const response = error.response?.data
     const fieldErrors = response?.data
@@ -55,7 +62,7 @@ const LoginPage = () => {
 
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
             const nextPath = location.state?.from || ROUTES.HOME
-            navigate(ADMIN_ROLES.has(user?.role) ? ROUTES.ADMIN_DASHBOARD : nextPath, { replace: true })
+            navigate(ADMIN_ROLES.has(user?.role) ? getRoleLandingRoute(user?.role, nextPath) : nextPath, { replace: true })
         } catch (loginError) {
             setError(getErrorMessage(loginError))
         } finally {

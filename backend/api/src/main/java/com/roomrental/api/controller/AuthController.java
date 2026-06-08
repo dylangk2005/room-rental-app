@@ -79,7 +79,7 @@ public class AuthController {
                 ApiResponse.success("Mã OTP đã được gửi đến email đã đăng ký", null));
     }
 
-    @PutMapping("/change-password") // Kiểm tra JWT token để lấy thông tin user, kiểm tra mật khẩu cũ, OTP, nếu đúng thì cập nhật mật khẩu mới cho tài khoản
+    @PutMapping("/change-password") // Kiểm tra JWT token để lấy thông tin người dùng, kiểm tra mật khẩu cũ, OTP, nếu đúng thì cập nhật mật khẩu mới cho tài khoản
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @Valid @RequestBody ChangePasswordRequest request) {
         // Lấy email từ SecurityContext (Đã được set bởi JwtAuthenticationFilter)

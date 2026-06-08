@@ -14,7 +14,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Bat loi AppException (loi do minh tu throw) va tra ve cau hinh loi
+    // Bắt lỗi AppException do hệ thống chủ động throw và trả về cấu trúc lỗi
     @ExceptionHandler(AppException.class)
     public ResponseEntity<ApiResponse<Void>> handleAppException(AppException ex) {
         return ResponseEntity
@@ -22,7 +22,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(ex.getMessage()));
     }
 
-    // Bat loi Validation (@Valid fail) va tra ve cau hinh loi
+    // Bắt lỗi validation khi @Valid không hợp lệ và trả về cấu trúc lỗi
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Map<String,String>>> handleValidationException(MethodArgumentNotValidException ex) {
         Map<String, String> errors = new HashMap<>();
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
                         .build());
     }
 
-    // Bat tat ca loi con lai
+    // Bắt tất cả lỗi còn lại
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGenericException(Exception ex) {
         ex.printStackTrace();

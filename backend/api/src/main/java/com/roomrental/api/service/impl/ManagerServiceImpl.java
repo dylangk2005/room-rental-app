@@ -44,7 +44,7 @@ public class ManagerServiceImpl implements ManagerService {
                 "UNBAN_USER",
                 AuditLog.TargetType.USER,
                 userId,
-                "Manager mở khóa tài khoản"
+                "Quản lý mở khóa tài khoản"
         );
 
         notificationService.notifyUser(

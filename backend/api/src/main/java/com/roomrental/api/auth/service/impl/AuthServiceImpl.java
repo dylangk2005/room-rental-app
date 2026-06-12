@@ -2,6 +2,7 @@ package com.roomrental.api.auth.service.impl;
 
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.admin.service.AuditLogService;
+import com.roomrental.api.auth.dto.AuthResponse;
 import com.roomrental.api.auth.dto.ChangePasswordRequest;
 import com.roomrental.api.auth.dto.ForgotPasswordRequest;
 import com.roomrental.api.auth.dto.LoginRequest;
@@ -24,11 +25,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Duration;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.Random;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -45,6 +53,9 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AuditLogService auditLogService;
     private Boolean mustChangePassword;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean secureCookies;
 
     @Override
     public void register(RegisterRequest request) {
@@ -127,7 +138,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserResponse login(LoginRequest request, HttpServletResponse response) {
+    public AuthResponse login(LoginRequest request, HttpServletResponse response) {
         // Tìm user theo email
         User user = userRepository.findByEmail(request.getEmail())
                 .orElse(null);
@@ -173,31 +184,16 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.forbidden("Tài khoản chưa kích hoạt hoặc đã bị khóa");
         }
 
+        String sessionId = createSessionId();
+
         // Tạo access token
-        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName());
+        String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), sessionId);
 
         // Tạo refresh token
-        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail());
+        String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), sessionId);
 
-        // Lưu refresh token vào Redis (1 ngày)
-        String key = "refreshToken:" + user.getEmail();
-        redisTemplate.opsForValue().set(key, refreshToken, 1, TimeUnit.DAYS);
-
-        //Set accessToken vào cookie
-        Cookie accessCookie = new Cookie("accessToken", accessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(900); // 15 phút
-        response.addCookie(accessCookie);
-
-        // Set refreshToken vào cookie
-        Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(false);
-        refreshCookie.setPath("/api/auth/refresh"); // Chỉ gửi refresh token khi gọi endpoint refresh
-        refreshCookie.setMaxAge(86400); // 24h
-        response.addCookie(refreshCookie);
+        storeRefreshToken(user.getEmail(), sessionId, refreshToken);
+        addRefreshTokenCookie(response, refreshToken, 86400);
 
         auditLogService.log(
                 user.getId(),
@@ -207,8 +203,7 @@ public class AuthServiceImpl implements AuthService {
                 "Người dùng #" + user.getId() + " đăng nhập thành công."
         );
 
-        // Trả về thông tin người dùng
-        return UserResponse.builder()
+        UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
@@ -218,49 +213,51 @@ public class AuthServiceImpl implements AuthService {
                 .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
                 .mustChangePassword(user.getMustChangePassword())
                 .build();
+
+        return AuthResponse.builder()
+                .accessToken(accessToken)
+                .user(userResponse)
+                .build();
     }
 
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response) {
-       // Xóa accessToken cookie
-        Cookie accessCookie = new Cookie("accessToken", null);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(0);
-        response.addCookie(accessCookie);
-
-        // Xóa refreshToken cookie
-        Cookie refreshCookie = new Cookie("refreshToken", null);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setPath("/api/auth/refresh");
-        refreshCookie.setMaxAge(0);
-        response.addCookie(refreshCookie);
+        clearRefreshTokenCookie(response);
 
         // Xóa refresh token khỏi Redis
+        String email = getCurrentAuthenticatedEmail();
+        String sessionId = getCurrentAuthenticatedSessionId();
         if (request.getCookies() != null){
             for (Cookie cookie : request.getCookies()){
                 if ("refreshToken".equals(cookie.getName())) {
-                    String email = jwtUtil.extractEmail(cookie.getValue());
-                    redisTemplate.delete("refreshToken:" + email);
-
-                    userRepository.findByEmail(email).ifPresent(user ->
-                            auditLogService.log(
-                                    user.getId(),
-                                    "LOGOUT_SUCCESS",
-                                    AuditLog.TargetType.USER,
-                                    user.getId(),
-                                    "Người dùng #" + user.getId() + " đăng xuất thành công."
-                            )
-                    );
-
+                    email = jwtUtil.extractEmail(cookie.getValue());
+                    sessionId = jwtUtil.extractTokenId(cookie.getValue());
                     break;
                 }
             }
         }
+
+        if (email != null) {
+            if (sessionId != null) {
+                revokeRefreshToken(email, sessionId);
+            } else {
+                revokeAllRefreshTokens(email);
+            }
+
+            userRepository.findByEmail(email).ifPresent(user ->
+                    auditLogService.log(
+                            user.getId(),
+                            "LOGOUT_SUCCESS",
+                            AuditLog.TargetType.USER,
+                            user.getId(),
+                            "Người dùng #" + user.getId() + " đăng xuất thành công."
+                    )
+            );
+        }
     }
 
     @Override
-    public UserResponse refresh(HttpServletRequest request, HttpServletResponse response) {
+    public AuthResponse refresh(HttpServletRequest request, HttpServletResponse response) {
         // Lấy refresh token từ cookie
         String refreshToken = null;
         if (request.getCookies() != null) {
@@ -283,9 +280,13 @@ public class AuthServiceImpl implements AuthService {
 
         // Lấy email từ refresh token
         String email = jwtUtil.extractEmail(refreshToken);
+        String sessionId = jwtUtil.extractTokenId(refreshToken);
+        if (sessionId == null) {
+            throw AppException.unauthorized("Refresh token không hợp lệ");
+        }
 
         // Kiểm tra refresh token có tồn tại trong Redis không
-        String key = "refreshToken:" + email;
+        String key = buildRefreshTokenKey(email, sessionId);
         String savedToken = redisTemplate.opsForValue().get(key);
         if (savedToken == null || !savedToken.equals(refreshToken)) {
             throw AppException.unauthorized("Refresh token không hợp lệ");
@@ -296,23 +297,21 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> AppException.notFound("Người dùng không tồn tại"));
 
         // Kiểm tra trạng thái tài khoản
-        if (user.getStatus() == User.UserStatus.BANNED) {
-            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
+        if (user.getStatus() != User.UserStatus.ACTIVE) {
+            throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn không ở trạng thái hoạt động");
         }
 
+        String newSessionId = createSessionId();
+
         // Tạo access token mới
-        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName());
+        String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), newSessionId);
 
-        // Set accessToken vào cookie
-        Cookie accessCookie = new Cookie("accessToken", newAccessToken);
-        accessCookie.setHttpOnly(true);
-        accessCookie.setSecure(false);
-        accessCookie.setPath("/");
-        accessCookie.setMaxAge(900); // 15 phút
-        response.addCookie(accessCookie);
+        String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail(), newSessionId);
+        redisTemplate.delete(key);
+        storeRefreshToken(user.getEmail(), newSessionId, newRefreshToken);
+        addRefreshTokenCookie(response, newRefreshToken, 86400);
 
-        // return thông tin người dùng
-        return UserResponse.builder()
+        UserResponse userResponse = UserResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
@@ -323,6 +322,72 @@ public class AuthServiceImpl implements AuthService {
                 .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
                 .mustChangePassword(user.getMustChangePassword())
                 .build();
+
+        return AuthResponse.builder()
+                .accessToken(newAccessToken)
+                .user(userResponse)
+                .build();
+    }
+
+    private void addRefreshTokenCookie(HttpServletResponse response, String refreshToken, long maxAgeSeconds) {
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(secureCookies)
+                .sameSite("Lax")
+                .path("/api/auth/refresh")
+                .maxAge(Duration.ofSeconds(maxAgeSeconds))
+                .build();
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+    }
+
+    private void clearRefreshTokenCookie(HttpServletResponse response) {
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(secureCookies)
+                .sameSite("Lax")
+                .path("/api/auth/refresh")
+                .maxAge(Duration.ZERO)
+                .build();
+        response.addHeader("Set-Cookie", refreshCookie.toString());
+    }
+
+    private String createSessionId() {
+        return UUID.randomUUID().toString();
+    }
+
+    private String buildRefreshTokenKey(String email, String sessionId) {
+        return "refreshToken:" + email + ":" + sessionId;
+    }
+
+    private void storeRefreshToken(String email, String sessionId, String refreshToken) {
+        redisTemplate.opsForValue().set(buildRefreshTokenKey(email, sessionId), refreshToken, 1, TimeUnit.DAYS);
+    }
+
+    private void revokeRefreshToken(String email, String sessionId) {
+        redisTemplate.delete(buildRefreshTokenKey(email, sessionId));
+    }
+
+    private void revokeAllRefreshTokens(String email) {
+        Set<String> keys = redisTemplate.keys("refreshToken:" + email + ":*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
+
+    private String getCurrentAuthenticatedEmail() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
+            return null;
+        }
+        return authentication.getName();
+    }
+
+    private String getCurrentAuthenticatedSessionId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !(authentication.getDetails() instanceof String sessionId)) {
+            return null;
+        }
+        return sessionId;
     }
 
     @Override
@@ -384,7 +449,7 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.delete(key);
 
         // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
-        redisTemplate.delete("refreshToken:" + request.getEmail());
+        revokeAllRefreshTokens(request.getEmail());
     }
 
     @Override
@@ -458,6 +523,6 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.delete(otpKey);
 
         // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
-        redisTemplate.delete("refreshToken:" + email);
+        revokeAllRefreshTokens(email);
     }
 }

@@ -1,6 +1,5 @@
 package com.roomrental.api.common.util;
 
-import com.roomrental.api.user.entity.Role;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import java.util.Date;
@@ -33,9 +32,21 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateRefreshToken(String email) {
+    public String generateToken(String email, String role, String tokenId) {
         return Jwts.builder()
                 .subject(email)
+                .claim("role", role)
+                .claim("jti", tokenId)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(String email, String tokenId) {
+        return Jwts.builder()
+                .subject(email)
+                .claim("jti", tokenId)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration * 96)) // 24 giờ
                 .signWith(getSigningKey())
@@ -50,6 +61,10 @@ public class JwtUtil {
     // Lấy role từ token
     public String extractRole(String token) {
         return parseClaims(token).get("role", String.class);
+    }
+
+    public String extractTokenId(String token) {
+        return parseClaims(token).get("jti", String.class);
     }
 
     // Kiểm tra token còn hợp lệ không

@@ -1,5 +1,6 @@
 package com.roomrental.api.auth.controller;
 
+import com.roomrental.api.auth.dto.AuthResponse;
 import com.roomrental.api.auth.dto.ChangePasswordRequest;
 import com.roomrental.api.auth.dto.ForgotPasswordRequest;
 import com.roomrental.api.auth.dto.LoginRequest;
@@ -8,9 +9,6 @@ import com.roomrental.api.auth.dto.ResetPasswordRequest;
 import com.roomrental.api.auth.dto.VerifyOtpRequest;
 import com.roomrental.api.auth.service.AuthService;
 import com.roomrental.api.common.dto.ApiResponse;
-import com.roomrental.api.config.JwtAuthenticationFilter;
-import com.roomrental.api.user.dto.UserResponse;
-import com.roomrental.api.user.entity.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -42,11 +40,11 @@ public class AuthController {
     }
 
     @PostMapping("/login") // Kiểm tra email + password, nếu đúng thì tạo JWT token và refresh token, lưu refresh token vào Redis, trả về token cho client
-    public ResponseEntity<ApiResponse<UserResponse>> login(
+    public ResponseEntity<ApiResponse<AuthResponse>> login(
             @Valid @RequestBody LoginRequest request,
             HttpServletResponse response) {
-        UserResponse user = authService.login(request, response);
-        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", user));
+        AuthResponse authResponse = authService.login(request, response);
+        return ResponseEntity.ok(ApiResponse.success("Đăng nhập thành công", authResponse));
     }
 
     @PostMapping("/logout") // Xóa JWT token và refresh token khỏi client (xóa cookie) và Redis
@@ -56,9 +54,9 @@ public class AuthController {
     }
 
     @PostMapping("/refresh") // Kiểm tra refresh token, nếu hợp lệ thì tạo JWT token mới và refresh token mới, cập nhật refresh token trong Redis, trả về token mới cho client
-    public ResponseEntity<ApiResponse<UserResponse>> refresh(HttpServletRequest request, HttpServletResponse response){
-        UserResponse user = authService.refresh(request, response);
-        return ResponseEntity.ok(ApiResponse.success("Làm mới token thành công", user));
+    public ResponseEntity<ApiResponse<AuthResponse>> refresh(HttpServletRequest request, HttpServletResponse response){
+        AuthResponse authResponse = authService.refresh(request, response);
+        return ResponseEntity.ok(ApiResponse.success("Làm mới token thành công", authResponse));
     }
 
     @PostMapping("/forgot-password") // Kiểm tra email, nếu tồn tại thì tạo OTP, lưu OTP vào Redis, gửi OTP về email

@@ -1,13 +1,13 @@
 package com.roomrental.api.moderation.service.impl;
 
-import com.roomrental.api.admin.dto.AdminUserPageResponse;
-import com.roomrental.api.admin.dto.AdminUserResponse;
+import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
+import com.roomrental.api.admin.dto.response.AdminUserResponse;
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.common.exception.AppException;
-import com.roomrental.api.moderation.dto.BanUserRequest;
-import com.roomrental.api.moderation.dto.ModerationPostPageResponse;
-import com.roomrental.api.moderation.dto.ModerationPostSummaryResponse;
+import com.roomrental.api.moderation.dto.request.BanUserRequest;
+import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
+import com.roomrental.api.moderation.dto.response.ModerationPostSummaryResponse;
 import com.roomrental.api.moderation.entity.ModerationLog;
 import com.roomrental.api.moderation.service.ModerationLogService;
 import com.roomrental.api.moderation.service.ModerationService;
@@ -15,7 +15,7 @@ import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
 import com.roomrental.api.payment.entity.Payment;
 import com.roomrental.api.payment.repository.PaymentRepository;
-import com.roomrental.api.post.dto.PostDetailResponse;
+import com.roomrental.api.post.dto.response.PostDetailResponse;
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.post.entity.PostImage;

@@ -2,8 +2,8 @@ package com.roomrental.api.pricing.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.pricing.dto.MembershipLevelResponse;
-import com.roomrental.api.pricing.dto.MyMembershipResponse;
+import com.roomrental.api.pricing.dto.response.MembershipLevelResponse;
+import com.roomrental.api.pricing.dto.response.MyMembershipResponse;
 import com.roomrental.api.pricing.service.MembershipService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

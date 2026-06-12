@@ -2,8 +2,8 @@ package com.roomrental.api.pricing.service.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.roomrental.api.common.util.RedisCacheService;
-import com.roomrental.api.pricing.dto.PostTypePriceResponse;
-import com.roomrental.api.pricing.dto.PostTypeResponse;
+import com.roomrental.api.pricing.dto.response.PostTypePriceResponse;
+import com.roomrental.api.pricing.dto.response.PostTypeResponse;
 import com.roomrental.api.pricing.entity.PostType;
 import com.roomrental.api.pricing.entity.PostTypePrice;
 import com.roomrental.api.pricing.repository.PostTypePriceRepository;

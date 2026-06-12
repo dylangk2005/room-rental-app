@@ -1,9 +1,9 @@
 package com.roomrental.api.payment.service;
 
-import com.roomrental.api.payment.dto.DepositInitResponse;
-import com.roomrental.api.payment.dto.DepositRequest;
-import com.roomrental.api.payment.dto.WalletBalanceResponse;
-import com.roomrental.api.payment.dto.WalletTransactionPageResponse;
+import com.roomrental.api.payment.dto.response.DepositInitResponse;
+import com.roomrental.api.payment.dto.request.DepositRequest;
+import com.roomrental.api.payment.dto.response.WalletBalanceResponse;
+import com.roomrental.api.payment.dto.response.WalletTransactionPageResponse;
 import com.roomrental.api.payment.entity.Payment;
 import java.util.Map;
 

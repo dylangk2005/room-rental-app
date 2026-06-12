@@ -2,9 +2,9 @@ package com.roomrental.api.notification.service.impl;
 
 import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.common.util.RedisCacheService;
-import com.roomrental.api.notification.dto.NotificationPageResponse;
-import com.roomrental.api.notification.dto.NotificationResponse;
-import com.roomrental.api.notification.dto.UnreadNotificationCountResponse;
+import com.roomrental.api.notification.dto.response.NotificationPageResponse;
+import com.roomrental.api.notification.dto.response.NotificationResponse;
+import com.roomrental.api.notification.dto.response.UnreadNotificationCountResponse;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.repository.NotificationRepository;
 import com.roomrental.api.notification.service.NotificationService;

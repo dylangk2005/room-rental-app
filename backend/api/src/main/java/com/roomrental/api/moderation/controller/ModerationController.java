@@ -1,13 +1,13 @@
 package com.roomrental.api.moderation.controller;
 
-import com.roomrental.api.admin.dto.AdminUserPageResponse;
+import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.moderation.dto.BanUserRequest;
-import com.roomrental.api.moderation.dto.ModerationPostPageResponse;
-import com.roomrental.api.moderation.dto.RejectPostRequest;
+import com.roomrental.api.moderation.dto.request.BanUserRequest;
+import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
+import com.roomrental.api.moderation.dto.request.RejectPostRequest;
 import com.roomrental.api.moderation.service.ModerationService;
-import com.roomrental.api.post.dto.PostDetailResponse;
+import com.roomrental.api.post.dto.response.PostDetailResponse;
 import com.roomrental.api.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

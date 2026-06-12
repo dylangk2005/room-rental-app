@@ -2,8 +2,8 @@ package com.roomrental.api.notification.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.notification.dto.NotificationPageResponse;
-import com.roomrental.api.notification.dto.UnreadNotificationCountResponse;
+import com.roomrental.api.notification.dto.response.NotificationPageResponse;
+import com.roomrental.api.notification.dto.response.UnreadNotificationCountResponse;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;

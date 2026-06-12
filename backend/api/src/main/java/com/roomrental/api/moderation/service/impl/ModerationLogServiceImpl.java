@@ -1,9 +1,9 @@
 package com.roomrental.api.moderation.service.impl;
 
 import com.roomrental.api.common.exception.AppException;
-import com.roomrental.api.moderation.dto.ModerationLogPageResponse;
-import com.roomrental.api.moderation.dto.ModerationLogResponse;
-import com.roomrental.api.moderation.dto.ModerationTargetDetailResponse;
+import com.roomrental.api.moderation.dto.response.ModerationLogPageResponse;
+import com.roomrental.api.moderation.dto.response.ModerationLogResponse;
+import com.roomrental.api.moderation.dto.response.ModerationTargetDetailResponse;
 import com.roomrental.api.moderation.entity.ModerationLog;
 import com.roomrental.api.moderation.entity.Report;
 import com.roomrental.api.moderation.entity.ReportImage;

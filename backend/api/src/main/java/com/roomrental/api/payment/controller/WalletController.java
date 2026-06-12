@@ -2,10 +2,10 @@ package com.roomrental.api.payment.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.payment.dto.DepositInitResponse;
-import com.roomrental.api.payment.dto.DepositRequest;
-import com.roomrental.api.payment.dto.WalletBalanceResponse;
-import com.roomrental.api.payment.dto.WalletTransactionPageResponse;
+import com.roomrental.api.payment.dto.response.DepositInitResponse;
+import com.roomrental.api.payment.dto.request.DepositRequest;
+import com.roomrental.api.payment.dto.response.WalletBalanceResponse;
+import com.roomrental.api.payment.dto.response.WalletTransactionPageResponse;
 import com.roomrental.api.payment.entity.Deposit;
 import com.roomrental.api.payment.entity.Payment;
 import com.roomrental.api.payment.service.WalletService;

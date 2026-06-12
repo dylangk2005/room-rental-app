@@ -2,10 +2,10 @@ package com.roomrental.api.payment.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.payment.dto.BoostPaymentRequest;
-import com.roomrental.api.payment.dto.PaymentResponse;
-import com.roomrental.api.payment.dto.PayPostRequest;
-import com.roomrental.api.payment.dto.RenewPaymentRequest;
+import com.roomrental.api.payment.dto.request.BoostPaymentRequest;
+import com.roomrental.api.payment.dto.response.PaymentResponse;
+import com.roomrental.api.payment.dto.request.PayPostRequest;
+import com.roomrental.api.payment.dto.request.RenewPaymentRequest;
 import com.roomrental.api.payment.entity.Payment;
 import com.roomrental.api.payment.service.PaymentService;
 import com.roomrental.api.post.entity.Post;

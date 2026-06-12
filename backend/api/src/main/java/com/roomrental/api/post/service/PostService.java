@@ -1,11 +1,11 @@
 package com.roomrental.api.post.service;
 
-import com.roomrental.api.post.dto.CreatePostRequest;
-import com.roomrental.api.post.dto.PostContactResponse;
-import com.roomrental.api.post.dto.PostDetailResponse;
-import com.roomrental.api.post.dto.PostLocationResponse;
-import com.roomrental.api.post.dto.PostPageResponse;
-import com.roomrental.api.post.dto.UpdatePostRequest;
+import com.roomrental.api.post.dto.request.CreatePostRequest;
+import com.roomrental.api.post.dto.response.PostContactResponse;
+import com.roomrental.api.post.dto.response.PostDetailResponse;
+import com.roomrental.api.post.dto.response.PostLocationResponse;
+import com.roomrental.api.post.dto.response.PostPageResponse;
+import com.roomrental.api.post.dto.request.UpdatePostRequest;
 import com.roomrental.api.post.entity.Post;
 import java.math.BigDecimal;
 import java.util.List;

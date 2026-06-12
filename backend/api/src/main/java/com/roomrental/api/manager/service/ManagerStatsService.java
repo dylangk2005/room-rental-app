@@ -1,9 +1,9 @@
 package com.roomrental.api.manager.service;
 
-import com.roomrental.api.manager.dto.ModerationStatsResponse;
-import com.roomrental.api.manager.dto.PostStatsResponse;
-import com.roomrental.api.manager.dto.RevenueStatsResponse;
-import com.roomrental.api.manager.dto.UserStatsResponse;
+import com.roomrental.api.manager.dto.response.ModerationStatsResponse;
+import com.roomrental.api.manager.dto.response.PostStatsResponse;
+import com.roomrental.api.manager.dto.response.RevenueStatsResponse;
+import com.roomrental.api.manager.dto.response.UserStatsResponse;
 import java.time.LocalDate;
 
 public interface ManagerStatsService {

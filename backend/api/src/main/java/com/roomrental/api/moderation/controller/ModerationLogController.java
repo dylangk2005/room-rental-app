@@ -2,8 +2,8 @@ package com.roomrental.api.moderation.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.moderation.dto.ModerationLogPageResponse;
-import com.roomrental.api.moderation.dto.ModerationTargetDetailResponse;
+import com.roomrental.api.moderation.dto.response.ModerationLogPageResponse;
+import com.roomrental.api.moderation.dto.response.ModerationTargetDetailResponse;
 import com.roomrental.api.moderation.entity.ModerationLog;
 import com.roomrental.api.moderation.service.ModerationLogService;
 import lombok.RequiredArgsConstructor;

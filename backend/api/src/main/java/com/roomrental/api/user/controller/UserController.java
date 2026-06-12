@@ -2,8 +2,8 @@ package com.roomrental.api.user.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.user.dto.UpdateUserProfileRequest;
-import com.roomrental.api.user.dto.UserProfileResponse;
+import com.roomrental.api.user.dto.request.UpdateUserProfileRequest;
+import com.roomrental.api.user.dto.response.UserProfileResponse;
 import com.roomrental.api.user.entity.User;
 import com.roomrental.api.user.service.UserService;
 import jakarta.validation.Valid;

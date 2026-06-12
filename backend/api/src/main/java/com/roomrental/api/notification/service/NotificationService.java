@@ -1,7 +1,7 @@
 package com.roomrental.api.notification.service;
 
-import com.roomrental.api.notification.dto.NotificationPageResponse;
-import com.roomrental.api.notification.dto.UnreadNotificationCountResponse;
+import com.roomrental.api.notification.dto.response.NotificationPageResponse;
+import com.roomrental.api.notification.dto.response.UnreadNotificationCountResponse;
 import com.roomrental.api.notification.entity.Notification;
 
   

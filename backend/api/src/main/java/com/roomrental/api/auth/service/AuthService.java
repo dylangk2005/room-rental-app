@@ -1,12 +1,12 @@
 package com.roomrental.api.auth.service;
 
-import com.roomrental.api.auth.dto.AuthResponse;
-import com.roomrental.api.auth.dto.ChangePasswordRequest;
-import com.roomrental.api.auth.dto.ForgotPasswordRequest;
-import com.roomrental.api.auth.dto.LoginRequest;
-import com.roomrental.api.auth.dto.RegisterRequest;
-import com.roomrental.api.auth.dto.ResetPasswordRequest;
-import com.roomrental.api.auth.dto.VerifyOtpRequest;
+import com.roomrental.api.auth.dto.response.AuthResponse;
+import com.roomrental.api.auth.dto.request.ChangePasswordRequest;
+import com.roomrental.api.auth.dto.request.ForgotPasswordRequest;
+import com.roomrental.api.auth.dto.request.LoginRequest;
+import com.roomrental.api.auth.dto.request.RegisterRequest;
+import com.roomrental.api.auth.dto.request.ResetPasswordRequest;
+import com.roomrental.api.auth.dto.request.VerifyOtpRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 

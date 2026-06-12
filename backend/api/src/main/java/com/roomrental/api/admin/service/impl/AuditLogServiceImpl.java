@@ -1,7 +1,7 @@
 package com.roomrental.api.admin.service.impl;
 
-import com.roomrental.api.admin.dto.AuditLogPageResponse;
-import com.roomrental.api.admin.dto.AuditLogResponse;
+import com.roomrental.api.admin.dto.response.AuditLogPageResponse;
+import com.roomrental.api.admin.dto.response.AuditLogResponse;
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.admin.repository.AuditLogRepository;
 import com.roomrental.api.admin.service.AuditLogService;

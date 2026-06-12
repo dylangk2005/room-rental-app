@@ -1,9 +1,9 @@
 package com.roomrental.api.moderation.service;
 
-import com.roomrental.api.admin.dto.AdminUserPageResponse;
-import com.roomrental.api.moderation.dto.BanUserRequest;
-import com.roomrental.api.moderation.dto.ModerationPostPageResponse;
-import com.roomrental.api.post.dto.PostDetailResponse;
+import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
+import com.roomrental.api.moderation.dto.request.BanUserRequest;
+import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
+import com.roomrental.api.post.dto.response.PostDetailResponse;
 import com.roomrental.api.user.entity.User;
 
   

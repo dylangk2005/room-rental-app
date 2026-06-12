@@ -1,7 +1,7 @@
 package com.roomrental.api.manager.service;
 
-import com.roomrental.api.pricing.dto.UpdateMembershipLevelRequest;
-import com.roomrental.api.pricing.dto.UpdatePostTypePriceRequest;
+import com.roomrental.api.pricing.dto.request.UpdateMembershipLevelRequest;
+import com.roomrental.api.pricing.dto.request.UpdatePostTypePriceRequest;
 
 public interface ManagerService {
     void unbanUser(Integer managerId, Integer userId);

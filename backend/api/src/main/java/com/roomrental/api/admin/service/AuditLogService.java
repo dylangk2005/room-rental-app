@@ -1,6 +1,6 @@
 package com.roomrental.api.admin.service;
 
-import com.roomrental.api.admin.dto.AuditLogPageResponse;
+import com.roomrental.api.admin.dto.response.AuditLogPageResponse;
 import com.roomrental.api.admin.entity.AuditLog;
 
 public interface AuditLogService {

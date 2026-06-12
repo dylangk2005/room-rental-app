@@ -1,8 +1,8 @@
 package com.roomrental.api.post.service.impl;
 
 import com.roomrental.api.common.exception.AppException;
-import com.roomrental.api.post.dto.PostPageResponse;
-import com.roomrental.api.post.dto.PostSummaryResponse;
+import com.roomrental.api.post.dto.response.PostPageResponse;
+import com.roomrental.api.post.dto.response.PostSummaryResponse;
 import com.roomrental.api.post.entity.Favorite;
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.post.entity.Post;

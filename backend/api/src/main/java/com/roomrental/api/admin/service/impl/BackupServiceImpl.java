@@ -1,6 +1,6 @@
 package com.roomrental.api.admin.service.impl;
 
-import com.roomrental.api.admin.dto.BackupResponse;
+import com.roomrental.api.admin.dto.response.BackupResponse;
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.admin.service.BackupService;

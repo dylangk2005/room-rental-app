@@ -2,7 +2,7 @@ package com.roomrental.api.post.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.post.dto.PostPageResponse;
+import com.roomrental.api.post.dto.response.PostPageResponse;
 import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.post.service.FavoriteService;
 import lombok.RequiredArgsConstructor;

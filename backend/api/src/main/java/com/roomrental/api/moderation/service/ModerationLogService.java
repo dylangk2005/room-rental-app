@@ -1,7 +1,7 @@
 package com.roomrental.api.moderation.service;
 
-import com.roomrental.api.moderation.dto.ModerationLogPageResponse;
-import com.roomrental.api.moderation.dto.ModerationTargetDetailResponse;
+import com.roomrental.api.moderation.dto.response.ModerationLogPageResponse;
+import com.roomrental.api.moderation.dto.response.ModerationTargetDetailResponse;
 import com.roomrental.api.moderation.entity.ModerationLog;
 
   

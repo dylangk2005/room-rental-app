@@ -2,7 +2,7 @@ package com.roomrental.api.pricing.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.post.entity.Post;
-import com.roomrental.api.pricing.dto.PostTypeResponse;
+import com.roomrental.api.pricing.dto.response.PostTypeResponse;
 import com.roomrental.api.pricing.service.PostTypeService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

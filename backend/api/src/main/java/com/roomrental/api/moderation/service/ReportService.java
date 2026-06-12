@@ -1,9 +1,9 @@
 package com.roomrental.api.moderation.service;
 
-import com.roomrental.api.moderation.dto.CreateReportRequest;
-import com.roomrental.api.moderation.dto.ReportDetailResponse;
-import com.roomrental.api.moderation.dto.ReportPageResponse;
-import com.roomrental.api.moderation.dto.ResolveReportRequest;
+import com.roomrental.api.moderation.dto.request.CreateReportRequest;
+import com.roomrental.api.moderation.dto.response.ReportDetailResponse;
+import com.roomrental.api.moderation.dto.response.ReportPageResponse;
+import com.roomrental.api.moderation.dto.request.ResolveReportRequest;
 import com.roomrental.api.moderation.entity.Report;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;

@@ -1,6 +1,6 @@
 package com.roomrental.api.post.service;
 
-import com.roomrental.api.post.dto.PostPageResponse;
+import com.roomrental.api.post.dto.response.PostPageResponse;
 import com.roomrental.api.post.entity.Post;
 
   

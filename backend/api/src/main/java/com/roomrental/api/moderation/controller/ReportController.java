@@ -2,10 +2,10 @@ package com.roomrental.api.moderation.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
-import com.roomrental.api.moderation.dto.CreateReportRequest;
-import com.roomrental.api.moderation.dto.ReportDetailResponse;
-import com.roomrental.api.moderation.dto.ReportPageResponse;
-import com.roomrental.api.moderation.dto.ResolveReportRequest;
+import com.roomrental.api.moderation.dto.request.CreateReportRequest;
+import com.roomrental.api.moderation.dto.response.ReportDetailResponse;
+import com.roomrental.api.moderation.dto.response.ReportPageResponse;
+import com.roomrental.api.moderation.dto.request.ResolveReportRequest;
 import com.roomrental.api.moderation.entity.Report;
 import com.roomrental.api.moderation.service.ReportService;
 import jakarta.validation.Valid;

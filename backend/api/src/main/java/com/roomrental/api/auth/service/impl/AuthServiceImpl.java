@@ -12,6 +12,7 @@ import com.roomrental.api.auth.dto.VerifyOtpRequest;
 import com.roomrental.api.auth.service.AuthService;
 import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.common.util.JwtUtil;
+import com.roomrental.api.common.util.RedisRateLimitService;
 import com.roomrental.api.integration.service.EmailService;
 import com.roomrental.api.pricing.entity.MembershipLevel;
 import com.roomrental.api.pricing.repository.MembershipLevelRepository;
@@ -39,10 +40,23 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
+
+    private static final Duration OTP_TTL = Duration.ofMinutes(5);
+    private static final Duration OTP_SEND_RATE_WINDOW = Duration.ofMinutes(10);
+    private static final Duration OTP_ATTEMPT_WINDOW = Duration.ofMinutes(5);
+    private static final Duration LOGIN_RATE_WINDOW = Duration.ofMinutes(10);
+    private static final long REFRESH_TOKEN_TTL_DAYS = 1;
+    private static final int OTP_SEND_EMAIL_LIMIT = 3;
+    private static final int OTP_SEND_IP_LIMIT = 10;
+    private static final int OTP_ATTEMPT_LIMIT = 5;
+    private static final int LOGIN_EMAIL_LIMIT = 5;
+    private static final int LOGIN_IP_LIMIT = 20;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -50,6 +64,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RedisTemplate<String, String> redisTemplate;
+    private final RedisRateLimitService rateLimitService;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
     private Boolean mustChangePassword;
@@ -59,8 +74,11 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void register(RegisterRequest request) {
+        String email = normalizeEmail(request.getEmail());
+        assertOtpSendAllowed("register", email);
+
         // kiểm tra email đã tồn tại chưa
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmail(email)) {
             throw AppException.badRequest("Email đã tồn tại");
         }
 
@@ -72,20 +90,21 @@ public class AuthServiceImpl implements AuthService {
         String otp = String.format("%06d", new Random().nextInt(999999));
 
         // Lưu thông tin đăng ký tạm vào Redis (5 phút)
-        String key = "otp:register:" + request.getEmail();
+        String key = buildOtpKey("register", email);
         redisTemplate.opsForHash().put(key, "otp", otp);
         redisTemplate.opsForHash().put(key, "fullName", request.getFullName());
         redisTemplate.opsForHash().put(key, "password", passwordEncoder.encode(request.getPassword()));
         redisTemplate.opsForHash().put(key, "phoneNumber", request.getPhoneNumber());
-        redisTemplate.expire(key, 5, TimeUnit.MINUTES);
+        redisTemplate.expire(key, OTP_TTL.toMillis(), TimeUnit.MILLISECONDS);
 
         // TODO: Gửi OTP qua email
-        emailService.sendOtp(request.getEmail(), otp);
+        emailService.sendOtp(email, otp);
     }
 
     @Override
     public void verifyOtp(VerifyOtpRequest request) {
-        String key = "otp:register:" + request.getEmail();
+        String email = normalizeEmail(request.getEmail());
+        String key = buildOtpKey("register", email);
 
         // Kiểm tra OTP còn tồn tại không
         String storedOtp = (String) redisTemplate.opsForHash().get(key, "otp");
@@ -95,8 +114,10 @@ public class AuthServiceImpl implements AuthService {
 
         // Kiểm tra OTP có đúng không
         if (!storedOtp.equals(request.getOtp())) {
+            recordInvalidOtp("register", email);
             throw AppException.badRequest("OTP không đúng");
         }
+        clearOtpAttempt("register", email);
 
         // Lấy thông tin đăng ký tạm thời từ Redis
         String fullName = (String) redisTemplate.opsForHash().get(key, "fullName");
@@ -112,7 +133,7 @@ public class AuthServiceImpl implements AuthService {
         // Tạo người dùng mới
         User user = new User();
         user.setFullName(fullName);
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPassword(password);
         user.setPhoneNumber(phoneNumber);
         user.setAccountBalance(BigDecimal.ZERO);
@@ -135,22 +156,27 @@ public class AuthServiceImpl implements AuthService {
 
         // Xoá OTP khỏi Redis
         redisTemplate.delete(key);
+        clearOtpAttempt("register", email);
     }
 
     @Override
     public AuthResponse login(LoginRequest request, HttpServletResponse response) {
+        String email = normalizeEmail(request.getEmail());
+        assertLoginAllowed(email);
+
         // Tìm user theo email
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElse(null);
 
         if (user == null) {
+            recordFailedLogin(email);
             auditLogService.log(
                     null,
                     "LOGIN_FAILED",
                     AuditLog.TargetType.USER,
                     null,
                     "Đăng nhập thất bại. Không tìm thấy tài khoản phù hợp với thông tin đăng nhập: "
-                            + request.getEmail()
+                            + email
             );
 
             throw AppException.unauthorized("Email hoặc mật khẩu không đúng");
@@ -158,6 +184,7 @@ public class AuthServiceImpl implements AuthService {
 
         // Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            recordFailedLogin(email);
             auditLogService.log(
                     user.getId(),
                     "LOGIN_FAILED",
@@ -183,6 +210,7 @@ public class AuthServiceImpl implements AuthService {
 
             throw AppException.forbidden("Tài khoản chưa kích hoạt hoặc đã bị khóa");
         }
+        clearFailedLogin(email);
 
         String sessionId = createSessionId();
 
@@ -307,7 +335,7 @@ public class AuthServiceImpl implements AuthService {
         String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), newSessionId);
 
         String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail(), newSessionId);
-        redisTemplate.delete(key);
+        revokeRefreshToken(user.getEmail(), sessionId);
         storeRefreshToken(user.getEmail(), newSessionId, newRefreshToken);
         addRefreshTokenCookie(response, newRefreshToken, 86400);
 
@@ -356,22 +384,34 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String buildRefreshTokenKey(String email, String sessionId) {
-        return "refreshToken:" + email + ":" + sessionId;
+        return "refreshToken:" + normalizeEmail(email) + ":" + sessionId;
+    }
+
+    private String buildRefreshSessionsKey(String email) {
+        return "refreshSessions:" + normalizeEmail(email);
     }
 
     private void storeRefreshToken(String email, String sessionId, String refreshToken) {
-        redisTemplate.opsForValue().set(buildRefreshTokenKey(email, sessionId), refreshToken, 1, TimeUnit.DAYS);
+        String normalizedEmail = normalizeEmail(email);
+        redisTemplate.opsForValue().set(buildRefreshTokenKey(normalizedEmail, sessionId), refreshToken, REFRESH_TOKEN_TTL_DAYS, TimeUnit.DAYS);
+        redisTemplate.opsForSet().add(buildRefreshSessionsKey(normalizedEmail), sessionId);
+        redisTemplate.expire(buildRefreshSessionsKey(normalizedEmail), REFRESH_TOKEN_TTL_DAYS, TimeUnit.DAYS);
     }
 
     private void revokeRefreshToken(String email, String sessionId) {
-        redisTemplate.delete(buildRefreshTokenKey(email, sessionId));
+        String normalizedEmail = normalizeEmail(email);
+        redisTemplate.delete(buildRefreshTokenKey(normalizedEmail, sessionId));
+        redisTemplate.opsForSet().remove(buildRefreshSessionsKey(normalizedEmail), sessionId);
     }
 
     private void revokeAllRefreshTokens(String email) {
-        Set<String> keys = redisTemplate.keys("refreshToken:" + email + ":*");
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
+        String normalizedEmail = normalizeEmail(email);
+        String sessionsKey = buildRefreshSessionsKey(normalizedEmail);
+        Set<String> sessionIds = redisTemplate.opsForSet().members(sessionsKey);
+        if (sessionIds != null && !sessionIds.isEmpty()) {
+            sessionIds.forEach(sessionId -> redisTemplate.delete(buildRefreshTokenKey(normalizedEmail, sessionId)));
         }
+        redisTemplate.delete(sessionsKey);
     }
 
     private String getCurrentAuthenticatedEmail() {
@@ -390,10 +430,115 @@ public class AuthServiceImpl implements AuthService {
         return sessionId;
     }
 
+    private String normalizeEmail(String email) {
+        return email == null ? null : email.trim().toLowerCase();
+    }
+
+    private String buildOtpKey(String purpose, String email) {
+        return "otp:" + purpose + ":" + normalizeEmail(email);
+    }
+
+    private String buildOtpAttemptKey(String purpose, String email) {
+        return "otpAttempt:" + purpose + ":" + normalizeEmail(email);
+    }
+
+    private String buildOtpSendEmailRateKey(String purpose, String email) {
+        return "rate:otp:send:" + purpose + ":email:" + normalizeEmail(email);
+    }
+
+    private String buildOtpSendIpRateKey(String purpose, String ip) {
+        return "rate:otp:send:" + purpose + ":ip:" + ip;
+    }
+
+    private String buildLoginEmailRateKey(String email) {
+        return "rate:login:email:" + normalizeEmail(email);
+    }
+
+    private String buildLoginIpRateKey(String ip) {
+        return "rate:login:ip:" + ip;
+    }
+
+    private void assertOtpSendAllowed(String purpose, String email) {
+        String ip = getCurrentClientIp();
+        rateLimitService.checkLimit(
+                buildOtpSendEmailRateKey(purpose, email),
+                OTP_SEND_EMAIL_LIMIT,
+                OTP_SEND_RATE_WINDOW,
+                "Bạn đã yêu cầu gửi OTP quá nhiều lần, vui lòng thử lại sau"
+        );
+        rateLimitService.checkLimit(
+                buildOtpSendIpRateKey(purpose, ip),
+                OTP_SEND_IP_LIMIT,
+                OTP_SEND_RATE_WINDOW,
+                "Thiết bị hoặc mạng của bạn gửi OTP quá nhiều lần, vui lòng thử lại sau"
+        );
+    }
+
+    private void recordInvalidOtp(String purpose, String email) {
+        String attemptKey = buildOtpAttemptKey(purpose, email);
+        long attempts = rateLimitService.hit(attemptKey, OTP_ATTEMPT_WINDOW);
+        if (attempts >= OTP_ATTEMPT_LIMIT) {
+            redisTemplate.delete(buildOtpKey(purpose, email));
+            throw AppException.tooManyRequests("Bạn đã nhập sai OTP quá nhiều lần, vui lòng gửi lại mã mới");
+        }
+    }
+
+    private void clearOtpAttempt(String purpose, String email) {
+        rateLimitService.reset(buildOtpAttemptKey(purpose, email));
+    }
+
+    private void assertLoginAllowed(String email) {
+        String ip = getCurrentClientIp();
+        if (rateLimitService.isLimited(buildLoginEmailRateKey(email), LOGIN_EMAIL_LIMIT)
+                || rateLimitService.isLimited(buildLoginIpRateKey(ip), LOGIN_IP_LIMIT)) {
+            auditLogService.log(
+                    null,
+                    "LOGIN_RATE_LIMITED",
+                    AuditLog.TargetType.USER,
+                    null,
+                    "Đăng nhập bị chặn do thử sai quá nhiều lần: " + email
+            );
+            throw AppException.tooManyRequests("Bạn đăng nhập sai quá nhiều lần, vui lòng thử lại sau");
+        }
+    }
+
+    private void recordFailedLogin(String email) {
+        String ip = getCurrentClientIp();
+        rateLimitService.hit(buildLoginEmailRateKey(email), LOGIN_RATE_WINDOW);
+        rateLimitService.hit(buildLoginIpRateKey(ip), LOGIN_RATE_WINDOW);
+    }
+
+    private void clearFailedLogin(String email) {
+        rateLimitService.reset(buildLoginEmailRateKey(email));
+    }
+
+    private String getCurrentClientIp() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return "unknown";
+        }
+
+        HttpServletRequest request = attributes.getRequest();
+        String forwardedFor = request.getHeader("X-Forwarded-For");
+        if (forwardedFor != null && !forwardedFor.isBlank()) {
+            return forwardedFor.split(",")[0].trim();
+        }
+
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+
+        return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
+    }
+
     @Override
     public void forgotPassword(ForgotPasswordRequest request){
+        String email = normalizeEmail(request.getEmail());
+        assertOtpSendAllowed("reset", email);
+
         // Kiểm tra email tồn tại
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.badRequest("Email không tồn tại trong hệ thống"));
 
         // Kiểm tra tài khoản có bị khóa không
@@ -405,18 +550,20 @@ public class AuthServiceImpl implements AuthService {
         String otp = String.format("%06d", new Random().nextInt(999999));
 
         // Lưu OTP vào Redis (5 phút)
-        String key = "otp:reset:" + request.getEmail();
-        redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
+        String key = buildOtpKey("reset", email);
+        redisTemplate.opsForValue().set(key, otp, OTP_TTL.toMillis(), TimeUnit.MILLISECONDS);
 
         // Gửi OTP qua email
-        emailService.sendResetPasswordOtp(request.getEmail(), otp);
+        emailService.sendResetPasswordOtp(email, otp);
 
     }
 
     @Override
     public void resetPassword(ResetPasswordRequest request){
+        String email = normalizeEmail(request.getEmail());
+
         // Kiểm tra OTP còn tồn tại không
-        String key = "otp:reset:" + request.getEmail();
+        String key = buildOtpKey("reset", email);
         String savedOtp = redisTemplate.opsForValue().get(key);
 
         if (savedOtp == null) {
@@ -425,11 +572,13 @@ public class AuthServiceImpl implements AuthService {
 
         // Kiểm tra OTP có đúng không
         if (!savedOtp.equals(request.getOtp())) {
+            recordInvalidOtp("reset", email);
             throw AppException.badRequest("OTP không chính xác");
         }
+        clearOtpAttempt("reset", email);
 
         // Tìm user theo email
-        User user = userRepository.findByEmail(request.getEmail())
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.badRequest("Email không tồn tại"));
 
         // Cập nhật mật khẩu mới
@@ -447,14 +596,18 @@ public class AuthServiceImpl implements AuthService {
 
         // Xóa OTP khỏi Redis
         redisTemplate.delete(key);
+        clearOtpAttempt("reset", email);
 
         // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
-        revokeAllRefreshTokens(request.getEmail());
+        revokeAllRefreshTokens(email);
     }
 
     @Override
     public void requestChangePasswordOtp(String email) {
-        User user = userRepository.findByEmail(email)
+        String normalizedEmail = normalizeEmail(email);
+        assertOtpSendAllowed("change-password", normalizedEmail);
+
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
         if (user.getStatus() != User.UserStatus.ACTIVE) {
@@ -462,8 +615,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String otp = String.format("%06d", new Random().nextInt(999999));
-        String key = "otp:change-password:" + email;
-        redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
+        String key = buildOtpKey("change-password", normalizedEmail);
+        redisTemplate.opsForValue().set(key, otp, OTP_TTL.toMillis(), TimeUnit.MILLISECONDS);
         emailService.sendChangePasswordOtp(user.getEmail(), otp);
 
         auditLogService.log(
@@ -477,13 +630,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void changePassword(String email, ChangePasswordRequest request) {
+        String normalizedEmail = normalizeEmail(email);
+
         // Kiểm tra mật khẩu mới và xác nhận có khớp không
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw AppException.badRequest("Mật khẩu xác nhận không khớp");
         }
 
         // Tìm user
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
         // Kiểm tra mật khẩu mới không được trùng mật khẩu hiện tại
@@ -495,16 +650,18 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu hiện tại");
         }
 
-        String otpKey = "otp:change-password:" + email;
-        String savedOtp = "unused";
+        String otpKey = buildOtpKey("change-password", normalizedEmail);
+        String savedOtp = redisTemplate.opsForValue().get(otpKey);
 
-        if (false) {
+        if (savedOtp == null) {
             throw AppException.badRequest("OTP đã hết hạn hoặc không tồn tại, vui lòng gửi lại mã");
         }
 
-        if (false) {
+        if (!savedOtp.equals(request.getOtp())) {
+            recordInvalidOtp("change-password", normalizedEmail);
             throw AppException.badRequest("OTP không chính xác");
         }
+        clearOtpAttempt("change-password", normalizedEmail);
 
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -521,8 +678,9 @@ public class AuthServiceImpl implements AuthService {
         );
 
         redisTemplate.delete(otpKey);
+        clearOtpAttempt("change-password", normalizedEmail);
 
         // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
-        revokeAllRefreshTokens(email);
+        revokeAllRefreshTokens(normalizedEmail);
     }
 }

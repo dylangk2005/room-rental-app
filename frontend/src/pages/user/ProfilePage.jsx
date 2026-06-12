@@ -143,12 +143,13 @@ const ProfilePage = () => {
     const [walletBalance, setWalletBalance] = useState(0)
     const [activeTab, setActiveTab] = useState('profile')
     const [profileForm, setProfileForm] = useState({ fullName: '', phoneNumber: '' })
-    const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
+    const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' })
     const [avatarFile, setAvatarFile] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isSavingProfile, setIsSavingProfile] = useState(false)
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
     const [isChangingPassword, setIsChangingPassword] = useState(false)
+    const [isRequestingPasswordOtp, setIsRequestingPasswordOtp] = useState(false)
     const [error, setError] = useState('')
     const [profileMessage, setProfileMessage] = useState('')
     const [profileError, setProfileError] = useState('')
@@ -252,7 +253,25 @@ const ProfilePage = () => {
 
     const handlePasswordChange = (event) => {
         const { name, value } = event.target
-        setPasswordForm((current) => ({ ...current, [name]: value }))
+        setPasswordForm((current) => ({
+            ...current,
+            [name]: name === 'otp' ? value.replace(/\D/g, '').slice(0, 6) : value,
+        }))
+    }
+
+    const handleRequestPasswordOtp = async () => {
+        setPasswordError('')
+        setPasswordMessage('')
+        setIsRequestingPasswordOtp(true)
+
+        try {
+            await authApi.requestChangePasswordOtp()
+            setPasswordMessage('Mã OTP đã được gửi đến email của bạn.')
+        } catch (otpError) {
+            setPasswordError(getErrorMessage(otpError, 'Không gửi được OTP. Vui lòng thử lại.'))
+        } finally {
+            setIsRequestingPasswordOtp(false)
+        }
     }
 
     const handleAvatarChange = (event) => {
@@ -345,8 +364,8 @@ const ProfilePage = () => {
         setPasswordError('')
         setPasswordMessage('')
 
-        if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
-            setPasswordError('Vui lòng nhập đầy đủ mật khẩu hiện tại, mật khẩu mới và xác nhận mật khẩu.')
+        if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword || !passwordForm.otp) {
+            setPasswordError('Vui lòng nhập đầy đủ mật khẩu hiện tại, mật khẩu mới, xác nhận mật khẩu và OTP.')
             return
         }
 
@@ -359,7 +378,7 @@ const ProfilePage = () => {
 
         try {
             await authApi.changePassword(passwordForm)
-            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+            setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '', otp: '' })
             setPasswordMessage('Đã đổi mật khẩu. Vui lòng đăng nhập lại nếu phiên đăng nhập hết hạn.')
         } catch (changeError) {
             setPasswordError(getErrorMessage(changeError, 'Không đổi được mật khẩu. Vui lòng thử lại.'))
@@ -556,7 +575,7 @@ const ProfilePage = () => {
                                         </span>
                                         <div>
                                             <h2 className="text-xl font-black text-slate-950">Bảo mật</h2>
-                                            <p className="mt-1 text-sm text-slate-500">Đổi mật khẩu bằng mật khẩu hiện tại, không cần OTP.</p>
+                                            <p className="mt-1 text-sm text-slate-500">Đổi mật khẩu bằng mật khẩu hiện tại và OTP gửi về email.</p>
                                         </div>
                                     </div>
 
@@ -604,6 +623,28 @@ const ProfilePage = () => {
                                                 onChange={handlePasswordChange}
                                                 autoComplete="new-password"
                                             />
+                                        </label>
+                                        <label className="block">
+                                            <span className="mb-2 block text-sm font-black text-slate-800">OTP</span>
+                                            <div className="flex flex-col gap-3 sm:flex-row">
+                                                <input
+                                                    className="h-12 w-full rounded-lg border border-slate-300 bg-white px-4 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                                    inputMode="numeric"
+                                                    name="otp"
+                                                    value={passwordForm.otp}
+                                                    onChange={handlePasswordChange}
+                                                    autoComplete="one-time-code"
+                                                    placeholder="Nhập mã 6 số"
+                                                />
+                                                <button
+                                                    className="h-12 shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-5 text-sm font-black text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    type="button"
+                                                    onClick={handleRequestPasswordOtp}
+                                                    disabled={isRequestingPasswordOtp}
+                                                >
+                                                    {isRequestingPasswordOtp ? 'Đang gửi...' : 'Gửi OTP'}
+                                                </button>
+                                            </div>
                                         </label>
                                         <button
                                             className="h-12 w-full rounded-lg border border-slate-300 bg-white px-5 text-sm font-black text-slate-800 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"

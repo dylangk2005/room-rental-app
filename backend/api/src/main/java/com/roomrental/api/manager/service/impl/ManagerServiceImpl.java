@@ -3,6 +3,7 @@ package com.roomrental.api.manager.service.impl;
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.common.exception.AppException;
+import com.roomrental.api.common.util.RedisCacheService;
 import com.roomrental.api.manager.service.ManagerService;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
@@ -33,6 +34,7 @@ public class ManagerServiceImpl implements ManagerService {
     private final NotificationService notificationService;
     private final PostTypePriceRepository postTypePriceRepository;
     private final MembershipLevelRepository membershipLevelRepository;
+    private final RedisCacheService redisCacheService;
 
     @Override
     @Transactional
@@ -71,6 +73,7 @@ public class ManagerServiceImpl implements ManagerService {
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy cấu hình giá"));
 
         price.setPrice(request.getPrice());
+        redisCacheService.delete("cache:post-types");
 
         auditLogService.log(
                 managerId,
@@ -90,6 +93,7 @@ public class ManagerServiceImpl implements ManagerService {
 
         level.setMinSpent(request.getMinSpent());
         level.setDiscountPercent(request.getDiscountPercent());
+        redisCacheService.delete("cache:membership-levels");
 
         auditLogService.log(
                 managerId,

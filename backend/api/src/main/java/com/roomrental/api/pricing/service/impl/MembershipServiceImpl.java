@@ -1,6 +1,8 @@
 package com.roomrental.api.pricing.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.roomrental.api.common.exception.AppException;
+import com.roomrental.api.common.util.RedisCacheService;
 import com.roomrental.api.pricing.dto.MembershipLevelResponse;
 import com.roomrental.api.pricing.dto.MyMembershipResponse;
 import com.roomrental.api.pricing.entity.MembershipLevel;
@@ -9,6 +11,7 @@ import com.roomrental.api.pricing.service.MembershipService;
 import com.roomrental.api.user.entity.User;
 import com.roomrental.api.user.repository.UserRepository;
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,15 +20,25 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MembershipServiceImpl implements MembershipService {
 
+    private static final String MEMBERSHIP_LEVELS_CACHE_KEY = "cache:membership-levels";
+    private static final Duration MEMBERSHIP_LEVELS_CACHE_TTL = Duration.ofMinutes(15);
+
     private final MembershipLevelRepository membershipLevelRepository;
     private final UserRepository userRepository;
+    private final RedisCacheService redisCacheService;
 
     @Override
     public List<MembershipLevelResponse> getLevels() {
-        return membershipLevelRepository.findAllByOrderByMinSpentAsc()
+        return redisCacheService.get(MEMBERSHIP_LEVELS_CACHE_KEY, new TypeReference<List<MembershipLevelResponse>>() {
+                })
+                .orElseGet(() -> {
+                    List<MembershipLevelResponse> result = membershipLevelRepository.findAllByOrderByMinSpentAsc()
                 .stream()
                 .map(this::mapLevelResponse)
                 .toList();
+                    redisCacheService.set(MEMBERSHIP_LEVELS_CACHE_KEY, result, MEMBERSHIP_LEVELS_CACHE_TTL);
+                    return result;
+                });
     }
 
     @Override

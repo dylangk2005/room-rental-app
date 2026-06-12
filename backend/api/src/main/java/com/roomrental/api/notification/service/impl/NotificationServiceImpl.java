@@ -1,6 +1,7 @@
 package com.roomrental.api.notification.service.impl;
 
 import com.roomrental.api.common.exception.AppException;
+import com.roomrental.api.common.util.RedisCacheService;
 import com.roomrental.api.notification.dto.NotificationPageResponse;
 import com.roomrental.api.notification.dto.NotificationResponse;
 import com.roomrental.api.notification.dto.UnreadNotificationCountResponse;
@@ -10,6 +11,7 @@ import com.roomrental.api.notification.service.NotificationService;
 import com.roomrental.api.user.entity.User;
 import com.roomrental.api.user.repository.UserRepository;
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -23,8 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
+    private static final Duration UNREAD_COUNT_CACHE_TTL = Duration.ofSeconds(60);
+
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final RedisCacheService redisCacheService;
 
     @Override
     @Transactional
@@ -40,6 +45,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setCreatedAt(LocalDateTime.now());
 
         notificationRepository.save(notification);
+        evictUnreadCount(userId);
     }
 
     @Override
@@ -60,6 +66,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .toList();
 
         notificationRepository.saveAll(notifications);
+        users.forEach(user -> evictUnreadCount(user.getId()));
     }
 
     @Override
@@ -89,11 +96,17 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     @Transactional(readOnly = true)
     public UnreadNotificationCountResponse countUnread(Integer userId) {
+        String cacheKey = unreadCountCacheKey(userId);
+        return redisCacheService.get(cacheKey, UnreadNotificationCountResponse.class)
+                .orElseGet(() -> {
         int unreadCount = notificationRepository.countByUser_IdAndIsRead(userId, false);
 
-        return UnreadNotificationCountResponse.builder()
+                    UnreadNotificationCountResponse response = UnreadNotificationCountResponse.builder()
                 .unreadCount(unreadCount)
                 .build();
+                    redisCacheService.set(cacheKey, response, UNREAD_COUNT_CACHE_TTL);
+                    return response;
+                });
     }
 
     @Override
@@ -107,6 +120,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         notification.setIsRead(true);
+        evictUnreadCount(userId);
     }
 
     @Override
@@ -127,6 +141,15 @@ public class NotificationServiceImpl implements NotificationService {
                 .toList();
 
         notificationRepository.saveAll(unreadNotifications);
+        evictUnreadCount(userId);
+    }
+
+    private String unreadCountCacheKey(Integer userId) {
+        return "cache:notification:unread-count:" + userId;
+    }
+
+    private void evictUnreadCount(Integer userId) {
+        redisCacheService.delete(unreadCountCacheKey(userId));
     }
 
     private NotificationResponse mapResponse(Notification notification) {

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getAccessToken, setAccessToken, clearAccessToken } from './accessTokenStore'
 import { normalizeApiText } from '../utils/textEncoding'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'
@@ -23,6 +24,15 @@ const refreshClient = axios.create({
 
 const isAuthUrl = (url = '') => url.includes('/auth/login') || url.includes('/auth/refresh')
 
+axiosClient.interceptors.request.use((config) => {
+    const token = getAccessToken()
+    if (token) {
+        config.headers = config.headers || {}
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+})
+
 axiosClient.interceptors.response.use(
     (response) => normalizeApiText(response.data),
     async (error) => {
@@ -38,9 +48,17 @@ axiosClient.interceptors.response.use(
             originalRequest._retry = true
 
             try {
-                await refreshClient.post('/auth/refresh')
+                const refreshResponse = await refreshClient.post('/auth/refresh')
+                const normalizedRefresh = normalizeApiText(refreshResponse.data)
+                const newAccessToken = normalizedRefresh?.data?.accessToken
+                if (newAccessToken) {
+                    setAccessToken(newAccessToken)
+                    originalRequest.headers = originalRequest.headers || {}
+                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+                }
                 return axiosClient(originalRequest)
             } catch (refreshError) {
+                clearAccessToken()
                 localStorage.removeItem('taytro_user')
                 if (window.location.pathname !== '/login') {
                     window.location.href = '/login'
@@ -50,6 +68,7 @@ axiosClient.interceptors.response.use(
         }
 
         if (status === 401 && !isAuthUrl(originalRequest?.url) && !skipAuthRedirect && window.location.pathname !== '/login') {
+            clearAccessToken()
             localStorage.removeItem('taytro_user')
             window.location.href = '/login'
         }

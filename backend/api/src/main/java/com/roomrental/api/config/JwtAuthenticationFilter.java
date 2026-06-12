@@ -1,20 +1,18 @@
 package com.roomrental.api.config;
 
-import com.roomrental.api.util.JwtUtil;
+import com.roomrental.api.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -27,13 +25,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
         throws ServletException, IOException {
 
-        // 1. Doc token tu cookie
-        String token = extractTokenFromCookie(request);
+        String token = extractTokenFromAuthorizationHeader(request);
 
         // 2. Neu co token va hop le -> set Authentication
         if (token != null && jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
             String role = jwtUtil.extractRole(token);
+            String tokenId = jwtUtil.extractTokenId(token);
 
             // Tao Authenticaion object voi role
             UsernamePasswordAuthenticationToken authentication =
@@ -42,6 +40,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             null,
                             List.of(new SimpleGrantedAuthority("ROLE_" + role))
                     );
+            authentication.setDetails(tokenId);
 
             // Set vao SecurityContext
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -51,15 +50,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    // Doc JWT tu cookie ten "accessToken"
-    private String extractTokenFromCookie(HttpServletRequest request) {
-        if (request.getCookies() == null) return null;
-
-        for (Cookie cookie : request.getCookies()) {
-            if ("accessToken".equals(cookie.getName())) {
-                return cookie.getValue();
-            }
+    private String extractTokenFromAuthorizationHeader(HttpServletRequest request) {
+        String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return null;
         }
-        return null;
+        return authorizationHeader.substring(7);
     }
 }

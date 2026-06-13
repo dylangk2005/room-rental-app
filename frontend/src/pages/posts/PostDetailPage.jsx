@@ -618,10 +618,9 @@ const MapPanel = ({ address }) => {
     )
 }
 
-const PostDetailPage = () => {
+const PostDetailPage = ({ user, onUserChange }) => {
     const { id } = useParams()
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [post, setPost] = useState(null)
     const [contact, setContact] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -654,7 +653,7 @@ const PostDetailPage = () => {
                 const sessionUser = await authApi.refreshSession()
                 if (ignore) return
 
-                setUser(sessionUser)
+                onUserChange?.(sessionUser)
 
                 const response = await postApi.getPostDetail(id)
                 if (!ignore) {
@@ -795,7 +794,7 @@ const PostDetailPage = () => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} />
+            <AppHeader user={user} onUserChange={onUserChange} />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
                 <div className="space-y-6">

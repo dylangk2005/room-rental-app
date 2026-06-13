@@ -127,9 +127,8 @@ const Field = ({ label, children }) => (
     </label>
 )
 
-const CreatePostPage = () => {
+const CreatePostPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [form, setForm] = useState(initialForm)
     const [postTypes, setPostTypes] = useState([])
     const [locations, setLocations] = useState([])
@@ -156,7 +155,7 @@ const CreatePostPage = () => {
                 const refreshedUser = await authApi.refresh()
                 if (ignore) return
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser.data))
-                setUser(refreshedUser.data)
+                onUserChange?.(refreshedUser.data)
 
                 const [postTypesResult, walletResult, membershipResult, locationsResult] = await Promise.allSettled([
                     postApi.getPostTypes(),
@@ -407,7 +406,7 @@ const CreatePostPage = () => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={setUser} />
+            <AppHeader user={user} onUserChange={onUserChange} />
 
             <section className="border-b border-slate-200 bg-white">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

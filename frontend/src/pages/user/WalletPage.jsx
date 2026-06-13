@@ -142,10 +142,9 @@ const TransactionList = ({ transactions, emptyTitle, emptyDescription }) => {
     )
 }
 
-const WalletPage = () => {
+const WalletPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
     const location = useLocation()
-    const [user, setUser] = useState(readStoredUser)
     const [balance, setBalance] = useState(0)
     const [amount, setAmount] = useState('100000')
     const [transactions, setTransactions] = useState([])
@@ -181,7 +180,7 @@ const WalletPage = () => {
             try {
                 const refreshResponse = await authApi.refresh()
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                setUser(refreshResponse.data)
+                onUserChange?.(refreshResponse.data)
 
                 const transactionType =
                     activeTab === 'deposit-history'
@@ -285,7 +284,7 @@ const WalletPage = () => {
     return (
         <AccountLayout
             user={user}
-            onUserChange={setUser}
+            onUserChange={onUserChange}
             balance={balance}
             activeKey={activeTab === 'deposit' ? 'deposit' : 'transactions'}
             title="Quản lý giao dịch"

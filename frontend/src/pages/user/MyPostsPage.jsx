@@ -40,9 +40,8 @@ const LoadingGrid = () => (
     </div>
 )
 
-const MyPostsPage = () => {
+const MyPostsPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({
@@ -61,7 +60,7 @@ const MyPostsPage = () => {
             try {
                 const refreshResponse = await authApi.refresh()
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                setUser(refreshResponse.data)
+                onUserChange?.(refreshResponse.data)
 
                 const [postsResult, balanceResult] = await Promise.allSettled([
                     postApi.getMyPosts({ page, size: 8 }),
@@ -115,7 +114,7 @@ const MyPostsPage = () => {
     return (
         <AccountLayout
             user={user}
-            onUserChange={setUser}
+            onUserChange={onUserChange}
             balance={balance}
             activeKey="posts"
             title="Quản lý bài đăng"

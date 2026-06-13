@@ -41,9 +41,8 @@ const LoadingGrid = () => (
     </div>
 )
 
-const FavoritesPage = () => {
+const FavoritesPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({
@@ -62,7 +61,7 @@ const FavoritesPage = () => {
             try {
                 const refreshResponse = await authApi.refresh()
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                setUser(refreshResponse.data)
+                    onUserChange?.(refreshResponse.data)
 
                 const [favoritesResult, balanceResult] = await Promise.allSettled([
                     favoriteApi.getFavorites({ page, size: 9 }),
@@ -87,7 +86,7 @@ const FavoritesPage = () => {
             } catch (loadError) {
                 if (loadError.response?.status === 401) {
                     localStorage.removeItem(USER_STORAGE_KEY)
-                    setUser(null)
+                    onUserChange?.(null)
                     navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.FAVORITES } })
                     return
                 }
@@ -118,7 +117,7 @@ const FavoritesPage = () => {
     return (
         <AccountLayout
             user={user}
-            onUserChange={setUser}
+            onUserChange={onUserChange}
             balance={balance}
             activeKey="favorites"
             title="Danh sách yêu thích"

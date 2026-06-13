@@ -65,8 +65,7 @@ const LoadingGrid = () => (
     </div>
 )
 
-const PostListPage = () => {
-    const [user, setUser] = useState(readStoredUser)
+const PostListPage = ({ user, onUserChange }) => {
     const [filters, setFilters] = useState(initialFilters)
     const [locations, setLocations] = useState([])
     const [posts, setPosts] = useState([])
@@ -139,11 +138,11 @@ const PostListPage = () => {
                 const response = await authApi.refresh()
                 if (ignore) return
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data))
-                setUser(response.data)
+                onUserChange?.(response.data)
             } catch {
                 if (ignore) return
                 localStorage.removeItem(USER_STORAGE_KEY)
-                setUser(null)
+                onUserChange?.(null)
             }
         }
 
@@ -244,7 +243,7 @@ const PostListPage = () => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={setUser} />
+            <AppHeader user={user} onUserChange={onUserChange} />
 
             <section className="border-b border-slate-200 bg-white">
                 <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_0.85fr] lg:px-8 lg:py-14">

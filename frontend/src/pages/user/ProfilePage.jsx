@@ -135,9 +135,8 @@ const InfoTile = ({ label, value, tone = 'slate' }) => {
     )
 }
 
-const ProfilePage = () => {
+const ProfilePage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [profile, setProfile] = useState(null)
     const [membership, setMembership] = useState(null)
     const [walletBalance, setWalletBalance] = useState(0)
@@ -168,7 +167,7 @@ const ProfilePage = () => {
             const refreshResponse = await authApi.refresh()
             const refreshedUser = refreshResponse.data
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser))
-            setUser(refreshedUser)
+            onUserChange?.(refreshedUser)
 
             const [profileResult, walletResult, membershipResult] = await Promise.allSettled([
                 userApi.getProfile(),
@@ -191,7 +190,7 @@ const ProfilePage = () => {
             setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
         } catch (loadError) {
             localStorage.removeItem(USER_STORAGE_KEY)
-            setUser(null)
+                onUserChange?.(null)
 
             if (loadError.response?.status === 401) {
                 navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.PROFILE } })
@@ -304,7 +303,7 @@ const ProfilePage = () => {
         }
 
         setProfile(updatedProfile)
-        setUser(updatedUser)
+        onUserChange?.(updatedUser)
         localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser))
     }
 
@@ -395,7 +394,7 @@ const ProfilePage = () => {
     return (
         <AccountLayout
             user={user}
-            onUserChange={setUser}
+            onUserChange={onUserChange}
             balance={walletBalance}
             activeKey="account"
             title="Quản lý tài khoản"

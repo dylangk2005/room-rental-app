@@ -165,9 +165,8 @@ const BoostConfirmModal = ({ post, balance, membership, isSubmitting, onClose, o
     )
 }
 
-const BoostPostsPage = () => {
+const BoostPostsPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
-    const [user, setUser] = useState(readStoredUser)
     const [balance, setBalance] = useState(0)
     const [membership, setMembership] = useState(null)
     const [posts, setPosts] = useState([])
@@ -189,7 +188,7 @@ const BoostPostsPage = () => {
         try {
             const refreshResponse = await authApi.refresh()
             localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-            setUser(refreshResponse.data)
+                onUserChange?.(refreshResponse.data)
 
             const [postsResult, balanceResult, membershipResult] = await Promise.allSettled([
                 postApi.getMyPosts({ page: 0, size: 50 }),
@@ -250,7 +249,7 @@ const BoostPostsPage = () => {
     return (
         <AccountLayout
             user={user}
-            onUserChange={setUser}
+            onUserChange={onUserChange}
             balance={balance}
             activeKey="boost"
             title="Đẩy tin đăng"

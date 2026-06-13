@@ -276,9 +276,9 @@ const ForgotPasswordPage = () => {
                                             autoComplete="new-password"
                                         />
                                         <button
-                                            className="px-4 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
+                                            className="px-4 text-sm font-bold text-slate-500"
                                             type="button"
-                                            onClick={() => setShowPassword((current) => !current)}
+                                            onClick={() => setShowPassword((v) => !v)}
                                         >
                                             {showPassword ? 'Ẩn' : 'Hiện'}
                                         </button>
@@ -312,9 +312,9 @@ const ForgotPasswordPage = () => {
                                             autoComplete="new-password"
                                         />
                                         <button
-                                            className="px-4 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
+                                            className="px-4 text-sm font-bold text-slate-500"
                                             type="button"
-                                            onClick={() => setShowConfirmPassword((current) => !current)}
+                                            onClick={() => setShowConfirmPassword((v) => !v)}
                                         >
                                             {showConfirmPassword ? 'Ẩn' : 'Hiện'}
                                         </button>

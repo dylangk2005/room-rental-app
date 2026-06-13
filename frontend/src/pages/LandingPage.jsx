@@ -164,7 +164,7 @@ const StepCard = ({ number, title, description, index, icon }) => {
     )
 }
 
-const LandingPage = () => {
+const LandingPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
     const [heroVisible, setHeroVisible] = useState(false)
     const [imgLoaded, setImgLoaded] = useState(false)
@@ -226,12 +226,41 @@ const LandingPage = () => {
                         <span className="text-lg font-black text-slate-950 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">TAYTRO</span>
                     </Link>
                     <div className="flex items-center gap-2">
-                        <Link to={ROUTES.LOGIN} className="hidden rounded-xl border-2 border-emerald-600 px-4 py-2 text-xs font-bold text-emerald-600 transition-all duration-300 hover:bg-emerald-600 hover:text-white hover:shadow-lg hover:shadow-emerald-600/25 active:scale-95 sm:inline-flex sm:h-9 sm:items-center sm:text-sm">
-                            Đăng nhập
-                        </Link>
-                        <Link to={ROUTES.REGISTER} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-300 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:scale-95 sm:h-9 sm:flex sm:items-center sm:text-sm">
-                            Đăng ký
-                        </Link>
+                    {user ? (
+                        <>
+                            <div className="relative" ref={null}>
+                                <button
+                                    className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-100 text-sm font-black text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50"
+                                    type="button"
+                                >
+                                    {user.avatar ? (
+                                        <img className="h-full w-full object-cover" src={user.avatar} alt={user.fullName || 'Tài khoản'} />
+                                    ) : (
+                                        (user.fullName || 'T').charAt(0).toUpperCase()
+                                    )}
+                                </button>
+                            </div>
+                            <button
+                                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700 active:scale-95 sm:h-9 sm:flex sm:items-center sm:text-sm"
+                                type="button"
+                                onClick={() => {
+                                    localStorage.removeItem('taytro_user')
+                                    onUserChange?.(null)
+                                }}
+                            >
+                                Đăng xuất
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to={ROUTES.LOGIN} className="hidden rounded-xl border-2 border-emerald-600 px-4 py-2 text-xs font-bold text-emerald-600 transition-all duration-300 hover:bg-emerald-600 hover:text-white hover:shadow-lg hover:shadow-emerald-600/25 active:scale-95 sm:inline-flex sm:h-9 sm:items-center sm:text-sm">
+                                Đăng nhập
+                            </Link>
+                            <Link to={ROUTES.REGISTER} className="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all duration-300 hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/30 hover:-translate-y-0.5 active:scale-95 sm:h-9 sm:flex sm:items-center sm:text-sm">
+                                Đăng ký
+                            </Link>
+                        </>
+                    )}
                     </div>
                 </div>
             </header>

@@ -62,8 +62,7 @@ const LoadingState = () => (
     </div>
 )
 
-const PostPricingPage = () => {
-    const [user, setUser] = useState(readStoredUser)
+const PostPricingPage = ({ user, onUserChange }) => {
     const [postTypes, setPostTypes] = useState([])
     const [includeVat, setIncludeVat] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -83,10 +82,10 @@ const PostPricingPage = () => {
 
             if (userResult.status === 'fulfilled') {
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userResult.value.data))
-                setUser(userResult.value.data)
+                onUserChange?.(userResult.value.data)
             } else {
                 localStorage.removeItem(USER_STORAGE_KEY)
-                setUser(null)
+                onUserChange?.(null)
             }
 
             if (postTypesResult.status !== 'fulfilled') {
@@ -114,7 +113,7 @@ const PostPricingPage = () => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={setUser} />
+            <AppHeader user={user} onUserChange={onUserChange} />
 
             <section className="border-b border-slate-200 bg-white">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

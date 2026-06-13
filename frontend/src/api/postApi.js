@@ -15,6 +15,14 @@ const postApi = {
     getMyPosts: (params = {}) => axiosClient.get('/posts/my-posts', { params: cleanParams(params) }),
     createPost: (payload) =>
         axiosClient.post('/posts', payload, {
+            timeout: 180000,
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        }),
+    createAndPayPost: (payload) =>
+        axiosClient.post('/posts/pay', payload, {
+            timeout: 180000,
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

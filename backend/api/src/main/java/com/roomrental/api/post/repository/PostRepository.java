@@ -25,6 +25,28 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @EntityGraph(attributePaths = "postType")
     Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
+    // Lấy danh sách bài đăng public còn hiệu lực
+    @EntityGraph(attributePaths = "postType")
+    @Query(
+            value = """
+        SELECT p FROM Post p
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+    """,
+            countQuery = """
+        SELECT COUNT(p) FROM Post p
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+    """
+    )
+    Page<Post> findPublicActivePosts(
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
+
     // Tìm kiếm bài đăng của người dùng, có phân trang
     @EntityGraph(attributePaths = "postType")
     Page<Post> findByUserId(Integer userId, Pageable pageable);
@@ -43,7 +65,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             value = """
         SELECT p FROM Post p
         JOIN FETCH p.postType
-        WHERE p.status = 'ACTIVE'
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
           AND (:province IS NULL OR p.province = :province)
           AND (:district IS NULL OR p.district = :district)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
@@ -53,7 +77,9 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     """,
             countQuery = """
         SELECT COUNT(p) FROM Post p
-        WHERE p.status = 'ACTIVE'
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
           AND (:province IS NULL OR p.province = :province)
           AND (:district IS NULL OR p.district = :district)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
@@ -63,6 +89,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     """
     )
     Page<Post> searchPosts(
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now,
             @Param("province") String province,
             @Param("district") String district,
             @Param("minPrice") BigDecimal minPrice,
@@ -80,14 +108,19 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query("""
     SELECT DISTINCT p.province AS province, p.district AS district
     FROM Post p
-    WHERE p.status = 'ACTIVE'
+    WHERE p.status = :status
+      AND p.endAt IS NOT NULL
+      AND p.endAt > :now
       AND p.province IS NOT NULL
       AND p.province <> ''
       AND p.district IS NOT NULL
       AND p.district <> ''
     ORDER BY p.province ASC, p.district ASC
 """)
-    List<PostLocationView> findActiveLocations();
+    List<PostLocationView> findActiveLocations(
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now
+    );
 
     // Tìm bài đăng của ngời dùng để thanh toán, cần khóa bản ghi để tránh xung đột
     @Lock(LockModeType.PESSIMISTIC_WRITE)

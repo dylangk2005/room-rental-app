@@ -1,12 +1,34 @@
 import axiosClient from './axiosClient'
 import { setAccessToken, clearAccessToken } from './accessTokenStore'
 
+const USER_STORAGE_KEY = 'taytro_user'
+
 const storeAuthResponse = (response) => {
     const authData = response?.data
     setAccessToken(authData?.accessToken)
     return {
         ...response,
         data: authData?.user,
+    }
+}
+
+const refreshSession = async () => {
+    try {
+        const response = storeAuthResponse(await axiosClient.post('/auth/refresh'))
+        const user = response.data || null
+
+        if (user) {
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
+        } else {
+            clearAccessToken()
+            localStorage.removeItem(USER_STORAGE_KEY)
+        }
+
+        return user
+    } catch {
+        clearAccessToken()
+        localStorage.removeItem(USER_STORAGE_KEY)
+        return null
     }
 }
 
@@ -17,6 +39,7 @@ const authApi = {
     forgotPassword: (payload) => axiosClient.post('/auth/forgot-password', payload),
     resetPassword: (payload) => axiosClient.post('/auth/reset-password', payload),
     refresh: async () => storeAuthResponse(await axiosClient.post('/auth/refresh')),
+    refreshSession,
     logout: async () => {
         try {
             return await axiosClient.post('/auth/logout')

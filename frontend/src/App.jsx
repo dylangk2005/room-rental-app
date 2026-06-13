@@ -5,6 +5,7 @@ import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
 import PostListPage from './pages/posts/PostListPage'
+import LandingPage from './pages/LandingPage'
 import PostDetailPage from './pages/posts/PostDetailPage'
 import CreatePostPage from './pages/posts/CreatePostPage'
 import PostPricingPage from './pages/posts/PostPricingPage'
@@ -60,7 +61,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path={ROUTES.HOME} element={<PostListPage />} />
+        <Route path={ROUTES.HOME} element={<LandingPage />} />
 
         <Route path={ROUTES.LOGIN} element={<LoginPage />} />
         <Route path={ROUTES.REGISTER} element={<RegisterPage />} />

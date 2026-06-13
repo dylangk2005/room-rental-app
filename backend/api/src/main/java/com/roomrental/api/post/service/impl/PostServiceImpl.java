@@ -29,6 +29,8 @@ import com.roomrental.api.user.repository.UserRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
@@ -138,8 +140,8 @@ public class PostServiceImpl implements PostService {
     // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
     @Override
     public PostPageResponse getActivePosts(int page, int size) {
-        Page<Post> result = postRepository.findByStatus(
-                PostStatus.ACTIVE, buildSortedPageable(page, size));
+        Page<Post> result = postRepository.findPublicActivePosts(
+                PostStatus.ACTIVE, LocalDateTime.now(), buildSortedPageable(page, size));
         return mapToPageResponse(result);
     }
 
@@ -149,8 +151,9 @@ public class PostServiceImpl implements PostService {
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         BigDecimal minArea, BigDecimal maxArea,
                                         int page, int size) {
-        // Chú ý: chỉ tìm kiếm bài đăng đang hoạt động
+        // Chú ý: chỉ tìm kiếm bài đăng public còn hiệu lực
         Page<Post> result = postRepository.searchPosts(
+                PostStatus.ACTIVE, LocalDateTime.now(),
                 province, district, minPrice, maxPrice, minArea, maxArea,
                 buildSortedPageable(page, size));
         return mapToPageResponse(result);
@@ -159,7 +162,7 @@ public class PostServiceImpl implements PostService {
     @Override
     @Transactional(readOnly = true)
     public List<PostLocationResponse> getActiveLocations() {
-        Map<String, List<String>> districtMap = postRepository.findActiveLocations()
+        Map<String, List<String>> districtMap = postRepository.findActiveLocations(PostStatus.ACTIVE, LocalDateTime.now())
                 .stream()
                 .collect(Collectors.groupingBy(
                         PostRepository.PostLocationView::getProvince,
@@ -220,8 +223,8 @@ public class PostServiceImpl implements PostService {
 
         AuthHelper.CurrentUser currentUser = authHelper.getCurrentUserOrNull();
 
-        // Nếu bài đăng không ở trạng thái ACTIVE thì chỉ chủ tin hoặc nhân viên được xem liên hệ
-        if (post.getStatus() != PostStatus.ACTIVE
+        // Nếu bài đăng không còn hiệu lực thì chỉ chủ tin hoặc nhân viên được xem liên hệ
+        if (!isActiveAndNotExpired(post)
                 && (currentUser == null || (!isPostOwner(post, currentUser) && !isStaff(currentUser)))) {
             throw AppException.badRequest("Tin đăng không còn hiệu lực");
         }
@@ -245,8 +248,8 @@ public class PostServiceImpl implements PostService {
         if (images == null || images.isEmpty()) {
             throw AppException.badRequest("Phải tải lên ít nhất 1 ảnh");
         }
-        if (images.size() > 7) {
-            throw AppException.badRequest("Không được tải lên quá 7 ảnh");
+        if (images.size() > 6) {
+            throw AppException.badRequest("Không được tải lên quá 6 ảnh");
         }
 
         User user = userRepository.findById(userId)
@@ -277,16 +280,13 @@ public class PostServiceImpl implements PostService {
 
         Post saved = postRepository.save(post);
 
-        // Upload ảnh lên Cloudinary và lưu URL vào PostImage
-        List<String> imageUrls = new ArrayList<>();
-        for (MultipartFile image : images) {
-            String url = cloudinaryService.uploadImage(image);
+        List<String> imageUrls = uploadPostImages(images);
+        for (String url : imageUrls) {
             PostImage postImage = new PostImage();
             postImage.setPost(saved);
             postImage.setImageUrl(url);
             postImage.setUpdatedAt(LocalDateTime.now());
             postImageRepository.save(postImage);
-            imageUrls.add(url);
         }
 
         // Ghi log hoạt động tạo bài đăng
@@ -345,8 +345,8 @@ public class PostServiceImpl implements PostService {
         // Xử lý upload ảnh mới nếu có
         if (newImages != null && !newImages.isEmpty()) {
             int currentCount = postImageRepository.findByPostId(postId).size();
-            if (currentCount + newImages.size() > 7) {
-                throw AppException.badRequest("Tổng số ảnh không được vượt quá 7");
+            if (currentCount + newImages.size() > 6) {
+                throw AppException.badRequest("Tổng số ảnh không được vượt quá 6");
             }
             for (MultipartFile image : newImages) {
                 String url = cloudinaryService.uploadImage(image);
@@ -436,10 +436,26 @@ public class PostServiceImpl implements PostService {
         }
     }
 
+    private List<String> uploadPostImages(List<MultipartFile> images) {
+        List<CompletableFuture<String>> uploadTasks = images.stream()
+                .map(image -> CompletableFuture.supplyAsync(() -> cloudinaryService.uploadImage(image)))
+                .toList();
+
+        try {
+            CompletableFuture.allOf(uploadTasks.toArray(CompletableFuture[]::new)).join();
+            return uploadTasks.stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+        } catch (CompletionException ex) {
+            Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+            throw new RuntimeException("Không thể upload ảnh bài đăng: " + cause.getMessage(), cause);
+        }
+    }
+
     // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
     private boolean canViewPostDetail(Post post, AuthHelper.CurrentUser currentUser) {
         // Nếu bài đăng đang hoạt động và chưa hết hạn thì cho phép xem chi tiết mà không cần kiểm tra quyền
-        if (post.getStatus() == PostStatus.ACTIVE) {
+        if (isActiveAndNotExpired(post)) {
             return true;
         }
 

@@ -2,14 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import authApi from '../../api/authApi'
 import membershipApi from '../../api/membershipApi'
-import paymentApi from '../../api/paymentApi'
 import postApi from '../../api/postApi'
 import walletApi from '../../api/walletApi'
 import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
 
 const USER_STORAGE_KEY = 'taytro_user'
-const MAX_IMAGES = 7
+const MAX_IMAGES = 6
+const BYTES_PER_MB = 1024 * 1024
+const MAX_IMAGE_SIZE_MB = 10
+const MAX_TOTAL_IMAGE_SIZE_MB = 60
+const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * BYTES_PER_MB
+const MAX_TOTAL_IMAGE_SIZE_BYTES = MAX_TOTAL_IMAGE_SIZE_MB * BYTES_PER_MB
 const VAT_PERCENT = 8
 const PRICE_DURATIONS = [5, 10, 15, 30]
 
@@ -97,6 +101,8 @@ const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu.
 
     return response?.message || fallback
 }
+
+const getTotalImageSize = (items) => items.reduce((total, image) => total + Number(image.file?.size || 0), 0)
 
 const Icon = ({ name }) => {
     const paths = {
@@ -290,6 +296,11 @@ const CreatePostPage = () => {
             setError('Chỉ hỗ trợ tải lên hình ảnh phòng trọ.')
         }
 
+        if (imageFiles.some((file) => file.size > MAX_IMAGE_SIZE_BYTES)) {
+            setError(`Mỗi ảnh không được vượt quá ${MAX_IMAGE_SIZE_MB}MB.`)
+            return
+        }
+
         const availableSlots = MAX_IMAGES - images.length
         const acceptedFiles = imageFiles.slice(0, availableSlots)
 
@@ -302,6 +313,12 @@ const CreatePostPage = () => {
             file,
             previewUrl: URL.createObjectURL(file),
         }))
+
+        if (getTotalImageSize([...images, ...nextImages]) > MAX_TOTAL_IMAGE_SIZE_BYTES) {
+            nextImages.forEach((image) => URL.revokeObjectURL(image.previewUrl))
+            setError(`Tổng dung lượng ảnh tối đa là ${MAX_TOTAL_IMAGE_SIZE_MB}MB. Vui lòng nén ảnh hoặc chọn ảnh nhẹ hơn.`)
+            return
+        }
 
         setImages((current) => [...current, ...nextImages])
     }
@@ -326,6 +343,8 @@ const CreatePostPage = () => {
         if (!form.description.trim()) return 'Vui lòng nhập mô tả phòng trọ.'
         if (images.length < 1) return 'Vui lòng tải lên ít nhất 1 ảnh phòng.'
         if (images.length > MAX_IMAGES) return `Chỉ được tải tối đa ${MAX_IMAGES} ảnh.`
+        if (images.some((image) => image.file?.size > MAX_IMAGE_SIZE_BYTES)) return `Mỗi ảnh không được vượt quá ${MAX_IMAGE_SIZE_MB}MB.`
+        if (getTotalImageSize(images) > MAX_TOTAL_IMAGE_SIZE_BYTES) return `Tổng dung lượng ảnh tối đa là ${MAX_TOTAL_IMAGE_SIZE_MB}MB. Vui lòng nén ảnh hoặc chọn ảnh nhẹ hơn.`
         if (!form.postTypeId || !form.durationDays) return 'Vui lòng chọn loại tin và thời gian đăng.'
         if (!form.agreed) return 'Vui lòng đồng ý với quy định đăng tin của hệ thống.'
         return ''
@@ -366,20 +385,17 @@ const CreatePostPage = () => {
         setIsSubmitting(true)
 
         try {
-            setSubmitStep('Đang tải ảnh và lưu tin nháp...')
-            const createResponse = await postApi.createPost(buildPayload())
-            const createdPost = createResponse.data
-            setDraftPostId(createdPost.id)
-
-            setSubmitStep('Đang trừ tiền ví và gửi tin chờ duyệt...')
-            await paymentApi.payPost({
-                postId: createdPost.id,
-                durationDays: Number(form.durationDays),
-            })
+            setSubmitStep('Đang tải ảnh, lưu tin và thanh toán...')
+            const paymentResponse = await postApi.createAndPayPost(buildPayload())
+            const paidPostId = paymentResponse.data?.postId
+            if (!paidPostId) {
+                throw new Error('Không nhận được mã tin đăng sau khi thanh toán.')
+            }
+            setDraftPostId(paidPostId)
 
             setSuccess('Đã thanh toán đăng tin thành công. Tin của bạn đang chờ kiểm duyệt.')
             window.setTimeout(() => {
-                navigate(`/posts/${createdPost.id}`)
+                navigate(`/posts/${paidPostId}`)
             }, 900)
         } catch (submitError) {
             setError(getErrorMessage(submitError, 'Không đăng được tin. Vui lòng kiểm tra thông tin và thử lại.'))

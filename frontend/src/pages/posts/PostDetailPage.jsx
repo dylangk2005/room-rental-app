@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import authApi from '../../api/authApi'
 import favoriteApi from '../../api/favoriteApi'
 import postApi from '../../api/postApi'
 import reportApi from '../../api/reportApi'
@@ -41,6 +42,21 @@ const buildMapUrl = (address) =>
 const buildMapOpenUrl = (address) =>
     `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
 
+const isExpiredPost = (post) => {
+    if (String(post?.status || '').toUpperCase() === 'EXPIRED') {
+        return true
+    }
+
+    if (!post?.endAt) {
+        return false
+    }
+
+    const endAtTime = new Date(post.endAt).getTime()
+    return Number.isFinite(endAtTime) && endAtTime <= Date.now()
+}
+
+const isStaffUser = (user) => ['ADMIN', 'MANAGER', 'MODERATOR'].includes(String(user?.role || '').toUpperCase())
+
 const normalizeVietnamPhoneForZalo = (phone = '') => {
     const digits = phone.toString().replace(/\D/g, '')
 
@@ -80,33 +96,148 @@ const DetailSkeleton = () => (
     </main>
 )
 
-const ImageGallery = ({ post }) => {
+const ImageGallery = ({ post, isExpired }) => {
     const fallbackUrl = `https://picsum.photos/seed/taytro-detail-${post.id}/1200/800`
     const images = useMemo(
         () => (Array.isArray(post.imageUrls) && post.imageUrls.length > 0 ? post.imageUrls : [fallbackUrl]),
         [fallbackUrl, post.imageUrls]
     )
     const [selectedIndex, setSelectedIndex] = useState(0)
-    const selectedImage = images[Math.min(selectedIndex, images.length - 1)]
+    const [trackIndex, setTrackIndex] = useState(1)
+    const [isTrackResetting, setIsTrackResetting] = useState(false)
+    const [isAnimating, setIsAnimating] = useState(false)
+    const hasMultipleImages = images.length > 1
+    const carouselImages = hasMultipleImages
+        ? [images[images.length - 1], ...images, images[0]]
+        : images
+    const activeTrackIndex = hasMultipleImages ? trackIndex : 0
+
+    useEffect(() => {
+        const frameId = requestAnimationFrame(() => {
+            setSelectedIndex(0)
+            setTrackIndex(hasMultipleImages ? 1 : 0)
+            setIsTrackResetting(false)
+            setIsAnimating(false)
+        })
+
+        return () => cancelAnimationFrame(frameId)
+    }, [hasMultipleImages, images, post.id])
+
+    const showPreviousImage = () => {
+        if (!hasMultipleImages || isAnimating) return
+
+        setIsAnimating(true)
+        setSelectedIndex((current) => (current === 0 ? images.length - 1 : current - 1))
+        setTrackIndex((current) => Math.max(current - 1, 0))
+    }
+
+    const showNextImage = () => {
+        if (!hasMultipleImages || isAnimating) return
+
+        setIsAnimating(true)
+        setSelectedIndex((current) => (current === images.length - 1 ? 0 : current + 1))
+        setTrackIndex((current) => Math.min(current + 1, images.length + 1))
+    }
+
+    const selectImage = (index) => {
+        if (isAnimating) return
+
+        setSelectedIndex(index)
+        setTrackIndex(hasMultipleImages ? index + 1 : 0)
+    }
+
+    const handleTrackTransitionEnd = () => {
+        if (!hasMultipleImages) {
+            setIsAnimating(false)
+            return
+        }
+
+        if (trackIndex === 0) {
+            setIsTrackResetting(true)
+            setTrackIndex(images.length)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setIsTrackResetting(false)
+                    setIsAnimating(false)
+                })
+            })
+            return
+        }
+
+        if (trackIndex === images.length + 1) {
+            setIsTrackResetting(true)
+            setTrackIndex(1)
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setIsTrackResetting(false)
+                    setIsAnimating(false)
+                })
+            })
+            return
+        }
+
+        setIsAnimating(false)
+    }
 
     return (
         <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="aspect-[4/3] bg-slate-100 sm:aspect-[16/10]">
-                <img className="h-full w-full object-cover" src={selectedImage} alt={post.title} />
+            {isExpired && <ExpiredPostBanner />}
+            <div className="relative aspect-[4/3] bg-slate-100 sm:aspect-[16/10]">
+                <div
+                    className={`flex h-full ${isTrackResetting ? '' : 'transition-transform duration-500 ease-out'}`}
+                    style={{ transform: `translateX(-${activeTrackIndex * 100}%)` }}
+                    onTransitionEnd={handleTrackTransitionEnd}
+                >
+                    {carouselImages.map((imageUrl, index) => (
+                        <img
+                            className="h-full w-full shrink-0 object-cover"
+                            src={imageUrl}
+                            alt={`${post.title} - ảnh ${hasMultipleImages ? ((index + images.length - 1) % images.length) + 1 : index + 1}`}
+                            key={`${imageUrl}-${index}`}
+                        />
+                    ))}
+                </div>
+                {hasMultipleImages && (
+                    <>
+                        <button
+                            aria-label="Xem ảnh trước"
+                            className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-950/55 text-white shadow-lg transition hover:bg-slate-950/75 focus:outline-none focus:ring-4 focus:ring-white/60"
+                            type="button"
+                            onClick={showPreviousImage}
+                            disabled={isAnimating}
+                        >
+                            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
+                            </svg>
+                        </button>
+                        <button
+                            aria-label="Xem ảnh tiếp theo"
+                            className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-slate-950/55 text-white shadow-lg transition hover:bg-slate-950/75 focus:outline-none focus:ring-4 focus:ring-white/60"
+                            type="button"
+                            onClick={showNextImage}
+                            disabled={isAnimating}
+                        >
+                            <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+                                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.4" />
+                            </svg>
+                        </button>
+                    </>
+                )}
             </div>
-            {images.length > 1 && (
+            {hasMultipleImages && (
                 <div className="grid grid-cols-4 gap-2 p-3 sm:grid-cols-6">
                     {images.map((imageUrl, index) => (
                         <button
                             className={`aspect-[4/3] overflow-hidden rounded-lg border bg-slate-100 transition ${
-                                selectedImage === imageUrl
+                                selectedIndex === index
                                     ? 'border-emerald-600 ring-2 ring-emerald-100'
                                     : 'border-slate-200 hover:border-emerald-300'
                             }`}
                             key={`${imageUrl}-${index}`}
                             type="button"
-                            onClick={() => setSelectedIndex(index)}
+                            onClick={() => selectImage(index)}
                             aria-label={`Xem ảnh ${index + 1}`}
+                            disabled={isAnimating}
                         >
                             <img className="h-full w-full object-cover" src={imageUrl} alt={`${post.title} - ảnh ${index + 1}`} />
                         </button>
@@ -127,6 +258,23 @@ const StatCard = ({ label, value, tone = 'slate' }) => {
         </div>
     )
 }
+
+const ExpiredPostBanner = () => (
+    <div className="flex w-full flex-col border-b border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+            <h2 className="text-sm font-black">Tin đăng này đã hết hạn</h2>
+            <p className="mt-1 text-sm leading-5">
+                Thông tin liên hệ có thể không còn khả dụng.
+            </p>
+        </div>
+        <Link
+            className="mt-3 inline-flex h-9 w-fit shrink-0 items-center justify-center rounded-lg bg-amber-600 px-3 text-xs font-black text-white transition hover:bg-amber-700 sm:mt-0"
+            to={ROUTES.POSTS}
+        >
+            Xem tin còn hiệu lực
+        </Link>
+    </div>
+)
 
 const HeartIcon = ({ filled }) => (
     <svg aria-hidden="true" className="h-5 w-5" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24">
@@ -329,7 +477,7 @@ const ReportModal = ({ onClose, onSubmit, postTitle, reportError, reportSuccess,
     )
 }
 
-const ContactPanel = ({ contact, contactError, isContactLoading, isOwner, user, postId }) => {
+const ContactPanel = ({ contact, contactError, isContactLoading, isExpired, canViewExpiredContact, isOwner, user, postId }) => {
     if (!user) {
         return (
             <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -343,6 +491,24 @@ const ContactPanel = ({ contact, contactError, isContactLoading, isOwner, user, 
                     state={{ from: `/posts/${postId}` }}
                 >
                     Đăng nhập để xem liên hệ
+                </Link>
+            </section>
+        )
+    }
+
+    if (isExpired && !canViewExpiredContact) {
+        return (
+            <section className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm">
+                <h2 className="text-lg font-black">Tin đăng đã hết hiệu lực</h2>
+                <p className="mt-2 text-sm leading-6">
+                    Thông tin liên hệ của tin này đã được tạm ẩn vì thời hạn hiển thị đã kết thúc.
+                    Vui lòng tham khảo các tin còn hiệu lực hoặc chờ chủ tin gia hạn.
+                </p>
+                <Link
+                    className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-lg bg-amber-600 px-4 text-sm font-black text-white hover:bg-amber-700"
+                    to={ROUTES.POSTS}
+                >
+                    Xem tin còn hiệu lực
                 </Link>
             </section>
         )
@@ -455,7 +621,7 @@ const MapPanel = ({ address }) => {
 const PostDetailPage = () => {
     const { id } = useParams()
     const navigate = useNavigate()
-    const [user] = useState(readStoredUser)
+    const [user, setUser] = useState(readStoredUser)
     const [post, setPost] = useState(null)
     const [contact, setContact] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -468,6 +634,10 @@ const PostDetailPage = () => {
     const [favoriteError, setFavoriteError] = useState('')
     const [reportError, setReportError] = useState('')
     const [reportSuccess, setReportSuccess] = useState('')
+    const address = useMemo(() => buildAddress(post), [post])
+    const isOwner = Boolean(user?.id && post?.ownerId && Number(user.id) === Number(post.ownerId))
+    const isPostExpired = useMemo(() => isExpiredPost(post), [post])
+    const canViewExpiredContact = isOwner || isStaffUser(user)
 
     useEffect(() => {
         let ignore = false
@@ -475,8 +645,17 @@ const PostDetailPage = () => {
         const loadPost = async () => {
             setIsLoading(true)
             setError('')
+            setPost(null)
+            setContact(null)
+            setContactError('')
+            setFavoriteError('')
 
             try {
+                const sessionUser = await authApi.refreshSession()
+                if (ignore) return
+
+                setUser(sessionUser)
+
                 const response = await postApi.getPostDetail(id)
                 if (!ignore) {
                     setPost(response.data)
@@ -500,13 +679,19 @@ const PostDetailPage = () => {
     }, [id])
 
     useEffect(() => {
-        if (!user || !id) return undefined
+        if (!user || !id || !post) return undefined
 
         let ignore = false
 
         const loadContact = async () => {
             setIsContactLoading(true)
             setContactError('')
+
+            if (isPostExpired && !canViewExpiredContact) {
+                setContact(null)
+                setIsContactLoading(false)
+                return
+            }
 
             try {
                 const response = await postApi.getPostContact(id)
@@ -530,10 +715,7 @@ const PostDetailPage = () => {
         return () => {
             ignore = true
         }
-    }, [id, user])
-
-    const address = useMemo(() => buildAddress(post), [post])
-    const isOwner = Boolean(user?.id && post?.ownerId && Number(user.id) === Number(post.ownerId))
+    }, [canViewExpiredContact, id, isPostExpired, post, user])
 
     const handleFavoriteToggle = async () => {
         if (!user) {
@@ -617,7 +799,7 @@ const PostDetailPage = () => {
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
                 <div className="space-y-6">
-                    <ImageGallery post={post} />
+                    <ImageGallery post={post} isExpired={isPostExpired} key={post.id} />
 
                     <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -675,6 +857,8 @@ const PostDetailPage = () => {
                         contact={contact}
                         contactError={contactError}
                         isContactLoading={isContactLoading}
+                        isExpired={isPostExpired}
+                        canViewExpiredContact={canViewExpiredContact}
                         isOwner={isOwner}
                         user={user}
                         postId={id}

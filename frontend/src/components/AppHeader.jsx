@@ -77,16 +77,14 @@ const BellIcon = () => (
 
 const NotificationItem = ({ notification, onClick }) => (
     <button
-        className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition hover:bg-slate-100 ${
-            notification.isRead ? 'bg-white' : 'bg-emerald-50'
-        }`}
+        className={`flex w-full items-start gap-3 rounded-lg p-3 text-left transition hover:bg-slate-100 ${notification.isRead ? 'bg-white' : 'bg-emerald-50'
+            }`}
         type="button"
         onClick={() => onClick(notification)}
     >
         <span
-            className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${
-                notification.isRead ? 'bg-slate-300' : 'bg-emerald-600'
-            }`}
+            className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${notification.isRead ? 'bg-slate-300' : 'bg-emerald-600'
+                }`}
         />
         <span className="min-w-0 flex-1">
             <span className="flex items-center justify-between gap-3">

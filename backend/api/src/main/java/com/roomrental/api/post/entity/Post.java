@@ -1,5 +1,7 @@
 package com.roomrental.api.post.entity;
 
+import com.roomrental.api.location.entity.District;
+import com.roomrental.api.location.entity.Province;
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.pricing.entity.PostType;
 import com.roomrental.api.user.entity.User;
@@ -37,6 +39,16 @@ public class Post {
     // Quận/Huyện, tối đa 100 ký tự
     @Column(name = "district", length = 100)
     private String district;
+
+    // FK -> provinces (id), có thể null khi dữ liệu cũ
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "province_id")
+    private Province provinceRef;
+
+    // FK -> districts (id), có thể null khi dữ liệu cũ
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "district_id")
+    private District districtRef;
 
     // Diện tích phòng trọ, sử dụng DECIMAL(6,2) để lưu trữ diện tích với tối đa 9999.99 m2
     @Column(name = "area", precision = 6, scale = 2, columnDefinition = "DECIMAL(6,2)")

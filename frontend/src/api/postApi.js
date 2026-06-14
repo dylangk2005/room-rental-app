@@ -9,6 +9,8 @@ const postApi = {
     getPosts: (params = {}) => axiosClient.get('/posts', { params: cleanParams(params) }),
     searchPosts: (params = {}) => axiosClient.get('/posts/search', { params: cleanParams(params) }),
     getLocations: () => axiosClient.get('/posts/locations'),
+    getProvinces: () => axiosClient.get('/provinces'),
+    getDistrictsByProvince: (provinceId) => axiosClient.get(`/provinces/${provinceId}/districts`),
     getPostTypes: () => axiosClient.get('/post-types'),
     getPostDetail: (id) => axiosClient.get(`/posts/${id}`),
     getPostContact: (id) => axiosClient.get(`/posts/${id}/contact`, { skipAuthRedirect: true }),

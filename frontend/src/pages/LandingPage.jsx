@@ -241,14 +241,17 @@ const LandingPage = ({ user, onUserChange }) => {
                                 </button>
                             </div>
                             <button
-                                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700 active:scale-95 sm:h-9 sm:flex sm:items-center sm:text-sm"
+                                className="group/logout inline-flex h-9 items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 text-xs font-black text-white shadow-sm transition-all duration-200 hover:scale-[1.04] hover:from-red-700 hover:to-rose-700 hover:shadow-lg hover:shadow-red-300/50 active:scale-95 sm:text-sm"
                                 type="button"
                                 onClick={() => {
                                     localStorage.removeItem('taytro_user')
                                     onUserChange?.(null)
                                 }}
                             >
-                                Đăng xuất
+                                <svg aria-hidden="true" className="h-3.5 w-3.5 transition-transform duration-200 group-hover/logout:-translate-x-0.5" fill="none" viewBox="0 0 24 24">
+                                    <path d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                                <span>Đăng xuất</span>
                             </button>
                         </>
                     ) : (

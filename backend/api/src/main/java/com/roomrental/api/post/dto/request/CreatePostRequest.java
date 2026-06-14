@@ -24,6 +24,10 @@ public class CreatePostRequest {
     @NotBlank(message = "Quận/huyện không được để trống")
     private String district;
 
+    private Integer provinceId;
+
+    private Integer districtId;
+
     @NotNull(message = "Diện tích không được để trống")
     @DecimalMin(value = "1.0", message = "Diện tích tối thiểu 1 m²")
     private BigDecimal area;

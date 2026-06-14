@@ -22,11 +22,11 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
     //Tìm kiếm bài đăng theo trạng thái, có phân trang
-    @EntityGraph(attributePaths = "postType")
+    @EntityGraph(attributePaths = {"postType", "user"})
     Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
     // Lấy danh sách bài đăng public còn hiệu lực
-    @EntityGraph(attributePaths = "postType")
+    @EntityGraph(attributePaths = {"postType", "user"})
     @Query(
             value = """
         SELECT p FROM Post p
@@ -48,7 +48,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     );
 
     // Tìm kiếm bài đăng của người dùng, có phân trang
-    @EntityGraph(attributePaths = "postType")
+    @EntityGraph(attributePaths = {"postType", "user"})
     Page<Post> findByUserId(Integer userId, Pageable pageable);
 
     // Lấy thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
@@ -61,7 +61,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Optional<Post> findDetailById(@Param("id") Integer id);
 
     // Tìm kiếm bài đăng theo tiêu chí, có phân trang
-    @Query(
+        @EntityGraph(attributePaths = "user")
+@Query(
             value = """
         SELECT p FROM Post p
         JOIN FETCH p.postType

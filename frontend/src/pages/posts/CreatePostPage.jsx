@@ -8,10 +8,10 @@ import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
 
 const USER_STORAGE_KEY = 'taytro_user'
-const MAX_IMAGES = 6
+const MAX_IMAGES = 10
 const BYTES_PER_MB = 1024 * 1024
 const MAX_IMAGE_SIZE_MB = 10
-const MAX_TOTAL_IMAGE_SIZE_MB = 60
+const MAX_TOTAL_IMAGE_SIZE_MB = 80
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * BYTES_PER_MB
 const MAX_TOTAL_IMAGE_SIZE_BYTES = MAX_TOTAL_IMAGE_SIZE_MB * BYTES_PER_MB
 const VAT_PERCENT = 8
@@ -53,7 +53,9 @@ const initialForm = {
     rentalPrice: '',
     area: '',
     province: '',
+    provinceId: '',
     district: '',
+    districtId: '',
     address: '',
     description: '',
     postTypeId: '',
@@ -131,7 +133,8 @@ const CreatePostPage = ({ user, onUserChange }) => {
     const navigate = useNavigate()
     const [form, setForm] = useState(initialForm)
     const [postTypes, setPostTypes] = useState([])
-    const [locations, setLocations] = useState([])
+    const [provinces, setProvinces] = useState([])
+    const [districts, setDistricts] = useState([])
     const [walletBalance, setWalletBalance] = useState(0)
     const [membership, setMembership] = useState(null)
     const [images, setImages] = useState([])
@@ -157,11 +160,11 @@ const CreatePostPage = ({ user, onUserChange }) => {
                 localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser.data))
                 onUserChange?.(refreshedUser.data)
 
-                const [postTypesResult, walletResult, membershipResult, locationsResult] = await Promise.allSettled([
+                const [postTypesResult, walletResult, membershipResult, provincesResult] = await Promise.allSettled([
                     postApi.getPostTypes(),
                     walletApi.getBalance(),
                     membershipApi.getMyLevel(),
-                    postApi.getLocations(),
+                    postApi.getProvinces(),
                 ])
 
                 if (ignore) return
@@ -174,7 +177,24 @@ const CreatePostPage = ({ user, onUserChange }) => {
                 setPostTypes(loadedPostTypes)
                 setWalletBalance(walletResult.status === 'fulfilled' ? walletResult.value.data?.balance || 0 : 0)
                 setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
-                setLocations(locationsResult.status === 'fulfilled' ? locationsResult.value.data || [] : [])
+                const loadedProvinces = provincesResult.status === 'fulfilled' ? provincesResult.value.data || [] : []
+                setProvinces(loadedProvinces)
+
+                // Tự động chọn tỉnh đầu tiên (TP.HCM) và load districts
+                if (loadedProvinces.length > 0) {
+                    const firstProvince = loadedProvinces[0]
+                    setForm((current) => ({
+                        ...current,
+                        provinceId: String(firstProvince.id),
+                        province: firstProvince.name,
+                    }))
+                    try {
+                        const districtsRes = await postApi.getDistrictsByProvince(firstProvince.id)
+                        if (!ignore) setDistricts(districtsRes.data || [])
+                    } catch {
+                        if (!ignore) setDistricts([])
+                    }
+                }
 
                 const firstType = loadedPostTypes[0]
                 const firstPrice = firstType?.prices?.[0]
@@ -232,22 +252,8 @@ const CreatePostPage = ({ user, onUserChange }) => {
         [form.durationDays, selectedPostType]
     )
 
-    const provinceOptions = useMemo(() => {
-        const optionMap = new Map()
-        DEFAULT_LOCATION_OPTIONS.forEach((location) => optionMap.set(normalizeText(location.province), location.province))
-        locations.forEach((location) => optionMap.set(normalizeText(location.province), location.province))
-        return Array.from(optionMap.values())
-    }, [locations])
-
-    const selectedProvince = useMemo(
-        () => locations.find((location) => normalizeText(location.province) === normalizeText(form.province)),
-        [form.province, locations]
-    )
-
-    const districtOptions = useMemo(() => {
-        const optionSet = new Set([...(selectedProvince?.districts || []), ...getFallbackDistricts(form.province)])
-        return Array.from(optionSet)
-    }, [form.province, selectedProvince])
+    const provinceOptions = provinces
+    const districtOptions = districts
 
     const discountPercent = Number(membership?.discountPercent || 0)
     const baseFee = Number(selectedPrice?.price || 0)
@@ -266,10 +272,31 @@ const CreatePostPage = ({ user, onUserChange }) => {
     }
 
     const handleProvinceChange = (event) => {
+        const value = event.target.value
+        const selected = provinces.find((p) => String(p.id) === value)
         setForm((current) => ({
             ...current,
-            province: event.target.value,
+            provinceId: value,
+            province: selected ? selected.name : '',
+            districtId: '',
             district: '',
+        }))
+        if (selected) {
+            postApi.getDistrictsByProvince(selected.id)
+                .then((res) => setDistricts(res.data || []))
+                .catch(() => setDistricts([]))
+        } else {
+            setDistricts([])
+        }
+    }
+
+    const handleDistrictChange = (event) => {
+        const value = event.target.value
+        const selected = districts.find((d) => String(d.id) === value)
+        setForm((current) => ({
+            ...current,
+            districtId: value,
+            district: selected ? selected.name : '',
         }))
     }
 
@@ -336,8 +363,8 @@ const CreatePostPage = ({ user, onUserChange }) => {
         if (!form.title.trim()) return 'Vui lòng nhập tiêu đề tin.'
         if (!form.rentalPrice || Number(form.rentalPrice) < 1000) return 'Giá thuê tối thiểu là 1.000đ.'
         if (!form.area || Number(form.area) < 1) return 'Diện tích tối thiểu là 1 m².'
-        if (!form.province.trim()) return 'Vui lòng nhập tỉnh/thành.'
-        if (!form.district.trim()) return 'Vui lòng nhập quận/huyện.'
+        if (!form.provinceId) return 'Vui lòng chọn tỉnh/thành.'
+        if (!form.districtId) return 'Vui lòng chọn quận/huyện.'
         if (!form.address.trim()) return 'Vui lòng nhập địa chỉ chi tiết.'
         if (!form.description.trim()) return 'Vui lòng nhập mô tả phòng trọ.'
         if (images.length < 1) return 'Vui lòng tải lên ít nhất 1 ảnh phòng.'
@@ -356,6 +383,8 @@ const CreatePostPage = ({ user, onUserChange }) => {
         payload.append('address', form.address.trim())
         payload.append('province', form.province.trim())
         payload.append('district', form.district.trim())
+        if (form.provinceId) payload.append('provinceId', form.provinceId)
+        if (form.districtId) payload.append('districtId', form.districtId)
         payload.append('area', form.area)
         payload.append('rentalPrice', form.rentalPrice)
         payload.append('postTypeId', form.postTypeId)
@@ -509,32 +538,32 @@ const CreatePostPage = ({ user, onUserChange }) => {
                                 </div>
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                     <Field label="Tỉnh/thành">
-                                        <input
+                                        <select
                                             className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                                            name="province"
-                                            list="create-post-provinces"
-                                            value={form.province}
+                                            name="provinceId"
+                                            value={form.provinceId}
                                             onChange={handleProvinceChange}
-                                            placeholder="TP. Hồ Chí Minh"
-                                        />
-                                        <datalist id="create-post-provinces">
-                                            {provinceOptions.map((province) => (
-                                                <option key={province} value={province} />
+                                        >
+                                            <option value="">Chọn tỉnh/thành</option>
+                                            {provinceOptions.map((p) => (
+                                                <option key={p.id} value={String(p.id)}>
+                                                    {p.name}
+                                                </option>
                                             ))}
-                                        </datalist>
+                                        </select>
                                     </Field>
                                     <Field label="Quận/huyện">
                                         <select
                                             className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none disabled:bg-slate-100 disabled:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
-                                            name="district"
-                                            value={form.district}
-                                            onChange={handleChange}
-                                            disabled={!form.province}
+                                            name="districtId"
+                                            value={form.districtId}
+                                            onChange={handleDistrictChange}
+                                            disabled={!form.provinceId}
                                         >
-                                            <option value="">{form.province ? 'Chọn quận/huyện' : 'Chọn tỉnh/thành trước'}</option>
-                                            {districtOptions.map((district) => (
-                                                <option key={district} value={district}>
-                                                    {district}
+                                            <option value="">{form.provinceId ? 'Chọn quận/huyện' : 'Chọn tỉnh/thành trước'}</option>
+                                            {districtOptions.map((d) => (
+                                                <option key={d.id} value={String(d.id)}>
+                                                    {d.name}
                                                 </option>
                                             ))}
                                         </select>

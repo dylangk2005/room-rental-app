@@ -119,6 +119,7 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     private PostSummaryResponse mapToSummary(Post post, List<String> imageUrls) {
         PostType postType = post.getPostType();
+        com.roomrental.api.user.entity.User owner = post.getUser();
         String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
 
         return PostSummaryResponse.builder()
@@ -138,6 +139,9 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .postTypePushPrice(postType != null ? postType.getPushPrice() : null)
                 .thumbnailUrl(thumbnailUrl)
                 .imageUrls(imageUrls)
+                .ownerId(owner != null ? owner.getId() : null)
+                .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .build();
     }
 }

@@ -19,11 +19,15 @@ public class UpdatePostRequest {
         @NotBlank(message = "Địa chỉ không được để trống")
         private String address;
 
-        @NotBlank(message = "Tỉnh/thành không được để trống")
-        private String province;
+    @NotBlank(message = "Tỉnh/thành không được để trống")
+    private String province;
 
-        @NotBlank(message = "Quận/huyện không được để trống")
-        private String district;
+    @NotBlank(message = "Quận/huyện không được để trống")
+    private String district;
+
+    private Integer provinceId;
+
+    private Integer districtId;
 
         @NotNull(message = "Diện tích không được để trống")
         @DecimalMin("1.0")

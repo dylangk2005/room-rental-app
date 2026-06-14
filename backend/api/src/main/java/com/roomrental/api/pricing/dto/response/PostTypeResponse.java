@@ -18,5 +18,8 @@ public class PostTypeResponse {
     private Integer titleSize;
     private Integer priority;
     private BigDecimal pushPrice;
+    private Boolean isUppercase;
+    private Boolean hasRecommendTag;
+    private Integer maxImageLimit;
     private List<PostTypePriceResponse> prices;
 }

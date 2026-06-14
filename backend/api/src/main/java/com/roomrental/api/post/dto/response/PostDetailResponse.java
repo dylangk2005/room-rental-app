@@ -17,6 +17,10 @@ public class PostDetailResponse {
     private String address;
     private String province;
     private String district;
+    private Integer provinceId;
+    private Integer districtId;
+    private String provinceName;
+    private String districtName;
     private BigDecimal area;
     private BigDecimal rentalPrice;
     private PostStatus status;
@@ -31,6 +35,9 @@ public class PostDetailResponse {
     private String postTypeTitleColor;
     private Integer postTypeTitleSize;
     private Integer postTypePriority;
+    private Boolean postTypeIsUppercase;
+    private Boolean postTypeHasRecommendTag;
+    private Integer postTypeMaxImageLimit;
 
     private List<String> imageUrls;
     private Boolean isFavorited;

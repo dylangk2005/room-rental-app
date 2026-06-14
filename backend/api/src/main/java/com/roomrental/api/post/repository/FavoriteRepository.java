@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface FavoriteRepository extends JpaRepository<Favorite, Favorite.FavoriteId> {
 
-    @EntityGraph(attributePaths = {"post", "post.postType"})
+    @EntityGraph(attributePaths = {"post", "post.postType", "post.user"})
     Page<Favorite> findByUser_Id(Integer userId, Pageable pageable);
 
     boolean existsByUser_IdAndPost_Id(Integer userId, Integer postId);

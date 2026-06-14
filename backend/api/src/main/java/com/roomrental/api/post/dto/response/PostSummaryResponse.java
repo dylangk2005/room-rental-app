@@ -15,6 +15,10 @@ public class PostSummaryResponse {
     private String title;
     private String province;
     private String district;
+    private Integer provinceId;
+    private Integer districtId;
+    private String provinceName;
+    private String districtName;
     private BigDecimal area;
     private BigDecimal rentalPrice;
     private String status;
@@ -27,8 +31,16 @@ public class PostSummaryResponse {
     private Integer postTypeTitleSize;
     private Integer postTypePriority;
     private BigDecimal postTypePushPrice;
+    private Boolean postTypeIsUppercase;
+    private Boolean postTypeHasRecommendTag;
+    private Integer postTypeMaxImageLimit;
 
     // Ảnh đại diện
     private String thumbnailUrl;
     private List<String> imageUrls;
+
+    // Thông tin người đăng
+    private Integer ownerId;
+    private String ownerName;
+    private String ownerAvatar;
 }

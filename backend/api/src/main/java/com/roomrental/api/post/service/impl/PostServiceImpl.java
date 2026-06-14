@@ -5,6 +5,10 @@ import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.common.util.AuthHelper;
 import com.roomrental.api.integration.service.CloudinaryService;
+import com.roomrental.api.location.entity.District;
+import com.roomrental.api.location.entity.Province;
+import com.roomrental.api.location.repository.DistrictRepository;
+import com.roomrental.api.location.repository.ProvinceRepository;
 import com.roomrental.api.post.dto.request.CreatePostRequest;
 import com.roomrental.api.post.dto.response.PostContactResponse;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
@@ -51,6 +55,10 @@ public class PostServiceImpl implements PostService {
     private final UserPenaltyRepository userPenaltyRepository;
     private final AuthHelper authHelper;
     private final FavoriteRepository favoriteRepository;
+    private final ProvinceRepository provinceRepository;
+    private final DistrictRepository districtRepository;
+
+    private static final int MAX_TOTAL_IMAGES = 10;
 
     // ─── Pageable sort theo priority ASC, pushTime DESC ──────────────────
     private Pageable buildSortedPageable(int page, int size) {
@@ -62,12 +70,19 @@ public class PostServiceImpl implements PostService {
     // ─── map Post → PostSummaryResponse ──────────────────────────────────
     private PostSummaryResponse mapToSummary(Post post, List<String> imageUrls) {
         PostType pt = post.getPostType();
+        com.roomrental.api.user.entity.User owner = post.getUser();
         String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
+        Province provinceRef = post.getProvinceRef();
+        District districtRef = post.getDistrictRef();
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
                 .province(post.getProvince())
                 .district(post.getDistrict())
+                .provinceId(provinceRef != null ? provinceRef.getId() : null)
+                .districtId(districtRef != null ? districtRef.getId() : null)
+                .provinceName(provinceRef != null ? provinceRef.getName() : post.getProvince())
+                .districtName(districtRef != null ? districtRef.getName() : post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus() != null ? post.getStatus().name() : null)
@@ -78,14 +93,22 @@ public class PostServiceImpl implements PostService {
                 .postTypeTitleSize(pt != null ? pt.getTitleSize() : null)
                 .postTypePriority(pt != null ? pt.getPriority() : null)
                 .postTypePushPrice(pt != null ? pt.getPushPrice() : null)
+                .postTypeIsUppercase(pt != null ? Boolean.TRUE.equals(pt.getIsUppercase()) : null)
+                .postTypeHasRecommendTag(pt != null ? Boolean.TRUE.equals(pt.getHasRecommendTag()) : null)
+                .postTypeMaxImageLimit(pt != null ? pt.getMaxImageLimit() : null)
                 .thumbnailUrl(thumbnailUrl)
                 .imageUrls(imageUrls)
+                .ownerId(owner != null ? owner.getId() : null)
+                .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .build();
     }
 
     // ─── map Post → PostDetailResponse ───────────────────────────────────
     private PostDetailResponse mapToDetail(Post post, List<String> imageUrls, Boolean isFavorited) {
         PostType pt = post.getPostType();
+        Province provinceRef = post.getProvinceRef();
+        District districtRef = post.getDistrictRef();
         return PostDetailResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
@@ -93,6 +116,10 @@ public class PostServiceImpl implements PostService {
                 .address(post.getAddress())
                 .province(post.getProvince())
                 .district(post.getDistrict())
+                .provinceId(provinceRef != null ? provinceRef.getId() : null)
+                .districtId(districtRef != null ? districtRef.getId() : null)
+                .provinceName(provinceRef != null ? provinceRef.getName() : post.getProvince())
+                .districtName(districtRef != null ? districtRef.getName() : post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus())
@@ -103,6 +130,9 @@ public class PostServiceImpl implements PostService {
                 .postTypeTitleColor(pt != null ? pt.getTitleColor() : null)
                 .postTypeTitleSize(pt != null ? pt.getTitleSize() : null)
                 .postTypePriority(pt != null ? pt.getPriority() : null)
+                .postTypeIsUppercase(pt != null ? Boolean.TRUE.equals(pt.getIsUppercase()) : null)
+                .postTypeHasRecommendTag(pt != null ? Boolean.TRUE.equals(pt.getHasRecommendTag()) : null)
+                .postTypeMaxImageLimit(pt != null ? pt.getMaxImageLimit() : null)
                 .imageUrls(imageUrls)
                 .isFavorited(isFavorited)
                 .build();
@@ -248,8 +278,8 @@ public class PostServiceImpl implements PostService {
         if (images == null || images.isEmpty()) {
             throw AppException.badRequest("Phải tải lên ít nhất 1 ảnh");
         }
-        if (images.size() > 6) {
-            throw AppException.badRequest("Không được tải lên quá 6 ảnh");
+        if (images.size() > MAX_TOTAL_IMAGES) {
+            throw AppException.badRequest("Không được tải lên quá " + MAX_TOTAL_IMAGES + " ảnh");
         }
 
         User user = userRepository.findById(userId)
@@ -261,13 +291,23 @@ public class PostServiceImpl implements PostService {
         PostType postType = postTypeRepository.findById(request.getPostTypeId())
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy loại bài đăng"));
 
+        int typeImageLimit = postType.getMaxImageLimit() != null ? postType.getMaxImageLimit() : 1;
+        if (images.size() > typeImageLimit) {
+            throw AppException.badRequest("Loại tin này chỉ cho phép tối đa " + typeImageLimit + " ảnh");
+        }
+
+        Province province = resolveProvince(request);
+        District district = resolveDistrict(request, province);
+
         // Tạo bản ghi bài đăng mới với trạng thái DRAFT
         Post post = new Post();
         post.setTitle(request.getTitle());
         post.setDescription(request.getDescription());
         post.setAddress(request.getAddress());
-        post.setProvince(request.getProvince());
-        post.setDistrict(request.getDistrict());
+        post.setProvince(province != null ? province.getName() : request.getProvince());
+        post.setDistrict(district != null ? district.getName() : request.getDistrict());
+        post.setProvinceRef(province);
+        post.setDistrictRef(district);
         post.setArea(request.getArea());
         post.setRentalPrice(request.getRentalPrice());
         post.setUser(user);
@@ -323,8 +363,12 @@ public class PostServiceImpl implements PostService {
         post.setTitle(request.getTitle());
         post.setDescription(request.getDescription());
         post.setAddress(request.getAddress());
-        post.setProvince(request.getProvince());
-        post.setDistrict(request.getDistrict());
+        Province province = resolveProvinceFromUpdate(request);
+        District district = resolveDistrictFromUpdate(request, province);
+        post.setProvince(province != null ? province.getName() : request.getProvince());
+        post.setDistrict(district != null ? district.getName() : request.getDistrict());
+        post.setProvinceRef(province);
+        post.setDistrictRef(district);
         post.setArea(request.getArea());
         post.setRentalPrice(request.getRentalPrice());
         post.setUpdatedAt(LocalDateTime.now());
@@ -345,8 +389,14 @@ public class PostServiceImpl implements PostService {
         // Xử lý upload ảnh mới nếu có
         if (newImages != null && !newImages.isEmpty()) {
             int currentCount = postImageRepository.findByPostId(postId).size();
-            if (currentCount + newImages.size() > 6) {
-                throw AppException.badRequest("Tổng số ảnh không được vượt quá 6");
+            int typeImageLimit = post.getPostType() != null && post.getPostType().getMaxImageLimit() != null
+                    ? post.getPostType().getMaxImageLimit()
+                    : 1;
+            if (currentCount + newImages.size() > typeImageLimit) {
+                throw AppException.badRequest("Loại tin này chỉ cho phép tối đa " + typeImageLimit + " ảnh");
+            }
+            if (currentCount + newImages.size() > MAX_TOTAL_IMAGES) {
+                throw AppException.badRequest("Tổng số ảnh không được vượt quá " + MAX_TOTAL_IMAGES);
             }
             for (MultipartFile image : newImages) {
                 String url = cloudinaryService.uploadImage(image);
@@ -453,6 +503,61 @@ public class PostServiceImpl implements PostService {
     }
 
     // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
+    // Resolve province: ưu tiên provinceId, fallback tìm theo tên
+    private Province resolveProvince(CreatePostRequest request) {
+        if (request.getProvinceId() != null) {
+            return provinceRepository.findById(request.getProvinceId()).orElse(null);
+        }
+        if (request.getProvince() != null && !request.getProvince().isBlank()) {
+            return provinceRepository.findAll().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(request.getProvince().trim()))
+                    .findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    private Province resolveProvinceFromUpdate(UpdatePostRequest request) {
+        if (request.getProvinceId() != null) {
+            return provinceRepository.findById(request.getProvinceId()).orElse(null);
+        }
+        if (request.getProvince() != null && !request.getProvince().isBlank()) {
+            return provinceRepository.findAll().stream()
+                    .filter(p -> p.getName().equalsIgnoreCase(request.getProvince().trim()))
+                    .findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    private District resolveDistrictFromUpdate(UpdatePostRequest request, Province province) {
+        if (request.getDistrictId() != null) {
+            return districtRepository.findById(request.getDistrictId()).orElse(null);
+        }
+        if (request.getDistrict() != null && !request.getDistrict().isBlank()) {
+            String name = request.getDistrict().trim();
+            return districtRepository.findAll().stream()
+                    .filter(d -> d.getName().equalsIgnoreCase(name)
+                            && (province == null || province.getId().equals(d.getProvinceId())))
+                    .findFirst().orElse(null);
+        }
+        return null;
+    }
+
+    // Resolve district: ưu tiên districtId, fallback tìm theo tên + province
+    private District resolveDistrict(CreatePostRequest request, Province province) {
+        if (request.getDistrictId() != null) {
+            return districtRepository.findById(request.getDistrictId()).orElse(null);
+        }
+        if (request.getDistrict() != null && !request.getDistrict().isBlank()) {
+            String name = request.getDistrict().trim();
+            return districtRepository.findAll().stream()
+                    .filter(d -> d.getName().equalsIgnoreCase(name)
+                            && (province == null || province.getId().equals(d.getProvinceId())))
+                    .findFirst().orElse(null);
+        }
+        return null;
+    }
+
+
     private boolean canViewPostDetail(Post post, AuthHelper.CurrentUser currentUser) {
         // Nếu bài đăng đang hoạt động và chưa hết hạn thì cho phép xem chi tiết mà không cần kiểm tra quyền
         if (isActiveAndNotExpired(post)) {

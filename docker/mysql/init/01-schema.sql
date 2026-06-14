@@ -4,6 +4,21 @@ CREATE DATABASE IF NOT EXISTS phongtro_db
 
 USE phongtro_db;
 
+CREATE TABLE IF NOT EXISTS provinces (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS districts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    province_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_districts_province FOREIGN KEY (province_id) REFERENCES provinces(id),
+    INDEX idx_districts_province_id (province_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS roles (
     role_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(50),
@@ -73,6 +88,9 @@ CREATE TABLE IF NOT EXISTS post_types (
     title_size INT,
     priority INT,
     push_price DECIMAL(12,2),
+    is_uppercase BOOLEAN DEFAULT FALSE,
+    has_recommend_tag BOOLEAN DEFAULT FALSE,
+    max_image_limit INT DEFAULT 1,
     updated_at TIMESTAMP NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -91,6 +109,8 @@ CREATE TABLE IF NOT EXISTS posts (
     address TEXT,
     province VARCHAR(100),
     district VARCHAR(100),
+    province_id INT NULL,
+    district_id INT NULL,
     area DECIMAL(6,2),
     rental_price DECIMAL(12,2),
     status ENUM('DRAFT', 'PENDING', 'ACTIVE', 'EXPIRED', 'REJECTED', 'HIDDEN', 'DELETED') DEFAULT 'PENDING',
@@ -103,11 +123,15 @@ CREATE TABLE IF NOT EXISTS posts (
     duration_days INT,
     CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id),
     CONSTRAINT fk_posts_post_type FOREIGN KEY (post_type_id) REFERENCES post_types(id),
+    CONSTRAINT fk_posts_province FOREIGN KEY (province_id) REFERENCES provinces(id),
+    CONSTRAINT fk_posts_district FOREIGN KEY (district_id) REFERENCES districts(id),
     INDEX idx_posts_user_id (user_id),
     INDEX idx_posts_post_type_id (post_type_id),
     INDEX idx_posts_status (status),
     INDEX idx_posts_end_at (end_at),
-    INDEX idx_posts_push_time (push_time)
+    INDEX idx_posts_push_time (push_time),
+    INDEX idx_posts_province_id (province_id),
+    INDEX idx_posts_district_id (district_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS post_images (

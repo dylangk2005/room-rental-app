@@ -66,6 +66,28 @@ const AuthenticatedRoute = ({ children, user }) => {
 
 function App() {
   const [user, setUser] = useState(() => getStoredUser())
+  const [isAuthReady, setIsAuthReady] = useState(() => {
+    if (typeof window === 'undefined') return true
+    return !window.__taytroAuthReady
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    if (!window.__taytroAuthReady) {
+      setIsAuthReady(true)
+      return undefined
+    }
+    let cancelled = false
+    window.__taytroAuthReady.then(() => {
+      if (!cancelled) {
+        setUser(getStoredUser())
+        setIsAuthReady(true)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     const handleStorageChange = () => {
@@ -80,6 +102,14 @@ function App() {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser))
     }
     setUser(newUser)
+  }
+
+  if (!isAuthReady) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-slate-900" />
+      </div>
+    )
   }
 
   return (

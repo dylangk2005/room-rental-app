@@ -1,5 +1,32 @@
 USE phongtro_db;
 
+INSERT INTO provinces (id, name, updated_at) VALUES
+(1, 'TP. Hồ Chí Minh', NOW());
+
+INSERT INTO districts (id, province_id, name, updated_at) VALUES
+(1, 1, 'Quận 1', NOW()),
+(2, 1, 'Quận 3', NOW()),
+(3, 1, 'Quận 4', NOW()),
+(4, 1, 'Quận 5', NOW()),
+(5, 1, 'Quận 6', NOW()),
+(6, 1, 'Quận 7', NOW()),
+(7, 1, 'Quận 8', NOW()),
+(8, 1, 'Quận 10', NOW()),
+(9, 1, 'Quận 11', NOW()),
+(10, 1, 'Quận 12', NOW()),
+(11, 1, 'Bình Tân', NOW()),
+(12, 1, 'Bình Thạnh', NOW()),
+(13, 1, 'Gò Vấp', NOW()),
+(14, 1, 'Phú Nhuận', NOW()),
+(15, 1, 'Tân Bình', NOW()),
+(16, 1, 'Tân Phú', NOW()),
+(17, 1, 'TP. Thủ Đức', NOW()),
+(18, 1, 'Bình Chánh', NOW()),
+(19, 1, 'Cần Giờ', NOW()),
+(20, 1, 'Củ Chi', NOW()),
+(21, 1, 'Hóc Môn', NOW()),
+(22, 1, 'Nhà Bè', NOW());
+
 SET @seed_password = '$2a$10$L6IJcqTcbfRP/eXRUj9MmeNKpcLjlxyaU.qqy2WwwnIeIuKTNbiEe';
 
 INSERT INTO roles (role_id, name, description) VALUES
@@ -48,11 +75,11 @@ VALUES
 (9, 1000000, 0, 1000000, 'BANK_TRANSFER', 'SUCCESS', 'BT-20240321-0009', 'ACB-GD030', 0, 1000000, 'Nap qua ACB', '2024-03-21 07:30:00', 9),
 (10, 300000, 0, 300000, 'VNPAY', 'PENDING', 'VNPAY-20240411-0010', NULL, 650000, 650000, 'Cho xac nhan tu cong VNPAY', '2024-04-11 10:45:00', 10);
 
-INSERT INTO post_types (id, name, title_color, title_size, priority, push_price, updated_at) VALUES
-(1, 'Tin thường', '#111827', 14, 4, 2000, NOW()),
-(2, 'Tin VIP2', '#0F766E', 15, 3, 2000, NOW()),
-(3, 'Tin VIP1', '#DB2777', 16, 2, 3000, NOW()),
-(4, 'Tin Vip Nổi Bật', '#DC2626', 18, 1, 5000, NOW());
+INSERT INTO post_types (id, name, title_color, title_size, priority, push_price, is_uppercase, has_recommend_tag, max_image_limit, updated_at) VALUES
+(1, 'Tin thường', '#111827', 14, 4, 2000, FALSE, FALSE, 1, NOW()),
+(2, 'Tin VIP2', '#0F766E', 15, 3, 2000, FALSE, FALSE, 2, NOW()),
+(3, 'Tin VIP1', '#DB2777', 16, 2, 3000, FALSE, FALSE, 3, NOW()),
+(4, 'Tin Vip Nổi Bật', '#DC2626', 18, 1, 5000, TRUE, TRUE, 5, NOW());
 
 INSERT INTO post_type_prices (post_type_id, day, price) VALUES
 (1, 5, 12000),
@@ -73,18 +100,18 @@ INSERT INTO post_type_prices (post_type_id, day, price) VALUES
 (4, 30, 900000);
 
 INSERT INTO posts
-(id, title, description, address, province, district, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
+(id, title, description, address, province, district, province_id, district_id, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
 VALUES
-(1, 'Phòng trọ gần ĐH Công nghiệp, có gác lửng, WC riêng', 'Phòng thoáng mát, có cửa sổ lớn, gác lửng tiện để đồ. WC riêng, máy nước nóng. Gần siêu thị và trường học.', '15/3 Nguyễn Văn Bảo', 'TP. Hồ Chí Minh', 'Gò Vấp', 22.5, 2500000, 'ACTIVE', '2026-06-01 09:00:00', '2026-06-01 09:00:00', '2026-06-01 10:00:00', '2026-07-01 10:00:00', 4, 1, 30),
-(2, 'Phòng VIP full nội thất, ban công view đẹp, Bình Thạnh', 'Phòng cao cấp đầy đủ nội thất: giường, tủ, bàn làm việc, điều hòa, máy giặt riêng. An ninh 24/7, thang máy.', '45 Xô Viết Nghệ Tĩnh', 'TP. Hồ Chí Minh', 'Bình Thạnh', 30.0, 5500000, 'ACTIVE', '2026-06-02 10:00:00', '2026-06-02 10:00:00', '2026-06-02 11:00:00', '2026-07-02 11:00:00', 4, 2, 30),
-(3, 'Nhà nguyên căn 3PN cho thuê, hẻm xe hơi, Quận 12', 'Nhà 1 trệt 1 lầu, 3 phòng ngủ, 2 WC, bếp rộng, sân để xe. Phù hợp gia đình hoặc nhóm 4-5 người.', '22 Đường số 8, KDC Tân Thới Nhất', 'TP. Hồ Chí Minh', 'Quận 12', 80.0, 9000000, 'ACTIVE', '2026-06-03 14:00:00', '2026-06-03 14:00:00', '2026-06-03 15:00:00', '2026-07-03 15:00:00', 6, 3, 30),
-(4, 'Phòng sinh viên giá rẻ, gần HUTECH, có chỗ để xe', 'Phòng nhỏ gọn, phù hợp 1-2 sinh viên. Có wifi, chỗ để xe máy. Ra đường lớn 5 phút đi bộ.', '7/1 Đường Phan Văn Trị', 'TP. Hồ Chí Minh', 'Bình Thạnh', 16.0, 1800000, 'EXPIRED', '2026-05-01 08:00:00', '2026-06-10 08:00:00', '2026-05-01 09:00:00', '2026-06-01 09:00:00', 5, 1, 30),
-(5, 'Phòng trọ cao cấp khu dân cư Lovera, Bình Chánh', 'Phòng mới xây, nội thất cao cấp, máy lạnh, nóng lạnh. Khu dân cư có bảo vệ, gần KCN Vĩnh Lộc.', '12 Lovera Vista', 'TP. Hồ Chí Minh', 'Bình Chánh', 25.0, 3800000, 'ACTIVE', '2026-06-04 11:00:00', '2026-06-04 11:00:00', '2026-06-04 12:00:00', '2026-07-04 12:00:00', 6, 2, 30),
-(6, 'Phòng trọ bị từ chối vì ảnh không đúng thực tế', 'Nội dung mô tả không khớp thực tế và địa chỉ không xác minh được.', '99 Đường Giả', 'TP. Hồ Chí Minh', 'Quận 1', 18.0, 2000000, 'REJECTED', '2026-06-05 10:00:00', '2026-06-05 16:00:00', NULL, NULL, 8, 1, 30),
-(7, 'Phòng trọ hẻm yên tĩnh, gần chợ Thủ Đức', 'Phòng yên tĩnh, thoáng mát, hẻm sạch sẽ. Gần chợ, trường học, bệnh viện. Cho phép nấu ăn.', '88 Kha Vạn Cân', 'TP. Hồ Chí Minh', 'TP. Thủ Đức', 20.0, 2200000, 'EXPIRED', '2026-04-25 09:00:00', '2026-05-25 10:00:00', '2026-04-25 10:00:00', '2026-05-25 10:00:00', 9, 1, 30),
-(8, 'Căn hộ mini full nội thất Q.7, sầm uất, dễ di chuyển', 'Căn hộ mini 1 phòng ngủ riêng biệt, full nội thất cao cấp. Khu vực sầm uất gần Phú Mỹ Hưng.', '30/4 Nguyễn Thị Thập', 'TP. Hồ Chí Minh', 'Quận 7', 28.0, 6000000, 'ACTIVE', '2026-06-06 10:00:00', '2026-06-06 10:00:00', '2026-06-06 11:00:00', '2026-07-06 11:00:00', 6, 3, 30),
-(9, 'Phòng trọ bình dân, sạch sẽ, Hóc Môn', 'Phòng đơn giản, sạch, có quạt trần và cửa sổ. Chủ nhà thân thiện.', '5 Đường Bà Điểm 5', 'TP. Hồ Chí Minh', 'Hóc Môn', 14.0, 1200000, 'ACTIVE', '2026-06-07 07:00:00', '2026-06-07 07:00:00', '2026-06-07 08:00:00', '2026-07-07 08:00:00', 10, 1, 30),
-(10, 'Phòng trọ đã hết hạn tại Quận 3', 'Tin đã hết hạn, giữ lại trong dữ liệu mẫu để kiểm tra luồng gia hạn và thống kê.', '10 Cách Mạng Tháng 8', 'TP. Hồ Chí Minh', 'Quận 3', 18.0, 3000000, 'EXPIRED', '2026-05-05 09:00:00', '2026-06-05 10:00:00', '2026-05-05 10:00:00', '2026-06-05 10:00:00', 5, 1, 30);
+(1, 'Phòng trọ gần ĐH Công nghiệp, có gác lửng, WC riêng', 'Phòng thoáng mát, có cửa sổ lớn, gác lửng tiện để đồ. WC riêng, máy nước nóng. Gần siêu thị và trường học.', '15/3 Nguyễn Văn Bảo', 'TP. Hồ Chí Minh', 'Gò Vấp', 1, 13, 22.5, 2500000, 'ACTIVE', '2026-06-01 09:00:00', '2026-06-01 09:00:00', '2026-06-01 10:00:00', '2026-07-01 10:00:00', 4, 1, 30),
+(2, 'Phòng VIP full nội thất, ban công view đẹp, Bình Thạnh', 'Phòng cao cấp đầy đủ nội thất: giường, tủ, bàn làm việc, điều hòa, máy giặt riêng. An ninh 24/7, thang máy.', '45 Xô Viết Nghệ Tĩnh', 'TP. Hồ Chí Minh', 'Bình Thạnh', 1, 12, 30.0, 5500000, 'ACTIVE', '2026-06-02 10:00:00', '2026-06-02 10:00:00', '2026-06-02 11:00:00', '2026-07-02 11:00:00', 4, 2, 30),
+(3, 'Nhà nguyên căn 3PN cho thuê, hẻm xe hơi, Quận 12', 'Nhà 1 trệt 1 lầu, 3 phòng ngủ, 2 WC, bếp rộng, sân để xe. Phù hợp gia đình hoặc nhóm 4-5 người.', '22 Đường số 8, KDC Tân Thới Nhất', 'TP. Hồ Chí Minh', 'Quận 12', 1, 10, 80.0, 9000000, 'ACTIVE', '2026-06-03 14:00:00', '2026-06-03 14:00:00', '2026-06-03 15:00:00', '2026-07-03 15:00:00', 6, 3, 30),
+(4, 'Phòng sinh viên giá rẻ, gần HUTECH, có chỗ để xe', 'Phòng nhỏ gọn, phù hợp 1-2 sinh viên. Có wifi, chỗ để xe máy. Ra đường lớn 5 phút đi bộ.', '7/1 Đường Phan Văn Trị', 'TP. Hồ Chí Minh', 'Bình Thạnh', 1, 12, 16.0, 1800000, 'EXPIRED', '2026-05-01 08:00:00', '2026-06-10 08:00:00', '2026-05-01 09:00:00', '2026-06-01 09:00:00', 5, 1, 30),
+(5, 'Phòng trọ cao cấp khu dân cư Lovera, Bình Chánh', 'Phòng mới xây, nội thất cao cấp, máy lạnh, nóng lạnh. Khu dân cư có bảo vệ, gần KCN Vĩnh Lộc.', '12 Lovera Vista', 'TP. Hồ Chí Minh', 'Bình Chánh', 1, 18, 25.0, 3800000, 'ACTIVE', '2026-06-04 11:00:00', '2026-06-04 11:00:00', '2026-06-04 12:00:00', '2026-07-04 12:00:00', 6, 2, 30),
+(6, 'Phòng trọ bị từ chối vì ảnh không đúng thực tế', 'Nội dung mô tả không khớp thực tế và địa chỉ không xác minh được.', '99 Đường Giả', 'TP. Hồ Chí Minh', 'Quận 1', 1, 1, 18.0, 2000000, 'REJECTED', '2026-06-05 10:00:00', '2026-06-05 16:00:00', NULL, NULL, 8, 1, 30),
+(7, 'Phòng trọ hẻm yên tĩnh, gần chợ Thủ Đức', 'Phòng yên tĩnh, thoáng mát, hẻm sạch sẽ. Gần chợ, trường học, bệnh viện. Cho phép nấu ăn.', '88 Kha Vạn Cân', 'TP. Hồ Chí Minh', 'TP. Thủ Đức', 1, 17, 20.0, 2200000, 'EXPIRED', '2026-04-25 09:00:00', '2026-05-25 10:00:00', '2026-04-25 10:00:00', '2026-05-25 10:00:00', 9, 1, 30),
+(8, 'Căn hộ mini full nội thất Q.7, sầm uất, dễ di chuyển', 'Căn hộ mini 1 phòng ngủ riêng biệt, full nội thất cao cấp. Khu vực sầm uất gần Phú Mỹ Hưng.', '30/4 Nguyễn Thị Thập', 'TP. Hồ Chí Minh', 'Quận 7', 1, 6, 28.0, 6000000, 'ACTIVE', '2026-06-06 10:00:00', '2026-06-06 10:00:00', '2026-06-06 11:00:00', '2026-07-06 11:00:00', 6, 3, 30),
+(9, 'Phòng trọ bình dân, sạch sẽ, Hóc Môn', 'Phòng đơn giản, sạch, có quạt trần và cửa sổ. Chủ nhà thân thiện.', '5 Đường Bà Điểm 5', 'TP. Hồ Chí Minh', 'Hóc Môn', 1, 21, 14.0, 1200000, 'ACTIVE', '2026-06-07 07:00:00', '2026-06-07 07:00:00', '2026-06-07 08:00:00', '2026-07-07 08:00:00', 10, 1, 30),
+(10, 'Phòng trọ đã hết hạn tại Quận 3', 'Tin đã hết hạn, giữ lại trong dữ liệu mẫu để kiểm tra luồng gia hạn và thống kê.', '10 Cách Mạng Tháng 8', 'TP. Hồ Chí Minh', 'Quận 3', 1, 2, 18.0, 3000000, 'EXPIRED', '2026-05-05 09:00:00', '2026-06-05 10:00:00', '2026-05-05 10:00:00', '2026-06-05 10:00:00', 5, 1, 30);
 
 INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
 (1, 'https://picsum.photos/seed/post-1-main/900/600', NOW(), 1),

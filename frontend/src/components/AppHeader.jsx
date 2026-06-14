@@ -16,6 +16,7 @@ const getInitial = (name = '') => {
 
 const accountLinks = [
     { label: 'Quản lý tài khoản', to: ROUTES.PROFILE },
+    { label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING },
     { label: 'Nạp tiền vào tài khoản', to: ROUTES.USER_DEPOSIT },
     { label: 'Quản lý bài đăng', to: ROUTES.MY_POSTS },
     { label: 'Đẩy tin đăng', to: ROUTES.BOOST_POSTS },
@@ -71,6 +72,18 @@ const BellIcon = () => (
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="1.8"
+        />
+    </svg>
+)
+
+const PlusIcon = () => (
+    <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path
+            d="M12 5v14m-7-7h14"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2.2"
         />
     </svg>
 )
@@ -290,29 +303,28 @@ const AppHeader = ({ user, onUserChange }) => {
                 </Link>
 
                 <nav className="hidden items-center gap-6 text-sm font-bold text-slate-600 md:flex">
-                    <a href={`${ROUTES.HOME}#search`} className="hover:text-emerald-700">
-                        Tìm phòng
-                    </a>
-                    <Link to={ROUTES.POST_PRICING} className="hover:text-emerald-700">
-                        Tin đăng
-                    </Link>
-                    <Link to={ROUTES.CREATE_POST} className="hover:text-emerald-700">
-                        Đăng tin
-                    </Link>
                 </nav>
 
                 <div className="flex items-center gap-2">
                     {user ? (
                         <>
+                            <Link
+                                className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
+                                to={ROUTES.CREATE_POST}
+                            >
+                                <PlusIcon />
+                                <span>Đăng tin</span>
+                            </Link>
+
                             <button
-                                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 ring-offset-2 transition hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 ring-offset-2 transition-all duration-200 hover:scale-105 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
                                 type="button"
                                 onClick={openQuickNotifications}
                                 aria-label="Mở thông báo"
                             >
                                 <BellIcon />
                                 {unreadCount > 0 && (
-                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-black text-white">
+                                    <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-black text-white shadow-sm ring-2 ring-white">
                                         {unreadCount > 9 ? '9+' : unreadCount}
                                     </span>
                                 )}
@@ -320,7 +332,7 @@ const AppHeader = ({ user, onUserChange }) => {
 
                             <div className="relative" ref={menuRef}>
                                 <button
-                                    className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-black text-slate-700 ring-offset-2 transition hover:border-emerald-300 hover:bg-emerald-50 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                    className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-black text-slate-700 ring-offset-2 transition-all duration-200 hover:scale-105 hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
                                     type="button"
                                     onClick={() => {
                                         setIsMenuOpen((current) => !current)
@@ -331,7 +343,7 @@ const AppHeader = ({ user, onUserChange }) => {
                                 >
                                     {user.avatar ? (
                                         <img
-                                            className="h-full w-full object-cover"
+                                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
                                             src={user.avatar}
                                             alt={user.fullName || 'Tài khoản'}
                                         />
@@ -341,8 +353,8 @@ const AppHeader = ({ user, onUserChange }) => {
                                 </button>
 
                                 {isMenuOpen && (
-                                    <div className="absolute right-0 mt-3 w-80 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-                                        <div className="border-b border-slate-200 p-4">
+                                    <div className="absolute right-0 mt-3 w-80 origin-top-right animate-in overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl fade-in slide-in-from-top-2 duration-200">
+                                        <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-4">
                                             <p className="truncate text-sm font-black text-slate-950">
                                                 {user.fullName || 'Người dùng'}
                                             </p>
@@ -350,10 +362,10 @@ const AppHeader = ({ user, onUserChange }) => {
                                                 {user.email || 'Tài khoản TAYTRO'}
                                             </p>
                                         </div>
-                                        <div className="p-2">
+                                        <div className="max-h-96 overflow-y-auto p-2">
                                             {[...getBackOfficeLinks(user.role), ...accountLinks].map((item) => (
                                                 <Link
-                                                    className="flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-100"
+                                                    className="flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700"
                                                     key={item.to}
                                                     to={item.to}
                                                     onClick={() => setIsMenuOpen(false)}
@@ -364,7 +376,7 @@ const AppHeader = ({ user, onUserChange }) => {
                                         </div>
                                         <div className="border-t border-slate-200 p-2">
                                             <button
-                                                className="flex h-10 w-full items-center rounded-lg px-3 text-left text-sm font-black text-red-600 hover:bg-red-50"
+                                                className="flex h-10 w-full items-center rounded-lg px-3 text-left text-sm font-black text-red-600 transition-colors duration-150 hover:bg-red-50"
                                                 type="button"
                                                 onClick={handleLogout}
                                             >
@@ -376,12 +388,21 @@ const AppHeader = ({ user, onUserChange }) => {
                             </div>
                         </>
                     ) : (
-                        <Link
-                            className="inline-flex h-10 items-center justify-center rounded-lg bg-emerald-600 px-4 text-sm font-black text-white hover:bg-emerald-700"
-                            to={ROUTES.LOGIN}
-                        >
-                            Đăng nhập
-                        </Link>
+                        <>
+                            <Link
+                                className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
+                                to={ROUTES.CREATE_POST}
+                            >
+                                <PlusIcon />
+                                <span>Đăng tin</span>
+                            </Link>
+                            <Link
+                                className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-black text-white transition-all duration-200 hover:scale-[1.04] hover:bg-slate-800 hover:shadow-md active:scale-95"
+                                to={ROUTES.LOGIN}
+                            >
+                                Đăng nhập
+                            </Link>
+                        </>
                     )}
                 </div>
             </div>
@@ -392,7 +413,7 @@ const AppHeader = ({ user, onUserChange }) => {
                     <div className="fixed left-1/2 top-16 z-50 w-full max-w-lg -translate-x-1/2 px-4 pt-3">
                         <div className="relative w-full rounded-lg bg-white shadow-xl">
                             <button
-                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-xl font-black text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full text-xl font-black text-slate-500 transition-all duration-150 hover:scale-110 hover:bg-slate-100 hover:text-slate-900 active:scale-95"
                                 type="button"
                                 onClick={() => setIsNotificationOpen(false)}
                                 aria-label="Đóng thông báo"
@@ -445,7 +466,7 @@ const AppHeader = ({ user, onUserChange }) => {
                             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 p-4 sm:flex-row sm:justify-end">
                                 {unreadCount > 0 && (
                                     <button
-                                        className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 hover:bg-slate-100"
+                                        className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700 transition-all duration-150 hover:scale-[1.02] hover:bg-slate-100 active:scale-95"
                                         type="button"
                                         onClick={handleMarkAllAsRead}
                                     >
@@ -453,7 +474,7 @@ const AppHeader = ({ user, onUserChange }) => {
                                     </button>
                                 )}
                                 <button
-                                    className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white hover:bg-slate-800"
+                                    className="h-10 rounded-lg bg-slate-900 px-4 text-sm font-black text-white transition-all duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-95"
                                     type="button"
                                     onClick={openAllNotifications}
                                 >

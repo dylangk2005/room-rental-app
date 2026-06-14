@@ -52,6 +52,9 @@ public class PostTypeServiceImpl implements PostTypeService {
                 .titleSize(postType.getTitleSize())
                 .priority(postType.getPriority())
                 .pushPrice(postType.getPushPrice())
+                .isUppercase(Boolean.TRUE.equals(postType.getIsUppercase()))
+                .hasRecommendTag(Boolean.TRUE.equals(postType.getHasRecommendTag()))
+                .maxImageLimit(postType.getMaxImageLimit())
                 .prices(prices)
                 .build();
     }

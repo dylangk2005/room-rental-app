@@ -417,7 +417,7 @@ const RegisterPage = () => {
                                             </svg>
                                         </div>
                                         <input
-                                            className={`h-12 w-full rounded-xl border-2 bg-white py-2 pl-11 pr-4 text-sm text-slate-950 outline-none transition-all duration-300 placeholder:text-slate-400 focus:ring-4 focus:ring-emerald-100 ${
+                                            className={`h-12 w-full rounded-xl border-2 bg-white py-2 pl-11 pr-12 text-sm text-slate-950 outline-none transition-all duration-300 placeholder:text-slate-400 focus:ring-4 focus:ring-emerald-100 ${
                                                 form.confirmPassword.length > 0
                                                     ? passwordsMatch
                                                         ? 'border-emerald-400 focus:border-emerald-500'
@@ -431,6 +431,13 @@ const RegisterPage = () => {
                                             placeholder="Nhập lại mật khẩu"
                                             autoComplete="new-password"
                                         />
+                                        <button
+                                            className="absolute inset-y-0 right-0 flex items-center pr-4 text-sm font-bold text-slate-500"
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword((v) => !v)}
+                                        >
+                                            {showConfirmPassword ? 'Ẩn' : 'Hiện'}
+                                        </button>
                                     </div>
                                     {form.confirmPassword.length > 0 && !passwordsMatch && (
                                         <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-red-500">

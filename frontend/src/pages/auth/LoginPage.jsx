@@ -5,6 +5,7 @@ import authApi from '../../api/authApi'
 import ROUTES from '../../constants/routes'
 
 const ADMIN_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
+const USER_STORAGE_KEY = 'taytro_user'
 
 const getRoleLandingRoute = (role, fallback) => {
     if (role === 'ADMIN') return ROUTES.ADMIN_DASHBOARD
@@ -155,7 +156,7 @@ const LoginPage = () => {
                         </h1>
 
                         <p className="mt-4 text-base leading-7 text-slate-500 transition-all duration-500 sm:mt-5 sm:text-lg">
-                            Quản lý tin đã đăng, theo dõi liên hệ từ người thuê và nhận thông báo khi có phòng mới phù hợp.
+                            Dễ dàng đăng tin, quản lý bài đăng phòng trọ và khám phá các phòng phù hợp với nhu cầu của bạn.
                         </p>
                     </div>
 

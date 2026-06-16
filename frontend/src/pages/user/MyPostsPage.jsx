@@ -1,21 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
 import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import PostCard from '../../components/PostCard'
 import ROUTES from '../../constants/routes'
-
-const USER_STORAGE_KEY = 'taytro_user'
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const getErrorMessage = (error) =>
     error.response?.data?.message || 'Không tải được danh sách bài đăng. Vui lòng thử lại.'
@@ -40,7 +31,8 @@ const LoadingGrid = () => (
     </div>
 )
 
-const MyPostsPage = ({ user, onUserChange }) => {
+const MyPostsPage = () => {
+    const { user, login } = useAuth()
     const navigate = useNavigate()
     const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
@@ -58,9 +50,8 @@ const MyPostsPage = ({ user, onUserChange }) => {
             setError('')
 
             try {
-                const refreshResponse = await authApi.refresh()
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                onUserChange?.(refreshResponse.data)
+            const refreshResponse = await authApi.refresh()
+            login(refreshResponse.data)
 
                 const [postsResult, balanceResult] = await Promise.allSettled([
                     postApi.getMyPosts({ page, size: 8 }),
@@ -113,8 +104,6 @@ const MyPostsPage = ({ user, onUserChange }) => {
 
     return (
         <AccountLayout
-            user={user}
-            onUserChange={onUserChange}
             balance={balance}
             activeKey="posts"
             title="Quản lý bài đăng"

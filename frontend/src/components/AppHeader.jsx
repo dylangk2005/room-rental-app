@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import authApi from '../api/authApi'
 import notificationApi from '../api/notificationApi'
 import ROUTES from '../constants/routes'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const QUICK_NOTIFICATION_LIMIT = 4
 const ALL_NOTIFICATION_PAGE_SIZE = 10
 
@@ -115,7 +115,8 @@ const NotificationItem = ({ notification, onClick }) => (
     </button>
 )
 
-const AppHeader = ({ user, onUserChange }) => {
+const AppHeader = () => {
+    const { user, logout } = useAuth()
     const navigate = useNavigate()
     const menuRef = useRef(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -249,17 +250,12 @@ const AppHeader = ({ user, onUserChange }) => {
     }
 
     const handleLogout = async () => {
-        try {
-            await authApi.logout()
-        } finally {
-            localStorage.removeItem(USER_STORAGE_KEY)
-            onUserChange?.(null)
-            setIsMenuOpen(false)
-            setIsNotificationOpen(false)
-            setIsAllNotificationsOpen(false)
-            setSelectedNotification(null)
-            navigate(ROUTES.HOME)
-        }
+        setIsMenuOpen(false)
+        setIsNotificationOpen(false)
+        setIsAllNotificationsOpen(false)
+        setSelectedNotification(null)
+        await logout()
+        navigate(ROUTES.HOME)
     }
 
     const handleNotificationClick = async (notification) => {

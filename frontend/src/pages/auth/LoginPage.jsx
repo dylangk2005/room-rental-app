@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import ROUTES from '../../constants/routes'
 
 const ADMIN_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
-const USER_STORAGE_KEY = 'taytro_user'
 
 const getRoleLandingRoute = (role, fallback) => {
     if (role === 'ADMIN') return ROUTES.ADMIN_DASHBOARD
@@ -37,7 +37,8 @@ const SpinnerIcon = () => (
     </svg>
 )
 
-const LoginPage = ({ onLoginSuccess }) => {
+const LoginPage = () => {
+    const { login } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
     const [form, setForm] = useState({
@@ -72,9 +73,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                 password: form.password,
             })
             const user = response.data
-
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user))
-            onLoginSuccess?.(user)
+            login(user)
             const nextPath = location.state?.from || ROUTES.POSTS
             navigate(ADMIN_ROLES.has(user?.role) ? getRoleLandingRoute(user?.role, nextPath) : nextPath, { replace: true })
         } catch (loginError) {

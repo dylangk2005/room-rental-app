@@ -1,21 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import favoriteApi from '../../api/favoriteApi'
 import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import PostCard from '../../components/PostCard'
 import ROUTES from '../../constants/routes'
-
-const USER_STORAGE_KEY = 'taytro_user'
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const getErrorMessage = (error) =>
     error.response?.data?.message || 'Không tải được danh sách yêu thích. Vui lòng thử lại.'
@@ -41,7 +32,8 @@ const LoadingGrid = () => (
     </div>
 )
 
-const FavoritesPage = ({ user, onUserChange }) => {
+const FavoritesPage = () => {
+    const { user, login, logout } = useAuth()
     const navigate = useNavigate()
     const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
@@ -60,8 +52,7 @@ const FavoritesPage = ({ user, onUserChange }) => {
 
             try {
                 const refreshResponse = await authApi.refresh()
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                    onUserChange?.(refreshResponse.data)
+                login(refreshResponse.data)
 
                 const [favoritesResult, balanceResult] = await Promise.allSettled([
                     favoriteApi.getFavorites({ page, size: 9 }),
@@ -85,8 +76,7 @@ const FavoritesPage = ({ user, onUserChange }) => {
                 }
             } catch (loadError) {
                 if (loadError.response?.status === 401) {
-                    localStorage.removeItem(USER_STORAGE_KEY)
-                    onUserChange?.(null)
+                    logout()
                     navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.FAVORITES } })
                     return
                 }
@@ -116,8 +106,6 @@ const FavoritesPage = ({ user, onUserChange }) => {
 
     return (
         <AccountLayout
-            user={user}
-            onUserChange={onUserChange}
             balance={balance}
             activeKey="favorites"
             title="Danh sách yêu thích"

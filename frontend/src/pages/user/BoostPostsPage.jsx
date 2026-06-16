@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import membershipApi from '../../api/membershipApi'
 import paymentApi from '../../api/paymentApi'
@@ -8,16 +9,7 @@ import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import ROUTES from '../../constants/routes'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const VAT_PERCENT = 8
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
@@ -165,7 +157,8 @@ const BoostConfirmModal = ({ post, balance, membership, isSubmitting, onClose, o
     )
 }
 
-const BoostPostsPage = ({ user, onUserChange }) => {
+const BoostPostsPage = () => {
+    const { user, login } = useAuth()
     const navigate = useNavigate()
     const [balance, setBalance] = useState(0)
     const [membership, setMembership] = useState(null)
@@ -187,8 +180,7 @@ const BoostPostsPage = ({ user, onUserChange }) => {
 
         try {
             const refreshResponse = await authApi.refresh()
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                onUserChange?.(refreshResponse.data)
+            login(refreshResponse.data)
 
             const [postsResult, balanceResult, membershipResult] = await Promise.allSettled([
                 postApi.getMyPosts({ page: 0, size: 50 }),
@@ -248,8 +240,6 @@ const BoostPostsPage = ({ user, onUserChange }) => {
 
     return (
         <AccountLayout
-            user={user}
-            onUserChange={onUserChange}
             balance={balance}
             activeKey="boost"
             title="Đẩy tin đăng"

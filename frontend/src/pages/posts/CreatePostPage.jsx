@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import membershipApi from '../../api/membershipApi'
 import postApi from '../../api/postApi'
@@ -7,7 +8,6 @@ import walletApi from '../../api/walletApi'
 import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const MAX_IMAGES = 12
 const BYTES_PER_MB = 1024 * 1024
 const MAX_IMAGE_SIZE_MB = 10
@@ -61,14 +61,6 @@ const initialForm = {
     postTypeId: '',
     durationDays: '',
     agreed: false,
-}
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
 }
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
@@ -129,7 +121,8 @@ const Field = ({ label, children }) => (
     </label>
 )
 
-const CreatePostPage = ({ user, onUserChange }) => {
+const CreatePostPage = () => {
+    const { user, login } = useAuth()
     const navigate = useNavigate()
     const [form, setForm] = useState(initialForm)
     const [postTypes, setPostTypes] = useState([])
@@ -157,8 +150,7 @@ const CreatePostPage = ({ user, onUserChange }) => {
             try {
                 const refreshedUser = await authApi.refresh()
                 if (ignore) return
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser.data))
-                onUserChange?.(refreshedUser.data)
+                login(refreshedUser.data)
 
                 const [postTypesResult, walletResult, membershipResult, provincesResult] = await Promise.allSettled([
                     postApi.getPostTypes(),
@@ -439,7 +431,7 @@ const CreatePostPage = ({ user, onUserChange }) => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={onUserChange} />
+            <AppHeader />
 
             <section className="border-b border-slate-200 bg-white">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

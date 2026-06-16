@@ -38,15 +38,15 @@ const sortByPriorityThenDate = (list) =>
         const pa = getCategoryPriority(getPostTypeCategory(a.postTypeName, a.postTypePriority))
         const pb = getCategoryPriority(getPostTypeCategory(b.postTypeName, b.postTypePriority))
         if (pa !== pb) return pa - pb
-        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        const da = a.pushTime ? new Date(a.pushTime).getTime() : 0
+        const db = b.pushTime ? new Date(b.pushTime).getTime() : 0
         return db - da
     })
 
 const sortByLatest = (list) =>
     [...list].sort((a, b) => {
-        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0
-        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0
+        const da = a.pushTime ? new Date(a.pushTime).getTime() : 0
+        const db = b.pushTime ? new Date(b.pushTime).getTime() : 0
         return db - da
     })
 

@@ -1,16 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import AppHeader from './AppHeader'
 import ROUTES from '../constants/routes'
-
-const USER_STORAGE_KEY = 'taytro_user'
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const adminLinks = [
     { label: 'Tổng quan', to: ROUTES.ADMIN_DASHBOARD },
@@ -33,7 +24,7 @@ const managerLinks = [
 
 const BackOfficeLayout = ({ section = 'admin', title, subtitle, actions, children }) => {
     const location = useLocation()
-    const user = readStoredUser()
+    const { user } = useAuth()
     const links = section === 'manager'
         ? managerLinks.filter((link) => user?.role && link.roles.includes(user.role))
         : adminLinks
@@ -47,7 +38,7 @@ const BackOfficeLayout = ({ section = 'admin', title, subtitle, actions, childre
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} />
+            <AppHeader />
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-0 px-4 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8">
                 <aside className="border-b border-slate-200 bg-white pb-5 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:border-b-0 lg:border-r lg:pr-5">
                     <Link className="block rounded-lg bg-slate-900 p-4 text-white" to={homeRoute}>

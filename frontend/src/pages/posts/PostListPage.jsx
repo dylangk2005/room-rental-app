@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import authApi from '../../api/authApi'
 import favoriteApi from '../../api/favoriteApi'
 import postApi from '../../api/postApi'
 import AppHeader from '../../components/AppHeader'
 import PostListTabs from '../../components/posts/PostListTabs'
+import { useAuth } from '../../contexts/AuthContext'
 import ROUTES from '../../constants/routes'
-
-const USER_STORAGE_KEY = 'taytro_user'
 
 const initialFilters = {
     provinceId: '',
@@ -57,14 +55,6 @@ const formatPriceValue = (value) => {
     if (num >= 1_000_000) return `${num / 1_000_000}tr`
     if (num >= 1_000) return `${num / 1_000}k`
     return String(num)
-}
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
 }
 
 const getErrorMessage = (error) =>
@@ -150,7 +140,8 @@ const LoadingGrid = () => (
     </div>
 )
 
-const PostListPage = ({ user, onUserChange }) => {
+const PostListPage = () => {
+    const { user } = useAuth()
     const navigate = useNavigate()
     const [filters, setFilters] = useState(initialFilters)
     const [provinces, setProvinces] = useState([])
@@ -221,19 +212,6 @@ const PostListPage = ({ user, onUserChange }) => {
     useEffect(() => {
         let ignore = false
 
-        const refreshUser = async () => {
-            try {
-                const response = await authApi.refresh()
-                if (ignore) return
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(response.data))
-                onUserChange?.(response.data)
-            } catch {
-                if (!ignore) return
-                localStorage.removeItem(USER_STORAGE_KEY)
-                onUserChange?.(null)
-            }
-        }
-
         const loadLocations = async () => {
             try {
                 const data = await postApi.getProvinces()
@@ -269,7 +247,6 @@ const PostListPage = ({ user, onUserChange }) => {
             }
         }
 
-        refreshUser()
         loadLocations()
         loadInitialPosts()
 
@@ -515,7 +492,7 @@ const PostListPage = ({ user, onUserChange }) => {
 
     return (
         <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={onUserChange} />
+            <AppHeader />
 
             <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8" id="search">
                 <form

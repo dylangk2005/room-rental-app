@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import AppHeader from './AppHeader'
+import { useAuth } from '../contexts/AuthContext'
 import ROUTES from '../constants/routes'
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
@@ -36,11 +37,12 @@ const accountMenuItems = [
     { key: 'favorites', label: 'Danh sách yêu thích', to: ROUTES.FAVORITES, icon: 'heart' },
 ]
 
-const AccountLayout = ({ user, onUserChange, balance = 0, activeKey, title, subtitle, children, actions }) => (
-    <main className="min-h-screen bg-slate-50 text-slate-950">
-        <AppHeader user={user} onUserChange={onUserChange} />
+const AccountLayout = ({ balance = 0, activeKey, title, subtitle, children, actions }) => {
+    const { user } = useAuth()
 
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-0 px-4 py-6 sm:px-6 lg:grid-cols-[300px_minmax(0,1fr)] lg:px-8">
+    return (
+        <main className="min-h-screen bg-slate-50 text-slate-950">
+            <AppHeader />
             <aside className="border-b border-slate-200 bg-white pb-5 lg:sticky lg:top-20 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto lg:border-b-0 lg:border-r lg:pr-5">
                 <section className="flex items-center gap-3">
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-lg font-black text-slate-700">
@@ -108,8 +110,8 @@ const AccountLayout = ({ user, onUserChange, balance = 0, activeKey, title, subt
                 )}
                 {children}
             </section>
-        </div>
-    </main>
-)
+        </main>
+    )
+}
 
 export default AccountLayout

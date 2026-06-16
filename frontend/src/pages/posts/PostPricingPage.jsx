@@ -1,22 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
 import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
 import { getPostTypeColorLabel, getPostTypeTitleColor } from '../../utils/postTypeStyles'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const VAT_PERCENT = 8
 const PRICE_DURATIONS = [5, 10, 15, 30]
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')}đ`
 
@@ -62,7 +54,8 @@ const LoadingState = () => (
     </div>
 )
 
-const PostPricingPage = ({ user, onUserChange }) => {
+const PostPricingPage = () => {
+    const { user, login } = useAuth()
     const [postTypes, setPostTypes] = useState([])
     const [includeVat, setIncludeVat] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
@@ -81,11 +74,9 @@ const PostPricingPage = ({ user, onUserChange }) => {
             const [userResult, postTypesResult] = await Promise.allSettled([authApi.refresh(), postApi.getPostTypes()])
 
             if (userResult.status === 'fulfilled') {
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userResult.value.data))
-                onUserChange?.(userResult.value.data)
+                login(userResult.value.data)
             } else {
-                localStorage.removeItem(USER_STORAGE_KEY)
-                onUserChange?.(null)
+                logout()
             }
 
             if (postTypesResult.status !== 'fulfilled') {
@@ -113,7 +104,7 @@ const PostPricingPage = ({ user, onUserChange }) => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={onUserChange} />
+            <AppHeader />
 
             <section className="border-b border-slate-200 bg-white">
                 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">

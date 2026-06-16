@@ -1,21 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import ROUTES from '../../constants/routes'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const MIN_DEPOSIT = 10000
 const quickAmounts = [50000, 100000, 200000, 500000, 1000000, 2000000]
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
@@ -142,7 +134,8 @@ const TransactionList = ({ transactions, emptyTitle, emptyDescription }) => {
     )
 }
 
-const WalletPage = ({ user, onUserChange }) => {
+const WalletPage = () => {
+    const { user, login } = useAuth()
     const navigate = useNavigate()
     const location = useLocation()
     const [balance, setBalance] = useState(0)
@@ -178,9 +171,8 @@ const WalletPage = ({ user, onUserChange }) => {
             setError('')
 
             try {
-                const refreshResponse = await authApi.refresh()
-                localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshResponse.data))
-                onUserChange?.(refreshResponse.data)
+            const refreshResponse = await authApi.refresh()
+            login(refreshResponse.data)
 
                 const transactionType =
                     activeTab === 'deposit-history'
@@ -283,8 +275,6 @@ const WalletPage = ({ user, onUserChange }) => {
 
     return (
         <AccountLayout
-            user={user}
-            onUserChange={onUserChange}
             balance={balance}
             activeKey={activeTab === 'deposit' ? 'deposit' : 'transactions'}
             title="Quản lý giao dịch"

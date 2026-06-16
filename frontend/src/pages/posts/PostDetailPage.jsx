@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import favoriteApi from '../../api/favoriteApi'
 import postApi from '../../api/postApi'
@@ -9,7 +10,6 @@ import ROUTES from '../../constants/routes'
 import { formatCurrency, formatDate } from '../../utils/postFormatters'
 import { getPostTypeTitleColor } from '../../utils/postTypeStyles'
 
-const USER_STORAGE_KEY = 'taytro_user'
 const MAX_REPORT_IMAGES = 5
 
 const reportReasons = [
@@ -19,14 +19,6 @@ const reportReasons = [
     'Nội dung lừa đảo hoặc đáng ngờ',
     'Khác',
 ]
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const getErrorMessage = (error) =>
     error.response?.data?.message || 'Không tải được tin đăng. Vui lòng kiểm tra backend và thử lại.'
@@ -477,7 +469,8 @@ const ReportModal = ({ onClose, onSubmit, postTitle, reportError, reportSuccess,
     )
 }
 
-const ContactPanel = ({ contact, contactError, isContactLoading, isExpired, canViewExpiredContact, isOwner, user, postId }) => {
+const ContactPanel = ({ contact, contactError, isContactLoading, isExpired, canViewExpiredContact, isOwner, postId }) => {
+    const { user } = useAuth()
     if (!user) {
         return (
             <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -618,7 +611,8 @@ const MapPanel = ({ address }) => {
     )
 }
 
-const PostDetailPage = ({ user, onUserChange }) => {
+const PostDetailPage = () => {
+    const { user, login } = useAuth()
     const { id } = useParams()
     const navigate = useNavigate()
     const [post, setPost] = useState(null)
@@ -652,8 +646,7 @@ const PostDetailPage = ({ user, onUserChange }) => {
             try {
                 const sessionUser = await authApi.refreshSession()
                 if (ignore) return
-
-                onUserChange?.(sessionUser)
+                login(sessionUser)
 
                 const response = await postApi.getPostDetail(id)
                 if (!ignore) {
@@ -794,7 +787,7 @@ const PostDetailPage = ({ user, onUserChange }) => {
 
     return (
         <main className="min-h-screen bg-slate-50 text-slate-950">
-            <AppHeader user={user} onUserChange={onUserChange} />
+            <AppHeader />
 
             <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8">
                 <div className="space-y-6">
@@ -859,7 +852,6 @@ const PostDetailPage = ({ user, onUserChange }) => {
                         isExpired={isPostExpired}
                         canViewExpiredContact={canViewExpiredContact}
                         isOwner={isOwner}
-                        user={user}
                         postId={id}
                     />
                     <MapPanel address={address} />

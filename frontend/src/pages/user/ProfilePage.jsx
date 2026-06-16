@@ -1,21 +1,12 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import authApi from '../../api/authApi'
 import membershipApi from '../../api/membershipApi'
 import userApi from '../../api/userApi'
 import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import ROUTES from '../../constants/routes'
-
-const USER_STORAGE_KEY = 'taytro_user'
-
-const readStoredUser = () => {
-    try {
-        return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null')
-    } catch {
-        return null
-    }
-}
 
 const getInitial = (name = '') => {
     const trimmedName = name.trim()
@@ -135,7 +126,8 @@ const InfoTile = ({ label, value, tone = 'slate' }) => {
     )
 }
 
-const ProfilePage = ({ user, onUserChange }) => {
+const ProfilePage = () => {
+    const { user, login, logout } = useAuth()
     const navigate = useNavigate()
     const [profile, setProfile] = useState(null)
     const [membership, setMembership] = useState(null)
@@ -165,9 +157,7 @@ const ProfilePage = ({ user, onUserChange }) => {
 
         try {
             const refreshResponse = await authApi.refresh()
-            const refreshedUser = refreshResponse.data
-            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(refreshedUser))
-            onUserChange?.(refreshedUser)
+            login(refreshResponse.data)
 
             const [profileResult, walletResult, membershipResult] = await Promise.allSettled([
                 userApi.getProfile(),
@@ -189,8 +179,7 @@ const ProfilePage = ({ user, onUserChange }) => {
             setWalletBalance(walletResult.status === 'fulfilled' ? walletResult.value.data?.balance || 0 : 0)
             setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
         } catch (loadError) {
-            localStorage.removeItem(USER_STORAGE_KEY)
-                onUserChange?.(null)
+            logout()
 
             if (loadError.response?.status === 401) {
                 navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.PROFILE } })
@@ -303,8 +292,7 @@ const ProfilePage = ({ user, onUserChange }) => {
         }
 
         setProfile(updatedProfile)
-        onUserChange?.(updatedUser)
-        localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser))
+        login(updatedUser)
     }
 
     const handleProfileSubmit = async (event) => {
@@ -393,8 +381,6 @@ const ProfilePage = ({ user, onUserChange }) => {
 
     return (
         <AccountLayout
-            user={user}
-            onUserChange={onUserChange}
             balance={walletBalance}
             activeKey="account"
             title="Quản lý tài khoản"

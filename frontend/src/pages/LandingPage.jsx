@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import ROUTES from '../constants/routes'
 
 const SearchIcon = ({ className }) => (
@@ -164,7 +165,8 @@ const StepCard = ({ number, title, description, index, icon }) => {
     )
 }
 
-const LandingPage = ({ user, onUserChange }) => {
+const LandingPage = () => {
+    const { user, logout } = useAuth()
     const navigate = useNavigate()
     const [heroVisible, setHeroVisible] = useState(false)
     const [imgLoaded, setImgLoaded] = useState(false)
@@ -244,8 +246,8 @@ const LandingPage = ({ user, onUserChange }) => {
                                 className="group/logout inline-flex h-9 items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 text-xs font-black text-white shadow-sm transition-all duration-200 hover:scale-[1.04] hover:from-red-700 hover:to-rose-700 hover:shadow-lg hover:shadow-red-300/50 active:scale-95 sm:text-sm"
                                 type="button"
                                 onClick={() => {
-                                    localStorage.removeItem('taytro_user')
-                                    onUserChange?.(null)
+                                    logout()
+                                    navigate(ROUTES.HOME)
                                 }}
                             >
                                 <svg aria-hidden="true" className="h-3.5 w-3.5 transition-transform duration-200 group-hover/logout:-translate-x-0.5" fill="none" viewBox="0 0 24 24">
@@ -334,7 +336,17 @@ const LandingPage = ({ user, onUserChange }) => {
 
                             {/* Trust bar */}
                             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 sm:mt-6 sm:justify-start sm:gap-x-5">
-                                {[1, 2, 3, 4].map(i => <StarIcon key={i} className={`h-4 w-4 transition-all duration-300 ${i <= 4 ? 'text-amber-400' : 'text-slate-200'}`} />)}
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <div key={i} className="relative inline-flex h-4 w-4">
+                                        <StarIcon className="absolute inset-0 h-4 w-4 text-slate-200" />
+                                        {i <= 4 && <StarIcon className="absolute inset-0 h-4 w-4 text-amber-400" />}
+                                        {i === 5 && (
+                                            <div className="absolute inset-0 overflow-hidden" style={{ width: '80%' }}>
+                                                <StarIcon className="h-4 w-4 text-amber-400" />
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
                                 <span className="text-xs text-slate-400 transition-colors duration-300 hover:text-slate-500 sm:text-sm">4.8/5 · 50,000+ người dùng</span>
                             </div>
                         </div>

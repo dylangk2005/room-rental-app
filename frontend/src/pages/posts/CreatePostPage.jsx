@@ -8,7 +8,7 @@ import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
 
 const USER_STORAGE_KEY = 'taytro_user'
-const MAX_IMAGES = 10
+const MAX_IMAGES = 12
 const BYTES_PER_MB = 1024 * 1024
 const MAX_IMAGE_SIZE_MB = 10
 const MAX_TOTAL_IMAGE_SIZE_MB = 80

@@ -58,7 +58,7 @@ public class PostServiceImpl implements PostService {
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
 
-    private static final int MAX_TOTAL_IMAGES = 10;
+    private static final int MAX_TOTAL_IMAGES = 12;
 
     // ─── Pageable sort theo priority ASC, pushTime DESC ──────────────────
     private Pageable buildSortedPageable(int page, int size) {
@@ -288,11 +288,8 @@ public class PostServiceImpl implements PostService {
         PostType postType = postTypeRepository.findById(request.getPostTypeId())
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy loại bài đăng"));
 
-        int typeImageLimit = postType.getMaxImageLimit() != null ? postType.getMaxImageLimit() : 1;
-        if (images.size() > typeImageLimit) {
-            throw AppException.badRequest("Loại tin này chỉ cho phép tối đa " + typeImageLimit + " ảnh");
-        }
-
+        // maxImageLimit chỉ dùng để hiển thị trên danh sách (summary card).
+        // Upload ảnh chỉ giới hạn bởi MAX_TOTAL_IMAGES, áp dụng cho mọi loại tin.
         Province province = resolveProvince(request);
         District district = resolveDistrict(request, province);
 
@@ -382,12 +379,8 @@ public class PostServiceImpl implements PostService {
         // Xử lý upload ảnh mới nếu có
         if (newImages != null && !newImages.isEmpty()) {
             int currentCount = postImageRepository.findByPostId(postId).size();
-            int typeImageLimit = post.getPostType() != null && post.getPostType().getMaxImageLimit() != null
-                    ? post.getPostType().getMaxImageLimit()
-                    : 1;
-            if (currentCount + newImages.size() > typeImageLimit) {
-                throw AppException.badRequest("Loại tin này chỉ cho phép tối đa " + typeImageLimit + " ảnh");
-            }
+            // maxImageLimit chỉ dùng để hiển thị trên danh sách (summary card).
+            // Tổng số ảnh lưu trữ chỉ giới hạn bởi MAX_TOTAL_IMAGES, áp dụng cho mọi loại tin.
             if (currentCount + newImages.size() > MAX_TOTAL_IMAGES) {
                 throw AppException.badRequest("Tổng số ảnh không được vượt quá " + MAX_TOTAL_IMAGES);
             }

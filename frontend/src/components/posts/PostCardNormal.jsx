@@ -169,14 +169,7 @@ const PostImageGallery = ({ post }) => {
             ? post.imageUrls
             : [post.thumbnailUrl].filter(Boolean)
     const images = (sourceImages.length > 0 ? sourceImages : [fallbackUrl]).slice(0, getPostTypeMaxImageLimit(post))
-    const showImageCount = images.length > 1
-
-    const imageCountBadge = showImageCount ? (
-        <span className="absolute bottom-3 right-3 z-10 rounded-full bg-slate-950/85 px-2.5 py-1 text-xs font-black text-white shadow-md ring-1 ring-white/20 backdrop-blur-sm">
-            <span className="mr-1">📷</span>
-            {images.length}
-        </span>
-    ) : null
+    const imageCountBadge = null
 
     const gradientOverlay = (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16 bg-gradient-to-t from-slate-950/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />

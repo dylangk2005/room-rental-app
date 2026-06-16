@@ -15,7 +15,7 @@ public interface PostService {
 
     PostPageResponse getActivePosts(int page, int size);
 
-    PostPageResponse searchPosts(String province, String district,
+    PostPageResponse searchPosts(Integer provinceId, Integer districtId,
                                  BigDecimal minPrice, BigDecimal maxPrice,
                                  BigDecimal minArea, BigDecimal maxArea,
                                  int page, int size);

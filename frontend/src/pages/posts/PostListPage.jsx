@@ -36,6 +36,20 @@ const areaRanges = [
     { label: 'Trên 60 m²', minArea: '60', maxArea: '' },
 ]
 
+const buildSearchParams = (filters = {}) => {
+    const params = {
+        page: filters.page ?? 0,
+        size: filters.size ?? 9,
+    }
+    if (filters.provinceId) params.provinceId = filters.provinceId
+    if (filters.districtId) params.districtId = filters.districtId
+    if (filters.minPrice) params.minPrice = filters.minPrice
+    if (filters.maxPrice) params.maxPrice = filters.maxPrice
+    if (filters.minArea) params.minArea = filters.minArea
+    if (filters.maxArea) params.maxArea = filters.maxArea
+    return params
+}
+
 const formatPriceValue = (value) => {
     if (!value) return ''
     const num = Number(value)
@@ -152,12 +166,9 @@ const PostListPage = ({ user, onUserChange }) => {
     const [isSearching, setIsSearching] = useState(false)
     const [error, setError] = useState('')
     const [hasSearched, setHasSearched] = useState(false)
+    const [lastSearchParams, setLastSearchParams] = useState({})
     const [favoriteToast, setFavoriteToast] = useState(null)
 
-    const activeFilterCount = useMemo(
-        () => Object.values(filters).filter((value) => value !== '').length,
-        [filters]
-    )
     const selectedPriceRange = useMemo(
         () =>
             Math.max(
@@ -189,7 +200,7 @@ const PostListPage = ({ user, onUserChange }) => {
 
         try {
             const response = useSearch
-                ? await postApi.searchPosts({ ...params, size: 9 })
+                ? await postApi.searchPosts(buildSearchParams(params))
                 : await postApi.getPosts({ ...params, size: 9 })
             const data = response.data || {}
 
@@ -402,6 +413,7 @@ const PostListPage = ({ user, onUserChange }) => {
 
     const handleSearch = (event) => {
         event.preventDefault()
+        setLastSearchParams(filters)
         setHasSearched(true)
         setIsSearching(true)
         loadPosts({ ...filters, page: 0, size: 9 }, true)
@@ -424,7 +436,9 @@ const PostListPage = ({ user, onUserChange }) => {
 
     const loadPage = (nextPage) => {
         if (nextPage < 0 || nextPage >= pageInfo.totalPages) return
-        loadPosts({ ...(hasSearched ? filters : {}), page: nextPage, size: 9 }, hasSearched)
+        const useSearch = hasSearched
+        const baseParams = useSearch ? lastSearchParams : {}
+        loadPosts({ ...baseParams, page: nextPage, size: 9 }, useSearch)
     }
 
     const activeFilterChips = useMemo(() => {
@@ -463,8 +477,23 @@ const PostListPage = ({ user, onUserChange }) => {
             setFilters((current) => ({ ...current, minArea: '', maxArea: '' }))
         } else if (chip.key === 'district') {
             setFilters((current) => ({ ...current, districtId: '', districtName: '' }))
+        } else if (chip.key === 'province') {
+            setFilters((current) => ({
+                ...current,
+                provinceId: '',
+                districtId: '',
+                provinceName: '',
+                districtName: '',
+            }))
+            setDistricts([])
         } else {
-            setFilters((current) => ({ ...current, provinceId: '', districtId: '', provinceName: '', districtName: '' }))
+            setFilters((current) => ({
+                ...current,
+                provinceId: '',
+                districtId: '',
+                provinceName: '',
+                districtName: '',
+            }))
         }
     }
 
@@ -660,7 +689,7 @@ const PostListPage = ({ user, onUserChange }) => {
                             <button
                                 className="mt-5 inline-flex h-10 items-center gap-1.5 rounded-xl bg-red-600 px-5 text-sm font-black text-white transition-all duration-200 hover:scale-[1.04] hover:bg-red-700 hover:shadow-md active:scale-95"
                                 type="button"
-                                onClick={() => loadPosts({ ...(hasSearched ? filters : {}), page: pageInfo.currentPage, size: 9 }, hasSearched)}
+                                onClick={() => loadPosts({ ...(hasSearched ? lastSearchParams : {}), page: pageInfo.currentPage, size: 9 }, hasSearched)}
                             >
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24">
                                     <path d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />

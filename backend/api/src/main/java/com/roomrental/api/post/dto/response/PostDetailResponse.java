@@ -19,8 +19,6 @@ public class PostDetailResponse {
     private String district;
     private Integer provinceId;
     private Integer districtId;
-    private String provinceName;
-    private String districtName;
     private BigDecimal area;
     private BigDecimal rentalPrice;
     private PostStatus status;

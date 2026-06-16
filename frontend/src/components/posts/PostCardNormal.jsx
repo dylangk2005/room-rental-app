@@ -315,7 +315,7 @@ const PostCardNormal = ({ post, index = 0, isFavorited = false, onToggleFavorite
                                 <MapPinIcon />
                             </span>
                             <span className="line-clamp-2 font-semibold">
-                                {post.districtName || post.district}, {post.provinceName || post.province}
+                                {post.district}, {post.province}
                             </span>
                         </div>
 

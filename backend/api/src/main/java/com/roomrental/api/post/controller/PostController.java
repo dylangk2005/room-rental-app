@@ -46,8 +46,8 @@ public class PostController {
 
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<PostPageResponse>> searchPosts(
-            @RequestParam(required = false) String province,
-            @RequestParam(required = false) String district,
+            @RequestParam(required = false) Integer provinceId,
+            @RequestParam(required = false) Integer districtId,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) BigDecimal minArea,
@@ -55,7 +55,7 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.success(
-                postService.searchPosts(province, district, minPrice, maxPrice, minArea, maxArea, page, size)));
+                postService.searchPosts(provinceId, districtId, minPrice, maxPrice, minArea, maxArea, page, size)));
     }
 
     @GetMapping("/locations")
@@ -80,8 +80,8 @@ public class PostController {
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("address") String address,
-            @RequestParam("province") String province,
-            @RequestParam("district") String district,
+            @RequestParam("provinceId") Integer provinceId,
+            @RequestParam("districtId") Integer districtId,
             @RequestParam("area") BigDecimal area,
             @RequestParam("rentalPrice") BigDecimal rentalPrice,
             @RequestParam("postTypeId") Integer postTypeId,
@@ -92,8 +92,8 @@ public class PostController {
         request.setTitle(title);
         request.setDescription(description);
         request.setAddress(address);
-        request.setProvince(province);
-        request.setDistrict(district);
+        request.setProvinceId(provinceId);
+        request.setDistrictId(districtId);
         request.setArea(area);
         request.setRentalPrice(rentalPrice);
         request.setPostTypeId(postTypeId);
@@ -110,8 +110,8 @@ public class PostController {
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("address") String address,
-            @RequestParam("province") String province,
-            @RequestParam("district") String district,
+            @RequestParam("provinceId") Integer provinceId,
+            @RequestParam("districtId") Integer districtId,
             @RequestParam("area") BigDecimal area,
             @RequestParam("rentalPrice") BigDecimal rentalPrice,
             @RequestParam("postTypeId") Integer postTypeId,
@@ -119,17 +119,16 @@ public class PostController {
             @RequestParam("images") List<MultipartFile> images) {
 
         Integer userId = authHelper.getCurrentUserId();
-        CreatePostRequest request = buildCreatePostRequest(
-                title,
-                description,
-                address,
-                province,
-                district,
-                area,
-                rentalPrice,
-                postTypeId,
-                durationDays
-        );
+        CreatePostRequest request = new CreatePostRequest();
+        request.setTitle(title);
+        request.setDescription(description);
+        request.setAddress(address);
+        request.setProvinceId(provinceId);
+        request.setDistrictId(districtId);
+        request.setArea(area);
+        request.setRentalPrice(rentalPrice);
+        request.setPostTypeId(postTypeId);
+        request.setDurationDays(durationDays);
 
         PostDetailResponse createdPost = postService.createPost(userId, request, images);
 
@@ -151,8 +150,8 @@ public class PostController {
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("address") String address,
-            @RequestParam("province") String province,
-            @RequestParam("district") String district,
+            @RequestParam("provinceId") Integer provinceId,
+            @RequestParam("districtId") Integer districtId,
             @RequestParam("area") BigDecimal area,
             @RequestParam("rentalPrice") BigDecimal rentalPrice,
             @RequestParam(value = "deleteImageUrls", required = false) List<String> deleteImageUrls,
@@ -162,8 +161,8 @@ public class PostController {
         request.setTitle(title);
         request.setDescription(description);
         request.setAddress(address);
-        request.setProvince(province);
-        request.setDistrict(district);
+        request.setProvinceId(provinceId);
+        request.setDistrictId(districtId);
         request.setArea(area);
         request.setRentalPrice(rentalPrice);
         request.setDeleteImageUrls(deleteImageUrls);
@@ -186,28 +185,5 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.success(postService.getMyPosts(authHelper.getCurrentUserId(), page, size)));
-    }
-
-    private CreatePostRequest buildCreatePostRequest(
-            String title,
-            String description,
-            String address,
-            String province,
-            String district,
-            BigDecimal area,
-            BigDecimal rentalPrice,
-            Integer postTypeId,
-            Integer durationDays) {
-        CreatePostRequest request = new CreatePostRequest();
-        request.setTitle(title);
-        request.setDescription(description);
-        request.setAddress(address);
-        request.setProvince(province);
-        request.setDistrict(district);
-        request.setArea(area);
-        request.setRentalPrice(rentalPrice);
-        request.setPostTypeId(postTypeId);
-        request.setDurationDays(durationDays);
-        return request;
     }
 }

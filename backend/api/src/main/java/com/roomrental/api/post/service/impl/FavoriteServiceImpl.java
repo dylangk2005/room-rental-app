@@ -121,13 +121,17 @@ public class FavoriteServiceImpl implements FavoriteService {
         PostType postType = post.getPostType();
         com.roomrental.api.user.entity.User owner = post.getUser();
         String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
+        com.roomrental.api.location.entity.Province provinceRef = post.getProvinceRef();
+        com.roomrental.api.location.entity.District districtRef = post.getDistrictRef();
 
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
                 .description(post.getDescription())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(provinceRef != null ? provinceRef.getName() : null)
+                .district(districtRef != null ? districtRef.getName() : null)
+                .provinceId(provinceRef != null ? provinceRef.getId() : null)
+                .districtId(districtRef != null ? districtRef.getId() : null)
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus() != null ? post.getStatus().name() : null)

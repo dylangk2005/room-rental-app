@@ -78,12 +78,10 @@ public class PostServiceImpl implements PostService {
                 .id(post.getId())
                 .title(post.getTitle())
                 .description(post.getDescription())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(provinceRef != null ? provinceRef.getName() : null)
+                .district(districtRef != null ? districtRef.getName() : null)
                 .provinceId(provinceRef != null ? provinceRef.getId() : null)
                 .districtId(districtRef != null ? districtRef.getId() : null)
-                .provinceName(provinceRef != null ? provinceRef.getName() : post.getProvince())
-                .districtName(districtRef != null ? districtRef.getName() : post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus() != null ? post.getStatus().name() : null)
@@ -115,12 +113,10 @@ public class PostServiceImpl implements PostService {
                 .title(post.getTitle())
                 .description(post.getDescription())
                 .address(post.getAddress())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(provinceRef != null ? provinceRef.getName() : null)
+                .district(districtRef != null ? districtRef.getName() : null)
                 .provinceId(provinceRef != null ? provinceRef.getId() : null)
                 .districtId(districtRef != null ? districtRef.getId() : null)
-                .provinceName(provinceRef != null ? provinceRef.getName() : post.getProvince())
-                .districtName(districtRef != null ? districtRef.getName() : post.getDistrict())
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus())
@@ -178,14 +174,14 @@ public class PostServiceImpl implements PostService {
 
     // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
     @Override
-    public PostPageResponse searchPosts(String province, String district,
+    public PostPageResponse searchPosts(Integer provinceId, Integer districtId,
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         BigDecimal minArea, BigDecimal maxArea,
                                         int page, int size) {
         // Chú ý: chỉ tìm kiếm bài đăng public còn hiệu lực
         Page<Post> result = postRepository.searchPosts(
                 PostStatus.ACTIVE, LocalDateTime.now(),
-                province, district, minPrice, maxPrice, minArea, maxArea,
+                provinceId, districtId, minPrice, maxPrice, minArea, maxArea,
                 buildSortedPageable(page, size));
         return mapToPageResponse(result);
     }
@@ -305,8 +301,6 @@ public class PostServiceImpl implements PostService {
         post.setTitle(request.getTitle());
         post.setDescription(request.getDescription());
         post.setAddress(request.getAddress());
-        post.setProvince(province != null ? province.getName() : request.getProvince());
-        post.setDistrict(district != null ? district.getName() : request.getDistrict());
         post.setProvinceRef(province);
         post.setDistrictRef(district);
         post.setArea(request.getArea());
@@ -366,8 +360,6 @@ public class PostServiceImpl implements PostService {
         post.setAddress(request.getAddress());
         Province province = resolveProvinceFromUpdate(request);
         District district = resolveDistrictFromUpdate(request, province);
-        post.setProvince(province != null ? province.getName() : request.getProvince());
-        post.setDistrict(district != null ? district.getName() : request.getDistrict());
         post.setProvinceRef(province);
         post.setDistrictRef(district);
         post.setArea(request.getArea());
@@ -505,57 +497,45 @@ public class PostServiceImpl implements PostService {
 
     // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
     // Resolve province: ưu tiên provinceId, fallback tìm theo tên
+    // Resolve province theo ID (bắt buộc)
     private Province resolveProvince(CreatePostRequest request) {
-        if (request.getProvinceId() != null) {
-            return provinceRepository.findById(request.getProvinceId()).orElse(null);
+        if (request.getProvinceId() == null) {
+            throw AppException.badRequest("Vui lòng chọn tỉnh/thành");
         }
-        if (request.getProvince() != null && !request.getProvince().isBlank()) {
-            return provinceRepository.findAll().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(request.getProvince().trim()))
-                    .findFirst().orElse(null);
-        }
-        return null;
+        return provinceRepository.findById(request.getProvinceId())
+                .orElseThrow(() -> AppException.badRequest("Tỉnh/thành không hợp lệ"));
     }
 
     private Province resolveProvinceFromUpdate(UpdatePostRequest request) {
-        if (request.getProvinceId() != null) {
-            return provinceRepository.findById(request.getProvinceId()).orElse(null);
+        if (request.getProvinceId() == null) {
+            throw AppException.badRequest("Vui lòng chọn tỉnh/thành");
         }
-        if (request.getProvince() != null && !request.getProvince().isBlank()) {
-            return provinceRepository.findAll().stream()
-                    .filter(p -> p.getName().equalsIgnoreCase(request.getProvince().trim()))
-                    .findFirst().orElse(null);
-        }
-        return null;
+        return provinceRepository.findById(request.getProvinceId())
+                .orElseThrow(() -> AppException.badRequest("Tỉnh/thành không hợp lệ"));
     }
 
     private District resolveDistrictFromUpdate(UpdatePostRequest request, Province province) {
-        if (request.getDistrictId() != null) {
-            return districtRepository.findById(request.getDistrictId()).orElse(null);
+        if (request.getDistrictId() == null) {
+            throw AppException.badRequest("Vui lòng chọn quận/huyện");
         }
-        if (request.getDistrict() != null && !request.getDistrict().isBlank()) {
-            String name = request.getDistrict().trim();
-            return districtRepository.findAll().stream()
-                    .filter(d -> d.getName().equalsIgnoreCase(name)
-                            && (province == null || province.getId().equals(d.getProvinceId())))
-                    .findFirst().orElse(null);
+        District district = districtRepository.findById(request.getDistrictId())
+                .orElseThrow(() -> AppException.badRequest("Quận/huyện không hợp lệ"));
+        if (province != null && !province.getId().equals(district.getProvinceId())) {
+            throw AppException.badRequest("Quận/huyện không thuộc tỉnh/thành đã chọn");
         }
-        return null;
+        return district;
     }
 
-    // Resolve district: ưu tiên districtId, fallback tìm theo tên + province
     private District resolveDistrict(CreatePostRequest request, Province province) {
-        if (request.getDistrictId() != null) {
-            return districtRepository.findById(request.getDistrictId()).orElse(null);
+        if (request.getDistrictId() == null) {
+            throw AppException.badRequest("Vui lòng chọn quận/huyện");
         }
-        if (request.getDistrict() != null && !request.getDistrict().isBlank()) {
-            String name = request.getDistrict().trim();
-            return districtRepository.findAll().stream()
-                    .filter(d -> d.getName().equalsIgnoreCase(name)
-                            && (province == null || province.getId().equals(d.getProvinceId())))
-                    .findFirst().orElse(null);
+        District district = districtRepository.findById(request.getDistrictId())
+                .orElseThrow(() -> AppException.badRequest("Quận/huyện không hợp lệ"));
+        if (province != null && !province.getId().equals(district.getProvinceId())) {
+            throw AppException.badRequest("Quận/huyện không thuộc tỉnh/thành đã chọn");
         }
-        return null;
+        return district;
     }
 
 

@@ -60,17 +60,18 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 """)
     Optional<Post> findDetailById(@Param("id") Integer id);
 
-    // Tìm kiếm bài đăng theo tiêu chí, có phân trang
-        @EntityGraph(attributePaths = "user")
-@Query(
+    // Tim kiem bai dang theo tieu chi, loc theo FK provinceId/districtId
+    @Query(
             value = """
         SELECT p FROM Post p
         JOIN FETCH p.postType
+        JOIN FETCH p.provinceRef
+        JOIN FETCH p.districtRef
         WHERE p.status = :status
           AND p.endAt IS NOT NULL
           AND p.endAt > :now
-          AND (:province IS NULL OR p.province = :province)
-          AND (:district IS NULL OR p.district = :district)
+          AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+          AND (:districtId IS NULL OR p.districtRef.id = :districtId)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
           AND (:maxPrice IS NULL OR p.rentalPrice <= :maxPrice)
           AND (:minArea IS NULL OR p.area >= :minArea)
@@ -81,8 +82,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
         WHERE p.status = :status
           AND p.endAt IS NOT NULL
           AND p.endAt > :now
-          AND (:province IS NULL OR p.province = :province)
-          AND (:district IS NULL OR p.district = :district)
+          AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+          AND (:districtId IS NULL OR p.districtRef.id = :districtId)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
           AND (:maxPrice IS NULL OR p.rentalPrice <= :maxPrice)
           AND (:minArea IS NULL OR p.area >= :minArea)
@@ -92,8 +93,8 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> searchPosts(
             @Param("status") PostStatus status,
             @Param("now") LocalDateTime now,
-            @Param("province") String province,
-            @Param("district") String district,
+            @Param("provinceId") Integer provinceId,
+            @Param("districtId") Integer districtId,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("minArea") BigDecimal minArea,
@@ -107,16 +108,14 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     }
 
     @Query("""
-    SELECT DISTINCT p.province AS province, p.district AS district
+    SELECT DISTINCT pr.name AS province, d.name AS district
     FROM Post p
+    JOIN p.provinceRef pr
+    JOIN p.districtRef d
     WHERE p.status = :status
       AND p.endAt IS NOT NULL
       AND p.endAt > :now
-      AND p.province IS NOT NULL
-      AND p.province <> ''
-      AND p.district IS NOT NULL
-      AND p.district <> ''
-    ORDER BY p.province ASC, p.district ASC
+    ORDER BY pr.name ASC, d.name ASC
 """)
     List<PostLocationView> findActiveLocations(
             @Param("status") PostStatus status,

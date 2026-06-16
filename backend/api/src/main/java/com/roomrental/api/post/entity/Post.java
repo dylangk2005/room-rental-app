@@ -32,22 +32,14 @@ public class Post {
     @Column(name = "address", columnDefinition = "TEXT")
     private String address;
 
-    // Tỉnh/Thành phố, tối đa 100 ký tự
-    @Column(name = "province", length = 100)
-    private String province;
-
-    // Quận/Huyện, tối đa 100 ký tự
-    @Column(name = "district", length = 100)
-    private String district;
-
-    // FK -> provinces (id), có thể null khi dữ liệu cũ
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "province_id")
+    // FK -> provinces (id), bắt buộc
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "province_id", nullable = false)
     private Province provinceRef;
 
-    // FK -> districts (id), có thể null khi dữ liệu cũ
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "district_id")
+    // FK -> districts (id), bắt buộc
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "district_id", nullable = false)
     private District districtRef;
 
     // Diện tích phòng trọ, sử dụng DECIMAL(6,2) để lưu trữ diện tích với tối đa 9999.99 m2

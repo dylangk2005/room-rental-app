@@ -125,6 +125,7 @@ public class FavoriteServiceImpl implements FavoriteService {
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
+                .description(post.getDescription())
                 .province(post.getProvince())
                 .district(post.getDistrict())
                 .area(post.getArea())

@@ -130,12 +130,6 @@ const PostListTabs = ({ posts, isAuthenticated, favoritedIds, onToggleFavorite, 
                         )
                     })}
                 </div>
-
-                <div className="hidden text-xs font-bold text-slate-500 sm:block">
-                    {activeTab === 'featured'
-                        ? `${vipPosts.length} tin VIP · ${normalPosts.length} tin thường`
-                        : `${latestPosts.length} tin mới nhất`}
-                </div>
             </div>
 
             {activeTab === 'featured' ? (
@@ -151,14 +145,21 @@ const PostListTabs = ({ posts, isAuthenticated, favoritedIds, onToggleFavorite, 
             ) : (
                 <div className="animate-in fade-in slide-in-from-right-2 duration-300">
                     {latestPosts.length > 0 ? (
-                        <div className="grid grid-cols-1 gap-5">
-                            {latestPosts.map((post, index) => (
-                                <PostCard
-                                    key={post.id}
-                                    post={post}
-                                    index={index}
-                                />
-                            ))}
+                        <div className="flex flex-col gap-5">
+                            {latestPosts.map((post, index) => {
+                                const isVip = isVipCategory(getPostTypeCategory(post.postTypeName, post.postTypePriority))
+                                const Card = isVip ? PostCardFeatured : PostCardNormal
+                                return (
+                                    <Card
+                                        key={post.id}
+                                        post={post}
+                                        index={index}
+                                        isFavorited={favoritedIds.has(post.id)}
+                                        onToggleFavorite={onToggleFavorite}
+                                        onRequireAuth={handleRequireAuth}
+                                    />
+                                )
+                            })}
                         </div>
                     ) : null}
                 </div>

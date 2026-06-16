@@ -284,10 +284,6 @@ const PostCardFeatured = ({ post, index = 0, isFavorited = false, onToggleFavori
                         </h3>
                     </Link>
 
-                    {post.description ? (
-                        <p className="line-clamp-3 text-xs leading-relaxed text-slate-500">{post.description}</p>
-                    ) : null}
-
                     <div className="grid grid-cols-2 gap-2">
                         <div className="group/info relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-2.5 ring-1 ring-emerald-100 transition-all duration-200 hover:scale-[1.03] hover:shadow-sm">
                             <span className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
@@ -308,6 +304,10 @@ const PostCardFeatured = ({ post, index = 0, isFavorited = false, onToggleFavori
                             </strong>
                         </div>
                     </div>
+
+                    {post.description ? (
+                        <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 font-medium">{post.description}</p>
+                    ) : null}
 
                     <div className="mt-auto flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600">

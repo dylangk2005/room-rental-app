@@ -225,9 +225,9 @@ const PostListPage = ({ user, onUserChange }) => {
 
         const loadLocations = async () => {
             try {
-                const response = await postApi.getProvinces()
+                const data = await postApi.getProvinces()
                 if (!ignore) {
-                    setProvinces(response.data || [])
+                    setProvinces(Array.isArray(data) ? data : (data?.data || []))
                 }
             } catch {
                 if (!ignore) {
@@ -365,7 +365,7 @@ const PostListPage = ({ user, onUserChange }) => {
         }))
         if (selected) {
             postApi.getDistrictsByProvince(selected.id)
-                .then((res) => setDistricts(res.data || []))
+                .then((data) => setDistricts(Array.isArray(data) ? data : (data?.data || [])))
                 .catch(() => setDistricts([]))
         } else {
             setDistricts([])
@@ -643,26 +643,10 @@ const PostListPage = ({ user, onUserChange }) => {
                     )}
                 </form>
 
-                <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
-                    <div>
-                        <div className="flex flex-wrap items-center gap-3">
-                            <h2 className="text-2xl font-black text-slate-950 sm:text-3xl">
-                                Phòng trọ đang hiển thị
-                            </h2>
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-800 ring-1 ring-emerald-200">
-                                <span className="relative flex h-1.5 w-1.5">
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-600" />
-                                </span>
-                                {pageInfo.totalElements} tin
-                            </span>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-500">
-                            {hasSearched
-                                ? `${activeFilterCount} bộ lọc đang áp dụng`
-                                : 'Tin nổi bật hiển thị nhiều ảnh hơn để bạn xem phòng nhanh hơn'}
-                        </p>
-                    </div>
+                <div className="mt-8">
+                    <h2 className="text-2xl font-black text-slate-950 sm:text-3xl">
+                        Tìm phòng phù hợp với bạn
+                    </h2>
                 </div>
 
                 <div className="mt-6">

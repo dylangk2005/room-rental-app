@@ -13,6 +13,7 @@ import lombok.Data;
 public class PostSummaryResponse {
     private Integer id;
     private String title;
+    private String description;
     private String province;
     private String district;
     private Integer provinceId;

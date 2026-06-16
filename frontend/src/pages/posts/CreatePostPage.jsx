@@ -173,11 +173,15 @@ const CreatePostPage = ({ user, onUserChange }) => {
                     throw postTypesResult.reason
                 }
 
-                const loadedPostTypes = postTypesResult.value.data || []
+                const postTypesData = postTypesResult.value
+                const loadedPostTypes = Array.isArray(postTypesData) ? postTypesData : (postTypesData?.data || [])
                 setPostTypes(loadedPostTypes)
-                setWalletBalance(walletResult.status === 'fulfilled' ? walletResult.value.data?.balance || 0 : 0)
-                setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
-                const loadedProvinces = provincesResult.status === 'fulfilled' ? provincesResult.value.data || [] : []
+                const walletData = walletResult.status === 'fulfilled' ? walletResult.value : null
+                setWalletBalance(walletData?.balance ?? walletData?.data?.balance ?? 0)
+                const membershipData = membershipResult.status === 'fulfilled' ? membershipResult.value : null
+                setMembership(membershipData?.data ?? membershipData)
+                const provincesData = provincesResult.status === 'fulfilled' ? provincesResult.value : []
+                const loadedProvinces = Array.isArray(provincesData) ? provincesData : (provincesData?.data || [])
                 setProvinces(loadedProvinces)
 
                 // Tự động chọn tỉnh đầu tiên (TP.HCM) và load districts
@@ -189,8 +193,8 @@ const CreatePostPage = ({ user, onUserChange }) => {
                         province: firstProvince.name,
                     }))
                     try {
-                        const districtsRes = await postApi.getDistrictsByProvince(firstProvince.id)
-                        if (!ignore) setDistricts(districtsRes.data || [])
+                        const districtsData = await postApi.getDistrictsByProvince(firstProvince.id)
+                        if (!ignore) setDistricts(Array.isArray(districtsData) ? districtsData : (districtsData?.data || []))
                     } catch {
                         if (!ignore) setDistricts([])
                     }
@@ -283,7 +287,7 @@ const CreatePostPage = ({ user, onUserChange }) => {
         }))
         if (selected) {
             postApi.getDistrictsByProvince(selected.id)
-                .then((res) => setDistricts(res.data || []))
+                .then((data) => setDistricts(Array.isArray(data) ? data : (data?.data || [])))
                 .catch(() => setDistricts([]))
         } else {
             setDistricts([])

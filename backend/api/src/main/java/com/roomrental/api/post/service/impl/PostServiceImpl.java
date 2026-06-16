@@ -77,6 +77,7 @@ public class PostServiceImpl implements PostService {
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
+                .description(post.getDescription())
                 .province(post.getProvince())
                 .district(post.getDistrict())
                 .provinceId(provinceRef != null ? provinceRef.getId() : null)

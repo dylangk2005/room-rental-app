@@ -398,6 +398,10 @@ const PostCard = ({ post, index = 0, isFavorited = false, onToggleFavorite, onRe
                         </div>
                     </div>
 
+                    {post.description ? (
+                        <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 font-medium">{post.description}</p>
+                    ) : null}
+
                     <div className="mt-auto flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600">
                             <span className="mt-0.5 shrink-0 text-emerald-600">

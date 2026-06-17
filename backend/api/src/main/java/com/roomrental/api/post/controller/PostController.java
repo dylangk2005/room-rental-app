@@ -69,7 +69,6 @@ public class PostController {
     }
 
     @GetMapping("/{id}/contact")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostContactResponse>> getPostContact(@PathVariable Integer id) {
         return ResponseEntity.ok(ApiResponse.success(postService.getPostContact(id)));
     }

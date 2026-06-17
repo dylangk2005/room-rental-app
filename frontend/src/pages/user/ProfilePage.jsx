@@ -8,8 +8,9 @@ import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import ROUTES from '../../constants/routes'
 
-const getInitial = (name = '') => {
-    const trimmedName = name.trim()
+const getInitial = (name) => {
+    const safeName = name ?? ''
+    const trimmedName = safeName.trim()
     return trimmedName ? trimmedName.charAt(0).toUpperCase() : 'T'
 }
 
@@ -26,8 +27,8 @@ const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu.
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
-const formatMembershipName = (value = '') => {
-    const normalized = value.toString().trim().toLowerCase()
+const formatMembershipName = (value) => {
+    const normalized = (value ?? '').toString().trim().toLowerCase()
     const labels = {
         sat: 'Sắt',
         dong: 'Đồng',

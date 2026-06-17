@@ -9,8 +9,9 @@ import ROUTES from '../constants/routes'
 const QUICK_NOTIFICATION_LIMIT = 4
 const ALL_NOTIFICATION_PAGE_SIZE = 10
 
-const getInitial = (name = '') => {
-    const trimmedName = name.trim()
+const getInitial = (name) => {
+    const safeName = name ?? ''
+    const trimmedName = safeName.trim()
     return trimmedName ? trimmedName.charAt(0).toUpperCase() : 'T'
 }
 

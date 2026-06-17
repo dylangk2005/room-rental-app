@@ -96,24 +96,24 @@ axiosClient.interceptors.response.use(
                 }
                 throw new Error('Refresh token không hợp lệ hoặc đã hết hạn')
             } catch (refreshError) {
-                clearAccessToken()
-                localStorage.removeItem(USER_STORAGE_KEY)
-                if (window.location.pathname !== '/login') {
-                    window.location.href = '/login'
+                const hasToken = getAccessToken()
+                if (hasToken) {
+                    clearAccessToken()
+                    localStorage.removeItem(USER_STORAGE_KEY)
                 }
                 return Promise.reject(refreshError)
             }
         }
 
-        if (status === 401 && !isAuthUrl(originalRequest?.url) && !skipAuthRedirect && window.location.pathname !== '/login') {
+        if (status === 401 && !isAuthUrl(originalRequest?.url) && !skipAuthRedirect && getAccessToken()) {
             clearAccessToken()
             localStorage.removeItem(USER_STORAGE_KEY)
-            window.location.href = '/login'
         }
         if (status === 403) {
             console.error('[API 403] Token không hợp lệ hoặc hết phiên:', originalRequest?.url, error.response?.data)
         }
         if (status === 401) {
+            if (isAuthUrl(originalRequest?.url)) return Promise.reject(error)
             console.error('[API 401] Phiên đăng nhập hết hạn hoặc token không hợp lệ:', originalRequest?.url, error.response?.data)
         }
         if (status === 500) {

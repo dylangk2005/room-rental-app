@@ -10,4 +10,5 @@ public class PostContactResponse {
     private Integer ownerId;
     private String ownerName;
     private String ownerPhone;
+    private String ownerAvatar;
 }

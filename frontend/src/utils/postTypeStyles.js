@@ -1,5 +1,5 @@
-const normalizePostTypeName = (value = '') =>
-    value
+const normalizePostTypeName = (value) =>
+    (value ?? '')
         .toString()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')

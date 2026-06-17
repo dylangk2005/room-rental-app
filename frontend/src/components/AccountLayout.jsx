@@ -5,8 +5,9 @@ import ROUTES from '../constants/routes'
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
-const getInitial = (name = '') => {
-    const trimmedName = name.trim()
+const getInitial = (name) => {
+    const safeName = name ?? ''
+    const trimmedName = safeName.trim()
     return trimmedName ? trimmedName.charAt(0).toUpperCase() : 'T'
 }
 

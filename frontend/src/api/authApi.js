@@ -14,7 +14,7 @@ const storeAuthResponse = (response) => {
 
 const refreshSession = async () => {
     try {
-        const response = storeAuthResponse(await axiosClient.post('/auth/refresh'))
+        const response = storeAuthResponse(await axiosClient.post('/auth/refresh', {}, { skipAuthRedirect: true }))
         const user = response.data || null
 
         if (user) {
@@ -38,7 +38,7 @@ const authApi = {
     verifyOtp: (payload) => axiosClient.post('/auth/verify-otp', payload),
     forgotPassword: (payload) => axiosClient.post('/auth/forgot-password', payload),
     resetPassword: (payload) => axiosClient.post('/auth/reset-password', payload),
-    refresh: async () => storeAuthResponse(await axiosClient.post('/auth/refresh')),
+    refresh: async () => storeAuthResponse(await axiosClient.post('/auth/refresh', {}, { skipAuthRedirect: true })),
     refreshSession,
     logout: async () => {
         try {

@@ -12,7 +12,7 @@ const postApi = {
     getProvinces: () => axiosClient.get('/provinces'),
     getDistrictsByProvince: (provinceId) => axiosClient.get(`/provinces/${provinceId}/districts`),
     getPostTypes: () => axiosClient.get('/post-types'),
-    getPostDetail: (id) => axiosClient.get(`/posts/${id}`),
+    getPostDetail: (id) => axiosClient.get(`/posts/${id}`, { skipAuthRedirect: true }),
     getPostContact: (id) => axiosClient.get(`/posts/${id}/contact`, { skipAuthRedirect: true }),
     getMyPosts: (params = {}) => axiosClient.get('/posts/my-posts', { params: cleanParams(params) }),
     createPost: (payload) =>

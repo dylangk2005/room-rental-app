@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ROUTES from './constants/routes'
+import ErrorBoundary from './components/common/ErrorBoundary'
 
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
@@ -52,9 +53,10 @@ const AuthenticatedRoute = ({ children }) => {
 
 function App() {
     return (
-        <AuthProvider>
-            <BrowserRouter>
-                <Routes>
+        <ErrorBoundary>
+            <AuthProvider>
+                <BrowserRouter>
+                    <Routes>
                     <Route path={ROUTES.HOME} element={<LandingPage />} />
 
                     <Route path={ROUTES.LOGIN} element={<LoginPage />} />
@@ -88,9 +90,10 @@ function App() {
                     <Route path={ROUTES.MODERATOR_MY_LOGS} element={<RoleRoute roles={['MODERATOR']}><MyModerationLogsPage /></RoleRoute>} />
                     <Route path={ROUTES.MANAGER_PRICING} element={<RoleRoute roles={['MANAGER']}><PricingPage /></RoleRoute>} />
                     <Route path={ROUTES.MANAGER_MEMBERSHIP} element={<RoleRoute roles={['MANAGER']}><MembershipPage /></RoleRoute>} />
-                </Routes>
-            </BrowserRouter>
-        </AuthProvider>
+                    </Routes>
+                </BrowserRouter>
+            </AuthProvider>
+        </ErrorBoundary>
     )
 }
 

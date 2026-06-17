@@ -259,10 +259,14 @@ public class PostServiceImpl implements PostService {
         // Lấy thông tin người dùng là chủ bài đăng
         User owner = post.getUser();
 
+        // Chưa đăng nhập thì chỉ ẩn số điện thoại, vẫn trả avatar + tên
+        String ownerPhone = (currentUser == null) ? null : owner.getPhoneNumber();
+
         return PostContactResponse.builder()
                 .ownerId(owner.getId())
                 .ownerName(owner.getFullName())
-                .ownerPhone(owner.getPhoneNumber())
+                .ownerPhone(ownerPhone)
+                .ownerAvatar(owner.getAvatar())
                 .build();
     }
 

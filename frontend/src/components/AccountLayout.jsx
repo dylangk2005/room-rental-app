@@ -170,7 +170,9 @@ const AccountLayout = ({ balance = 0, activeKey, title, subtitle, children, acti
                     {/* Name + Account */}
                     <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-black text-slate-900">{user?.fullName || 'Người dùng'}</p>
-                        <p className="truncate text-xs font-semibold text-slate-500">{user?.phoneNumber || user?.email || 'Tài khoản TAYTRO'}</p>
+                        {user?.id && (
+                            <p className="truncate text-xs font-semibold text-slate-500">Mã tài khoản: #{user.id}</p>
+                        )}
                     </div>
 
                     {/* Balance pill */}
@@ -222,9 +224,8 @@ const AccountLayout = ({ balance = 0, activeKey, title, subtitle, children, acti
                                 </div>
                             </div>
                             <p className="text-base font-black text-slate-900">{user?.fullName || 'Người dùng'}</p>
-                            <p className="mt-0.5 text-xs font-semibold text-slate-500">{user?.phoneNumber || user?.email || 'Tài khoản TAYTRO'}</p>
                             {user?.id && (
-                                <p className="mt-1 text-[11px] font-semibold text-slate-400">#{user.id}</p>
+                                <p className="mt-0.5 text-xs font-semibold text-slate-500">Mã tài khoản: #{user.id}</p>
                             )}
                         </div>
                     </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
@@ -136,9 +137,9 @@ const TransactionList = ({ transactions, emptyTitle, emptyDescription }) => {
 
 const WalletPage = () => {
     const { user, login } = useAuth()
+    const { balance, loadBalance } = useWallet()
     const navigate = useNavigate()
     const location = useLocation()
-    const [balance, setBalance] = useState(0)
     const [amount, setAmount] = useState('100000')
     const [transactions, setTransactions] = useState([])
     const [pageInfo, setPageInfo] = useState({ currentPage: 0, totalPages: 0, totalElements: 0 })
@@ -181,16 +182,11 @@ const WalletPage = () => {
                           ? 'PAYMENT'
                           : undefined
 
-                const [balanceResult, transactionsResult] = await Promise.allSettled([
-                    walletApi.getBalance(),
+                const [transactionsResult] = await Promise.allSettled([
                     walletApi.getTransactions({ page, size: 10, type: transactionType }),
                 ])
 
-                if (balanceResult.status !== 'fulfilled') {
-                    throw balanceResult.reason
-                }
-
-                setBalance(balanceResult.value.data?.balance || 0)
+                await loadBalance()
 
                 if (transactionsResult.status === 'fulfilled') {
                     const data = transactionsResult.value.data || {}
@@ -275,7 +271,6 @@ const WalletPage = () => {
 
     return (
         <AccountLayout
-            balance={balance}
             activeKey={activeTab === 'deposit' ? 'deposit' : 'transactions'}
             title="Quản lý giao dịch"
             subtitle="Nạp tiền vào tài khoản, theo dõi lịch sử nạp tiền và các khoản thanh toán dịch vụ."

@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import AppHeader from './AppHeader'
 import { useAuth } from '../contexts/AuthContext'
+import { useWallet } from '../contexts/WalletContext'
 import ROUTES from '../constants/routes'
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
@@ -137,12 +138,15 @@ const DesktopNavItem = ({ item, isActive, isHovered, onMouseEnter, onMouseLeave,
 )
 
 // ─── AccountLayout ─────────────────────────────────────────────────────────
-const AccountLayout = ({ balance = 0, activeKey, title, subtitle, children, actions }) => {
+const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
     const { user } = useAuth()
+    const { balance, loadBalance } = useWallet()
     const scrollRef = useRef(null)
     const [hoveredKey, setHoveredKey] = useState(null)
 
-    // Scroll active menu item into view on mount
+    useEffect(() => {
+        loadBalance()
+    }, [activeKey, loadBalance])
     useEffect(() => {
         if (!scrollRef.current || !activeKey) return
         const activeEl = scrollRef.current.querySelector(`[data-key="${activeKey}"]`)

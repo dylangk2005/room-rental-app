@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { WalletProvider } from './contexts/WalletContext'
 import ROUTES from './constants/routes'
 import ErrorBoundary from './components/common/ErrorBoundary'
 
@@ -55,6 +56,7 @@ function App() {
     return (
         <ErrorBoundary>
             <AuthProvider>
+                <WalletProvider>
                 <BrowserRouter>
                     <Routes>
                     <Route path={ROUTES.HOME} element={<LandingPage />} />
@@ -92,6 +94,7 @@ function App() {
                     <Route path={ROUTES.MANAGER_MEMBERSHIP} element={<RoleRoute roles={['MANAGER']}><MembershipPage /></RoleRoute>} />
                     </Routes>
                 </BrowserRouter>
+                </WalletProvider>
             </AuthProvider>
         </ErrorBoundary>
     )

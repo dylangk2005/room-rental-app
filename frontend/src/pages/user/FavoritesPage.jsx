@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import favoriteApi from '../../api/favoriteApi'
-import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import PostCard from '../../components/PostCard'
 import ROUTES from '../../constants/routes'
@@ -34,8 +34,8 @@ const LoadingGrid = () => (
 
 const FavoritesPage = () => {
     const { user, login, logout } = useAuth()
+    const { balance } = useWallet()
     const navigate = useNavigate()
-    const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({
         currentPage: 0,
@@ -54,9 +54,8 @@ const FavoritesPage = () => {
                 const refreshResponse = await authApi.refresh()
                 login(refreshResponse.data)
 
-                const [favoritesResult, balanceResult] = await Promise.allSettled([
+                const [favoritesResult] = await Promise.allSettled([
                     favoriteApi.getFavorites({ page, size: 9 }),
-                    walletApi.getBalance(),
                 ])
 
                 if (favoritesResult.status !== 'fulfilled') {
@@ -70,10 +69,6 @@ const FavoritesPage = () => {
                     totalPages: data.totalPages || 0,
                     totalElements: data.totalElements || 0,
                 })
-
-                if (balanceResult.status === 'fulfilled') {
-                    setBalance(balanceResult.value.data?.balance || 0)
-                }
             } catch (loadError) {
                 if (loadError.response?.status === 401) {
                     logout()

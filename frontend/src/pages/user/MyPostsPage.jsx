@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
-import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import PostCard from '../../components/PostCard'
 import ROUTES from '../../constants/routes'
@@ -33,8 +33,8 @@ const LoadingGrid = () => (
 
 const MyPostsPage = () => {
     const { user, login } = useAuth()
+    const { balance } = useWallet()
     const navigate = useNavigate()
-    const [balance, setBalance] = useState(0)
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({
         currentPage: 0,
@@ -53,9 +53,8 @@ const MyPostsPage = () => {
             const refreshResponse = await authApi.refresh()
             login(refreshResponse.data)
 
-                const [postsResult, balanceResult] = await Promise.allSettled([
+                const [postsResult] = await Promise.allSettled([
                     postApi.getMyPosts({ page, size: 8 }),
-                    walletApi.getBalance(),
                 ])
 
                 if (postsResult.status !== 'fulfilled') {
@@ -69,10 +68,6 @@ const MyPostsPage = () => {
                     totalPages: data.totalPages || 0,
                     totalElements: data.totalElements || 0,
                 })
-
-                if (balanceResult.status === 'fulfilled') {
-                    setBalance(balanceResult.value.data?.balance || 0)
-                }
             } catch (loadError) {
                 if (loadError.response?.status === 401) {
                     navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.MY_POSTS } })

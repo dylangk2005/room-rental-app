@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import membershipApi from '../../api/membershipApi'
 import paymentApi from '../../api/paymentApi'
 import postApi from '../../api/postApi'
-import walletApi from '../../api/walletApi'
 import AccountLayout from '../../components/AccountLayout'
 import ROUTES from '../../constants/routes'
 
@@ -62,7 +62,8 @@ const LoadingState = () => (
     </div>
 )
 
-const BoostConfirmModal = ({ post, balance, membership, isSubmitting, onClose, onConfirm }) => {
+const BoostConfirmModal = ({ post, membership, isSubmitting, onClose, onConfirm }) => {
+    const { balance } = useWallet()
     if (!post) return null
 
     const cost = calculateBoostCost(post.postTypePushPrice, membership?.discountPercent)
@@ -159,8 +160,8 @@ const BoostConfirmModal = ({ post, balance, membership, isSubmitting, onClose, o
 
 const BoostPostsPage = () => {
     const { user, login } = useAuth()
+    const { balance } = useWallet()
     const navigate = useNavigate()
-    const [balance, setBalance] = useState(0)
     const [membership, setMembership] = useState(null)
     const [posts, setPosts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
@@ -182,9 +183,8 @@ const BoostPostsPage = () => {
             const refreshResponse = await authApi.refresh()
             login(refreshResponse.data)
 
-            const [postsResult, balanceResult, membershipResult] = await Promise.allSettled([
+            const [postsResult, membershipResult] = await Promise.allSettled([
                 postApi.getMyPosts({ page: 0, size: 50 }),
-                walletApi.getBalance(),
                 membershipApi.getMyLevel(),
             ])
 
@@ -193,7 +193,6 @@ const BoostPostsPage = () => {
             }
 
             setPosts(postsResult.value.data?.posts || [])
-            setBalance(balanceResult.status === 'fulfilled' ? balanceResult.value.data?.balance || 0 : 0)
             setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
         } catch (loadError) {
             if (loadError.response?.status === 401) {
@@ -391,7 +390,6 @@ const BoostPostsPage = () => {
 
             <BoostConfirmModal
                 post={selectedPost}
-                balance={balance}
                 membership={membership}
                 isSubmitting={isSubmitting}
                 onClose={() => setSelectedPost(null)}

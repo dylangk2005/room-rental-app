@@ -62,7 +62,10 @@ const PostPricingPage = () => {
     const [error, setError] = useState('')
 
     const sortedPostTypes = useMemo(
-        () => [...postTypes].sort((first, second) => Number(first.priority || 0) - Number(second.priority || 0)),
+        () =>
+            [...postTypes]
+                .sort((first, second) => Number(first.priority || 0) - Number(second.priority || 0))
+                .filter((item, index, arr) => arr.findIndex((t) => t.name === item.name) === index),
         [postTypes]
     )
 
@@ -163,20 +166,26 @@ const PostPricingPage = () => {
                 {!isLoading && !error && sortedPostTypes.length > 0 && (
                     <div className="space-y-6">
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                            {sortedPostTypes.map((postType, index) => (
-                                <article className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" key={postType.id}>
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <h2 className="text-lg font-black">{formatPostTypeName(postType.name)}</h2>
-                                            <p className="mt-1 text-sm font-semibold text-slate-500">Giá đẩy tin</p>
+                            {sortedPostTypes.map((postType) => {
+                                const accentColor = postType.titleColor || '#111827'
+                                return (
+                                    <article
+                                        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                                        key={postType.id}
+                                        style={{ borderTop: `3px solid ${accentColor}` }}
+                                    >
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div>
+                                                <h2 className="text-lg font-black">{formatPostTypeName(postType.name)}</h2>
+                                                <p className="mt-1 text-sm font-semibold text-slate-500">Giá đẩy tin</p>
+                                            </div>
                                         </div>
-                                        <span className={`rounded-lg px-3 py-1 text-xs font-black ${getPlanTone(index)}`}>Gói {index + 1}</span>
-                                    </div>
-                                    <strong className="mt-4 block text-2xl text-emerald-700">
-                                        {formatMoney(getDisplayPrice(postType.pushPrice, includeVat))}
-                                    </strong>
-                                </article>
-                            ))}
+                                        <strong className="mt-4 block text-2xl" style={{ color: accentColor }}>
+                                            {formatMoney(getDisplayPrice(postType.pushPrice, includeVat))}
+                                        </strong>
+                                    </article>
+                                )
+                            })}
                         </div>
 
                         <div className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">

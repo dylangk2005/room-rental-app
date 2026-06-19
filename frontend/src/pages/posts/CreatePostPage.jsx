@@ -7,6 +7,10 @@ import postApi from '../../api/postApi'
 import walletApi from '../../api/walletApi'
 import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
+import {
+    getPostTypeCategory,
+    getPostTypeCategoryMeta,
+} from '../../utils/postTypeStyles'
 
 const MAX_IMAGES = 12
 const BYTES_PER_MB = 1024 * 1024
@@ -15,38 +19,6 @@ const MAX_TOTAL_IMAGE_SIZE_MB = 80
 const MAX_IMAGE_SIZE_BYTES = MAX_IMAGE_SIZE_MB * BYTES_PER_MB
 const MAX_TOTAL_IMAGE_SIZE_BYTES = MAX_TOTAL_IMAGE_SIZE_MB * BYTES_PER_MB
 const VAT_PERCENT = 8
-const PRICE_DURATIONS = [5, 10, 15, 30]
-
-const DEFAULT_LOCATION_OPTIONS = [
-    {
-        province: 'TP. Hồ Chí Minh',
-        aliases: ['TP. Ho Chi Minh', 'TP Hồ Chí Minh', 'Thành phố Hồ Chí Minh', 'Ho Chi Minh', 'Hồ Chí Minh'],
-        districts: [
-            'Quận 1',
-            'Quận 3',
-            'Quận 4',
-            'Quận 5',
-            'Quận 6',
-            'Quận 7',
-            'Quận 8',
-            'Quận 10',
-            'Quận 11',
-            'Quận 12',
-            'Bình Tân',
-            'Bình Thạnh',
-            'Gò Vấp',
-            'Phú Nhuận',
-            'Tân Bình',
-            'Tân Phú',
-            'TP. Thủ Đức',
-            'Bình Chánh',
-            'Cần Giờ',
-            'Củ Chi',
-            'Hóc Môn',
-            'Nhà Bè',
-        ],
-    },
-]
 
 const initialForm = {
     title: '',
@@ -69,22 +41,6 @@ const formatNumberInput = (value) => String(value || '').replace(/\B(?=(\d{3})+(
 
 const onlyDigits = (value) => value.replace(/\D/g, '')
 
-const normalizeText = (value) =>
-    String(value || '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '')
-
-const getFallbackDistricts = (province) => {
-    const normalizedProvince = normalizeText(province)
-    const location = DEFAULT_LOCATION_OPTIONS.find((item) =>
-        [item.province, ...item.aliases].some((name) => normalizeText(name) === normalizedProvince)
-    )
-
-    return location?.districts || []
-}
-
 const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu. Vui lòng thử lại.') => {
     const response = error.response?.data
     const fieldErrors = response?.data
@@ -98,28 +54,154 @@ const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu.
 
 const getTotalImageSize = (items) => items.reduce((total, image) => total + Number(image.file?.size || 0), 0)
 
-const Icon = ({ name }) => {
+// ─── Icons ────────────────────────────────────────────────────────────────
+const Icon = ({ name, className = 'h-5 w-5' }) => {
     const paths = {
         home: 'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5M9 21v-6h6v6',
         image: 'M4 5h16v14H4zM8 13l2.5-2.5L14 14l2-2 4 4M8.5 8.5h.01',
         wallet: 'M4 7h15a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12M16 13h4',
         spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z',
         trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3',
+        map: 'M12 22s-7-7.5-7-13a7 7 0 1 1 14 0c0 5.5-7 13-7 13zM12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+        doc: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5',
+        upload: 'M12 16V4m0 0-4 4m4-4 4 4M4 20h16',
+        edit: 'M11 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
+        gift: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z',
+        check: 'M5 13l4 4L19 7',
+        info: 'M12 8v5m0 3h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+        clock: 'M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
+        flash: 'M13 2 4 14h7l-1 8 9-12h-7l1-8z',
+        back: 'M15 18l-6-6 6-6',
+        crown: 'M3 17l2-8 4 4 3-7 3 7 4-4 2 8H3z',
+        star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
     }
 
     return (
-        <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
             <path d={paths[name]} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
         </svg>
     )
 }
 
-const Field = ({ label, children }) => (
+const SpinnerIcon = ({ className = 'h-5 w-5' }) => (
+    <svg aria-hidden="true" className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24">
+        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+    </svg>
+)
+
+const SectionHeader = ({ icon, iconClassName, title, subtitle }) => (
+    <div className="mb-5 flex items-start gap-3">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${iconClassName}`}>
+            <Icon name={icon} className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+            <h2 className="text-lg font-black text-slate-950 sm:text-xl">{title}</h2>
+            {subtitle && <p className="mt-1 text-sm font-semibold text-slate-500">{subtitle}</p>}
+        </div>
+    </div>
+)
+
+// ─── Section Card (hoverable) ─────────────────────────────────────────────
+const SectionCard = ({ children, accent = 'emerald' }) => {
+    const accents = {
+        emerald: 'hover:border-emerald-200 hover:shadow-emerald-100/60',
+        amber: 'hover:border-amber-200 hover:shadow-amber-100/60',
+        blue: 'hover:border-blue-200 hover:shadow-blue-100/60',
+        slate: 'hover:border-slate-300 hover:shadow-slate-200/60',
+        pink: 'hover:border-pink-200 hover:shadow-pink-100/60',
+    }
+    return (
+        <section className={`group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:p-6 ${accents[accent] || accents.emerald}`}>
+            {children}
+        </section>
+    )
+}
+
+const Field = ({ label, required, hint, children }) => (
     <label className="block">
-        <span className="mb-2 block text-sm font-black text-slate-800">{label}</span>
+        <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-black text-slate-800">
+                {label} {required && <span className="text-red-500">*</span>}
+            </span>
+            {hint && <span className="text-xs font-semibold text-slate-400">{hint}</span>}
+        </div>
         {children}
     </label>
 )
+
+const inputClassName =
+    'h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400'
+
+// ─── Post Type Card ───────────────────────────────────────────────────────
+const PostTypeCard = ({ postType, isSelected, onSelect }) => {
+    const accentColor = postType.titleColor || '#111827'
+    const category = getPostTypeCategory(postType.name, postType.priority)
+    const meta = getPostTypeCategoryMeta(category)
+    const isFree = Number(meta.imageLimit) === 1
+
+    return (
+        <button
+            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
+                isSelected
+                    ? 'border-transparent shadow-sm ring-4'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+            style={
+                isSelected
+                    ? {
+                          borderColor: accentColor,
+                          backgroundColor: accentColor + '0f',
+                          '--tw-ring-color': accentColor + '30',
+                      }
+                    : undefined
+            }
+            type="button"
+            onClick={() => onSelect(postType.id)}
+        >
+            {isSelected && (
+                <span
+                    className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm"
+                    style={{ backgroundColor: accentColor }}
+                >
+                    <Icon name="check" className="h-3.5 w-3.5" />
+                </span>
+            )}
+            <h3 className="text-base font-black text-slate-900">{postType.name}</h3>
+            <p className="text-xs font-semibold text-slate-500">
+                {isFree ? 'Hiển thị 1 ảnh đại diện' : `Hiển thị tối đa ${meta.imageLimit} ảnh đại diện`}
+            </p>
+        </button>
+    )
+}
+
+// ─── Duration Option ──────────────────────────────────────────────────────
+const DurationOption = ({ days, price, isSelected, isFirstFree, postTypeName, onSelect }) => {
+    const isNormal = postTypeName && postTypeName.toLowerCase().includes('thường')
+
+    return (
+        <button
+            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
+                isSelected
+                    ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
+                    : 'border-slate-200 bg-white hover:border-emerald-300'
+            }`}
+            type="button"
+            onClick={onSelect}
+        >
+            <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wide text-slate-500">
+                <Icon name="clock" className="h-3.5 w-3.5" />
+                {days} ngày
+            </span>
+            <span className="text-base font-black text-emerald-700">{formatMoney(price)}</span>
+            {isFirstFree && !isNormal && (
+                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700">
+                    Lần đầu miễn phí đẩy
+                </span>
+            )}
+        </button>
+    )
+}
 
 const CreatePostPage = () => {
     const { user, login } = useAuth()
@@ -137,8 +219,10 @@ const CreatePostPage = () => {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [draftPostId, setDraftPostId] = useState(null)
+    const [activeStep, setActiveStep] = useState(0)
     const imagesRef = useRef([])
     const alertRef = useRef(null)
+    const formTopRef = useRef(null)
 
     useEffect(() => {
         let ignore = false
@@ -167,7 +251,10 @@ const CreatePostPage = () => {
 
                 const postTypesData = postTypesResult.value
                 const loadedPostTypes = Array.isArray(postTypesData) ? postTypesData : (postTypesData?.data || [])
-                setPostTypes(loadedPostTypes)
+                const sortedPostTypes = [...loadedPostTypes]
+                    .sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0))
+                    .filter((item, index, arr) => arr.findIndex((t) => t.name === item.name) === index)
+                setPostTypes(sortedPostTypes)
                 const walletData = walletResult.status === 'fulfilled' ? walletResult.value : null
                 setWalletBalance(walletData?.balance ?? walletData?.data?.balance ?? 0)
                 const membershipData = membershipResult.status === 'fulfilled' ? membershipResult.value : null
@@ -176,7 +263,7 @@ const CreatePostPage = () => {
                 const loadedProvinces = Array.isArray(provincesData) ? provincesData : (provincesData?.data || [])
                 setProvinces(loadedProvinces)
 
-                // Tự động chọn tỉnh đầu tiên (TP.HCM) và load districts
+                // Tự động chọn tỉnh đầu tiên và load districts
                 if (loadedProvinces.length > 0) {
                     const firstProvince = loadedProvinces[0]
                     setForm((current) => ({
@@ -190,16 +277,6 @@ const CreatePostPage = () => {
                     } catch {
                         if (!ignore) setDistricts([])
                     }
-                }
-
-                const firstType = loadedPostTypes[0]
-                const firstPrice = firstType?.prices?.[0]
-                if (firstType && firstPrice) {
-                    setForm((current) => ({
-                        ...current,
-                        postTypeId: String(firstType.id),
-                        durationDays: String(firstPrice.days),
-                    }))
                 }
             } catch (loadError) {
                 if (loadError.response?.status === 401) {
@@ -248,8 +325,16 @@ const CreatePostPage = () => {
         [form.durationDays, selectedPostType]
     )
 
-    const provinceOptions = provinces
-    const districtOptions = districts
+    const sortedPrices = useMemo(
+        () => [...(selectedPostType?.prices || [])].sort((a, b) => Number(a.days) - Number(b.days)),
+        [selectedPostType]
+    )
+
+    const selectedCategory = selectedPostType
+        ? getPostTypeCategory(selectedPostType.name, selectedPostType.priority)
+        : null
+    const selectedCategoryMeta = selectedCategory ? getPostTypeCategoryMeta(selectedCategory) : null
+    const isFirstFreePush = selectedCategoryMeta ? Number(selectedCategoryMeta.imageLimit) === 1 : false
 
     const discountPercent = Number(membership?.discountPercent || 0)
     const baseFee = Number(selectedPrice?.price || 0)
@@ -296,16 +381,29 @@ const CreatePostPage = () => {
         }))
     }
 
-    const handlePriceSelection = (postTypeId, durationDays) => {
+    const handlePostTypeSelect = (postTypeId) => {
+        if (form.postTypeId === String(postTypeId)) {
+            setForm((current) => ({ ...current, postTypeId: '', durationDays: '' }))
+            return
+        }
+        const type = postTypes.find((t) => String(t.id) === String(postTypeId))
+        if (!type) return
+        const sortedTypePrices = [...(type.prices || [])].sort((a, b) => Number(a.days) - Number(b.days))
+        const defaultPrice = sortedTypePrices[0]
         setForm((current) => ({
             ...current,
             postTypeId: String(postTypeId),
-            durationDays: String(durationDays),
+            durationDays: defaultPrice ? String(defaultPrice.days) : '',
         }))
     }
 
-    const getPriceByDuration = (postType, durationDays) =>
-        postType?.prices?.find((price) => Number(price.days) === Number(durationDays))
+    const handleDurationSelect = (days) => {
+        if (form.durationDays === String(days)) {
+            setForm((current) => ({ ...current, durationDays: '' }))
+            return
+        }
+        setForm((current) => ({ ...current, durationDays: String(days) }))
+    }
 
     const handleImageChange = (event) => {
         const files = Array.from(event.target.files || [])
@@ -356,10 +454,10 @@ const CreatePostPage = () => {
     }
 
     const validateForm = () => {
-        if (!form.title.trim()) return 'Vui lòng nhập tiêu đề tin.'
-        if (!form.rentalPrice || Number(form.rentalPrice) < 1000) return 'Giá thuê tối thiểu là 1.000đ.'
+        if (!form.title.trim()) return 'Vui lòng nhập tiêu đề tin đăng.'
+        if (!form.rentalPrice || Number(form.rentalPrice) < 1000) return 'Giá thuê tối thiểu là 1.000 đ.'
         if (!form.area || Number(form.area) < 1) return 'Diện tích tối thiểu là 1 m².'
-        if (!form.provinceId) return 'Vui lòng chọn tỉnh/thành.'
+        if (!form.provinceId) return 'Vui lòng chọn tỉnh/thành phố.'
         if (!form.districtId) return 'Vui lòng chọn quận/huyện.'
         if (!form.address.trim()) return 'Vui lòng nhập địa chỉ chi tiết.'
         if (!form.description.trim()) return 'Vui lòng nhập mô tả phòng trọ.'
@@ -368,7 +466,6 @@ const CreatePostPage = () => {
         if (images.some((image) => image.file?.size > MAX_IMAGE_SIZE_BYTES)) return `Mỗi ảnh không được vượt quá ${MAX_IMAGE_SIZE_MB}MB.`
         if (getTotalImageSize(images) > MAX_TOTAL_IMAGE_SIZE_BYTES) return `Tổng dung lượng ảnh tối đa là ${MAX_TOTAL_IMAGE_SIZE_MB}MB. Vui lòng nén ảnh hoặc chọn ảnh nhẹ hơn.`
         if (!form.postTypeId || !form.durationDays) return 'Vui lòng chọn loại tin và thời gian đăng.'
-        if (!form.agreed) return 'Vui lòng đồng ý với quy định đăng tin của hệ thống.'
         return ''
     }
 
@@ -389,6 +486,36 @@ const CreatePostPage = () => {
         return payload
     }
 
+    const handleSaveDraft = async () => {
+        setError('')
+        setSuccess('')
+        setDraftPostId(null)
+
+        if (!form.title.trim()) {
+            setError('Vui lòng nhập tiêu đề trước khi lưu nháp.')
+            return
+        }
+        if (images.length < 1) {
+            setError('Vui lòng tải lên ít nhất 1 ảnh phòng trước khi lưu nháp.')
+            return
+        }
+
+        setIsSubmitting(true)
+        setSubmitStep('Đang lưu tin nháp...')
+
+        try {
+            const response = await postApi.createPost(buildPayload())
+            const savedId = response?.data?.id || response?.id
+            if (savedId) setDraftPostId(savedId)
+            setSuccess('Đã lưu tin nháp thành công. Bạn có thể thanh toán để đăng tin sau.')
+        } catch (submitError) {
+            setError(getErrorMessage(submitError, 'Không lưu được tin nháp. Vui lòng thử lại.'))
+        } finally {
+            setSubmitStep('')
+            setIsSubmitting(false)
+        }
+    }
+
     const handleSubmit = async (event) => {
         event.preventDefault()
         setError('')
@@ -401,8 +528,15 @@ const CreatePostPage = () => {
             return
         }
 
+        if (!form.agreed) {
+            setError('Vui lòng đồng ý với quy định đăng tin trước khi thanh toán.')
+            return
+        }
+
         if (!hasEnoughBalance) {
-            setError('Số dư ví không đủ để thanh toán gói đăng tin này. Vui lòng nạp thêm tiền vào ví.')
+            setError(
+                `Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán gói đăng tin này (${formatMoney(finalFee)}). Vui lòng nạp thêm tiền hoặc lưu tin nháp để đăng sau.`
+            )
             return
         }
 
@@ -417,7 +551,7 @@ const CreatePostPage = () => {
             }
             setDraftPostId(paidPostId)
 
-            setSuccess('Đã thanh toán đăng tin thành công. Tin của bạn đang chờ kiểm duyệt.')
+            setSuccess('Thanh toán đăng tin thành công. Tin của bạn đang chờ kiểm duyệt.')
             window.setTimeout(() => {
                 navigate(`/posts/${paidPostId}`)
             }, 900)
@@ -429,72 +563,204 @@ const CreatePostPage = () => {
         }
     }
 
+    // ─── Stepper (visual only, no logic gates form) ────────────────────────
+    const steps = [
+        { id: 0, label: 'Thông tin cơ bản', icon: 'home' },
+        { id: 1, label: 'Vị trí & Mô tả', icon: 'map' },
+        { id: 2, label: 'Hình ảnh', icon: 'image' },
+        { id: 3, label: 'Cấu hình & Thanh toán', icon: 'spark' },
+    ]
+
+    const isStepComplete = (stepId) => {
+        if (stepId === 0) {
+            return form.title.trim() && form.rentalPrice && form.area
+        }
+        if (stepId === 1) {
+            return form.provinceId && form.districtId && form.address.trim() && form.description.trim()
+        }
+        if (stepId === 2) {
+            return images.length >= 1
+        }
+        if (stepId === 3) {
+            return form.postTypeId && form.durationDays
+        }
+        return false
+    }
+
+    const scrollToStep = (stepId) => {
+        const element = document.getElementById(`create-step-${stepId}`)
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+    }
+
+    useEffect(() => {
+        // Theo dõi section đang hiển thị để tô sáng stepper
+        const observer = new IntersectionObserver(
+            (entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        const id = entry.target.id
+                        const match = id.match(/create-step-(\d+)/)
+                        if (match) {
+                            setActiveStep(Number(match[1]))
+                        }
+                    }
+                })
+            },
+            { rootMargin: '-30% 0px -50% 0px', threshold: 0 }
+        )
+        steps.forEach((step) => {
+            const el = document.getElementById(`create-step-${step.id}`)
+            if (el) observer.observe(el)
+        })
+        return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isLoading])
+
+    if (isLoading) {
+        return (
+            <main className="min-h-screen bg-slate-50 text-slate-950">
+                <AppHeader />
+                <div className="mx-auto max-w-5xl space-y-5 px-4 py-8 sm:px-6 lg:px-8">
+                    <div className="h-32 animate-pulse rounded-2xl bg-slate-200" />
+                    <div className="h-20 animate-pulse rounded-2xl bg-slate-200" />
+                    <div className="h-96 animate-pulse rounded-2xl bg-slate-200" />
+                    <div className="h-64 animate-pulse rounded-2xl bg-slate-200" />
+                </div>
+            </main>
+        )
+    }
+
     return (
-        <main className="min-h-screen bg-slate-50 text-slate-950">
+        <main className="min-h-screen bg-gradient-to-b from-slate-50 via-emerald-50/30 to-slate-50 text-slate-950">
             <AppHeader />
 
-            <section className="border-b border-slate-200 bg-white">
-                <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-                    <p className="inline-flex rounded-full bg-emerald-100 px-4 py-2 text-sm font-black text-emerald-800">
-                        Phiếu đăng tin cho thuê phòng trọ
-                    </p>
-                    <div className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            {/* ─── Hero ─────────────────────────────────────────────────────── */}
+            <section className="relative overflow-hidden border-b border-slate-200 bg-white">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-100/50 blur-3xl" />
+                <div className="pointer-events-none absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-amber-100/40 blur-3xl" />
+                <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                         <div>
-                            <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">
-                                Đăng tin rõ thông tin, thanh toán nhanh bằng ví.
+                            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-1.5 text-xs font-black uppercase tracking-wide text-emerald-800">
+                                <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-600" />
+                                Đăng tin cho thuê phòng trọ
+                            </span>
+                            <h1 className="mt-4 text-3xl font-black leading-tight tracking-tight text-slate-950 sm:text-4xl">
+                                Đăng tin rõ ràng – Đẩy tin miễn phí lần đầu
                             </h1>
-                            <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                                Điền thông tin phòng, tải ảnh thực tế, chọn loại tin và thời gian hiển thị. Tin sẽ được gửi kiểm duyệt sau khi thanh toán.
+                            <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+                                Điền thông tin phòng, tải ảnh thực tế, chọn loại tin và thời gian hiển thị. Bạn có thể lưu nháp để đăng sau nếu cần chuẩn bị thêm ngân sách.
                             </p>
+                            <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-bold text-slate-500">
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-emerald-700">
+                                    <Icon name="gift" className="h-3.5 w-3.5" />
+                                    Tin thường: đẩy tin miễn phí lần đầu
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-amber-700">
+                                    <Icon name="flash" className="h-3.5 w-3.5" />
+                                    Thanh toán nhanh bằng ví
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700">
+                                    <Icon name="doc" className="h-3.5 w-3.5" />
+                                    Hỗ trợ lưu nháp không giới hạn
+                                </span>
+                            </div>
                         </div>
-                        <Link
-                            className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-800 hover:bg-slate-100"
-                            to={ROUTES.WALLET}
-                        >
-                            Nạp tiền vào ví
-                        </Link>
+                        <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+                            <Link
+                                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-300 bg-white px-5 text-sm font-black text-slate-800 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-400 hover:shadow-md active:scale-95"
+                                to={ROUTES.POST_PRICING}
+                            >
+                                <Icon name="crown" className="h-4 w-4" />
+                                Xem bảng giá
+                            </Link>
+                            <Link
+                                className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-black text-emerald-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95"
+                                to={ROUTES.WALLET}
+                            >
+                                <Icon name="wallet" className="h-4 w-4" />
+                                Nạp tiền vào ví
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-                {isLoading && (
-                    <div className="mx-auto max-w-5xl space-y-6">
-                        <div className="h-[720px] animate-pulse rounded-lg bg-slate-200" />
-                        <div className="h-96 animate-pulse rounded-lg bg-slate-200" />
-                    </div>
-                )}
+            {/* ─── Sticky Stepper ──────────────────────────────────────────── */}
+            <div className="sticky top-16 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                    <ol className="flex items-center gap-2 overflow-x-auto py-3 text-sm font-bold sm:gap-4">
+                        {steps.map((step, index) => {
+                            const isComplete = isStepComplete(step.id)
+                            const isActive = activeStep === step.id
+                            return (
+                                <li className="flex items-center gap-2 sm:gap-3" key={step.id}>
+                                    <button
+                                        className={`group/step flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 transition-all duration-200 active:scale-95 ${
+                                            isActive
+                                                ? 'bg-emerald-600 text-white shadow-sm'
+                                                : isComplete
+                                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                        }`}
+                                        type="button"
+                                        onClick={() => scrollToStep(step.id)}
+                                    >
+                                        <span
+                                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${
+                                                isActive
+                                                    ? 'bg-white text-emerald-700'
+                                                    : isComplete
+                                                        ? 'bg-emerald-600 text-white'
+                                                        : 'bg-slate-300 text-white'
+                                            }`}
+                                        >
+                                            {isComplete && !isActive ? <Icon name="check" className="h-3.5 w-3.5" /> : index + 1}
+                                        </span>
+                                        <span className="hidden sm:inline">{step.label}</span>
+                                    </button>
+                                    {index < steps.length - 1 && (
+                                        <span className={`h-0.5 w-4 shrink-0 rounded-full sm:w-8 ${isComplete ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                                    )}
+                                </li>
+                            )
+                        })}
+                    </ol>
+                </div>
+            </div>
 
-                {!isLoading && (
-                    <form className="mx-auto max-w-5xl space-y-6" onSubmit={handleSubmit}>
-                        <div className="space-y-6">
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                                <div className="mb-5 flex items-center gap-3">
-                                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                                        <Icon name="home" />
-                                    </span>
-                                    <div>
-                                        <h2 className="text-xl font-black">Thông tin cơ bản</h2>
-                                        <p className="mt-1 text-sm text-slate-500">Tiêu đề, giá và diện tích là các thông tin người thuê nhìn đầu tiên.</p>
-                                    </div>
-                                </div>
+            {/* ─── Form ────────────────────────────────────────────────────── */}
+            <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+                <form className="mx-auto grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" onSubmit={handleSubmit} ref={formTopRef}>
+                    <div className="space-y-6">
+                        {/* STEP 1: Thông tin cơ bản */}
+                        <div id="create-step-0">
+                            <SectionCard accent="emerald">
+                                <SectionHeader
+                                    icon="home"
+                                    iconClassName="bg-emerald-100 text-emerald-700"
+                                    title="Thông tin cơ bản"
+                                    subtitle="Tiêu đề, giá thuê và diện tích là những thông tin người thuê nhìn thấy đầu tiên."
+                                />
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                                     <div className="sm:col-span-2">
-                                        <Field label="Tiêu đề tin">
+                                        <Field label="Tiêu đề tin đăng" required hint={`${form.title.length}/255`}>
                                             <input
-                                                className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                                className={inputClassName}
                                                 name="title"
                                                 value={form.title}
                                                 onChange={handleChange}
-                                                placeholder="Phòng trọ gần trường, có gác, giờ giấc tự do"
+                                                placeholder="Ví dụ: Phòng trọ gần ĐH Bách Khoa, có gác, WC riêng, giờ giấc tự do"
                                                 maxLength="255"
                                             />
                                         </Field>
                                     </div>
-                                    <Field label="Giá thuê/tháng">
-                                        <div className="flex h-12 overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-100">
+                                    <Field label="Giá thuê hàng tháng" required hint="VND">
+                                        <div className="flex h-12 overflow-hidden rounded-xl border border-slate-300 bg-white transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100 hover:border-slate-400">
                                             <input
-                                                className="min-w-0 flex-1 px-4 outline-none"
+                                                className="min-w-0 flex-1 bg-transparent px-4 text-sm font-semibold text-slate-900 outline-none placeholder:font-semibold placeholder:text-slate-400"
                                                 name="rentalPrice"
                                                 type="text"
                                                 inputMode="numeric"
@@ -507,10 +773,10 @@ const CreatePostPage = () => {
                                             </span>
                                         </div>
                                     </Field>
-                                    <Field label="Diện tích (m²)">
-                                        <div className="flex h-12 overflow-hidden rounded-lg border border-slate-300 bg-white focus-within:border-emerald-600 focus-within:ring-4 focus-within:ring-emerald-100">
+                                    <Field label="Diện tích phòng" required hint="m²">
+                                        <div className="flex h-12 overflow-hidden rounded-xl border border-slate-300 bg-white transition-all duration-200 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100 hover:border-slate-400">
                                             <input
-                                                className="min-w-0 flex-1 px-4 outline-none"
+                                                className="min-w-0 flex-1 bg-transparent px-4 text-sm font-semibold text-slate-900 outline-none placeholder:font-semibold placeholder:text-slate-400"
                                                 name="area"
                                                 type="number"
                                                 min="1"
@@ -525,39 +791,46 @@ const CreatePostPage = () => {
                                         </div>
                                     </Field>
                                 </div>
-                            </section>
+                            </SectionCard>
+                        </div>
 
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                                <div className="mb-5">
-                                    <h2 className="text-xl font-black">Vị trí phòng</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Nhập địa chỉ đủ rõ để người thuê dễ hình dung khu vực.</p>
-                                </div>
+                        {/* STEP 2: Vị trí & Mô tả */}
+                        <div id="create-step-1" className="space-y-6">
+                            <SectionCard accent="blue">
+                                <SectionHeader
+                                    icon="map"
+                                    iconClassName="bg-blue-100 text-blue-700"
+                                    title="Vị trí phòng trọ"
+                                    subtitle="Chọn tỉnh/thành, quận/huyện và nhập địa chỉ chi tiết để người thuê dễ tìm."
+                                />
                                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                                    <Field label="Tỉnh/thành">
+                                    <Field label="Tỉnh/Thành phố" required>
                                         <select
-                                            className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                            className={`${inputClassName} cursor-pointer`}
                                             name="provinceId"
                                             value={form.provinceId}
                                             onChange={handleProvinceChange}
                                         >
-                                            <option value="">Chọn tỉnh/thành</option>
-                                            {provinceOptions.map((p) => (
+                                            <option value="">-- Chọn tỉnh/thành phố --</option>
+                                            {provinces.map((p) => (
                                                 <option key={p.id} value={String(p.id)}>
                                                     {p.name}
                                                 </option>
                                             ))}
                                         </select>
                                     </Field>
-                                    <Field label="Quận/huyện">
+                                    <Field label="Quận/Huyện" required>
                                         <select
-                                            className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none disabled:bg-slate-100 disabled:text-slate-400 focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                            className={`${inputClassName} cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400`}
                                             name="districtId"
                                             value={form.districtId}
                                             onChange={handleDistrictChange}
                                             disabled={!form.provinceId}
                                         >
-                                            <option value="">{form.provinceId ? 'Chọn quận/huyện' : 'Chọn tỉnh/thành trước'}</option>
-                                            {districtOptions.map((d) => (
+                                            <option value="">
+                                                {form.provinceId ? '-- Chọn quận/huyện --' : 'Vui lòng chọn tỉnh/thành trước'}
+                                            </option>
+                                            {districts.map((d) => (
                                                 <option key={d.id} value={String(d.id)}>
                                                     {d.name}
                                                 </option>
@@ -565,246 +838,374 @@ const CreatePostPage = () => {
                                         </select>
                                     </Field>
                                     <div className="sm:col-span-2">
-                                        <Field label="Địa chỉ chi tiết">
+                                        <Field label="Địa chỉ chi tiết" required hint="Số nhà, hẻm, ngõ, phường/xã">
                                             <input
-                                                className="h-12 w-full rounded-lg border border-slate-300 px-4 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                                className={inputClassName}
                                                 name="address"
                                                 value={form.address}
                                                 onChange={handleChange}
-                                                placeholder="Số nhà, đường, phường/xã"
+                                                placeholder="Ví dụ: 123/45 Lê Lợi, phường Bến Nghé"
                                             />
                                         </Field>
                                     </div>
                                 </div>
-                            </section>
+                            </SectionCard>
 
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                                <div className="mb-5">
-                                    <h2 className="text-xl font-black">Nội dung mô tả</h2>
-                                    <p className="mt-1 text-sm text-slate-500">Nêu tiện ích, nội thất, giờ giấc, nội quy và các điểm mạnh của phòng.</p>
-                                </div>
+                            <SectionCard accent="blue">
+                                <SectionHeader
+                                    icon="doc"
+                                    iconClassName="bg-blue-100 text-blue-700"
+                                    title="Mô tả chi tiết"
+                                    subtitle="Nêu rõ tiện ích, nội thất, giờ giấc, nội quy và điểm mạnh của phòng để thu hút người thuê."
+                                />
                                 <textarea
-                                    className="min-h-44 w-full rounded-lg border border-slate-300 p-4 leading-7 outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100"
+                                    className="min-h-44 w-full rounded-xl border border-slate-300 bg-white p-4 text-sm font-semibold leading-7 text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400"
                                     name="description"
                                     value={form.description}
                                     onChange={handleChange}
-                                    placeholder="Phòng thoáng, có cửa sổ, WC riêng, gần chợ và trạm xe buýt..."
+                                    placeholder="Phòng thoáng mát, có cửa sổ lớn, WC riêng, gần chợ, trạm xe buýt, trường học... Giờ giấc tự do, an ninh đảm bảo."
                                 />
-                            </section>
+                            </SectionCard>
+                        </div>
 
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                                <div className="mb-5 flex items-center gap-3">
-                                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
-                                        <Icon name="image" />
+                        {/* STEP 3: Hình ảnh */}
+                        <div id="create-step-2">
+                            <SectionCard accent="pink">
+                                <SectionHeader
+                                    icon="image"
+                                    iconClassName="bg-pink-100 text-pink-700"
+                                    title="Hình ảnh thực tế"
+                                    subtitle={`Tải lên từ 1 đến ${MAX_IMAGES} ảnh chất lượng cao, sắc nét và đúng thực tế phòng.`}
+                                />
+
+                                <label className="group/drop flex min-h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-400 hover:bg-emerald-50/60 hover:shadow-md">
+                                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-emerald-600 shadow-sm transition-transform duration-300 group-hover/drop:scale-110 group-hover/drop:rotate-3">
+                                        <Icon name="upload" className="h-6 w-6" />
                                     </span>
-                                    <div>
-                                        <h2 className="text-xl font-black">Hình ảnh phòng</h2>
-                                        <p className="mt-1 text-sm text-slate-500">Tải 1-{MAX_IMAGES} ảnh rõ nét. Backend hiện hỗ trợ ảnh, chưa hỗ trợ video.</p>
-                                    </div>
-                                </div>
-                                <label className="flex min-h-36 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center hover:border-emerald-300 hover:bg-emerald-50">
-                                    <Icon name="image" />
-                                    <span className="mt-3 text-sm font-black text-slate-800">Chọn ảnh phòng</span>
-                                    <span className="mt-1 text-sm text-slate-500">Có thể chọn nhiều ảnh cùng lúc</span>
-                                    <input className="sr-only" type="file" accept="image/*" multiple onChange={handleImageChange} />
+                                    <span className="text-sm font-black text-slate-800">Kéo thả hoặc bấm để chọn ảnh</span>
+                                    <span className="text-xs font-semibold text-slate-500">
+                                        Hỗ trợ JPG, PNG, WEBP. Tối đa {MAX_IMAGE_SIZE_MB}MB/ảnh, tổng tối đa {MAX_TOTAL_IMAGE_SIZE_MB}MB.
+                                    </span>
+                                    <input
+                                        className="sr-only"
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleImageChange}
+                                    />
                                 </label>
+
                                 {images.length > 0 && (
-                                    <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
-                                        {images.map((image) => (
-                                            <div className="group relative overflow-hidden rounded-lg border border-slate-200 bg-slate-100" key={image.id}>
-                                                <img className="aspect-[4/3] w-full object-cover" src={image.previewUrl} alt={image.file.name} />
-                                                <button
-                                                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-lg bg-white/95 text-red-600 shadow-sm hover:bg-red-50"
-                                                    type="button"
-                                                    onClick={() => removeImage(image.id)}
-                                                    aria-label="Xóa ảnh"
+                                    <div className="mt-5 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-sm font-black text-slate-700">
+                                                Đã chọn <span className="text-emerald-600">{images.length}</span> / {MAX_IMAGES} ảnh
+                                            </span>
+                                            <button
+                                                className="text-xs font-bold text-red-600 transition-colors hover:text-red-700"
+                                                type="button"
+                                                onClick={() => {
+                                                    if (window.confirm('Bạn có chắc muốn xóa tất cả ảnh đã chọn?')) {
+                                                        images.forEach((img) => URL.revokeObjectURL(img.previewUrl))
+                                                        setImages([])
+                                                    }
+                                                }}
+                                            >
+                                                Xóa tất cả
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                            {images.map((image, index) => (
+                                                <div
+                                                    className="group/img relative overflow-hidden rounded-xl border border-slate-200 bg-slate-100 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-md"
+                                                    key={image.id}
                                                 >
-                                                    <Icon name="trash" />
-                                                </button>
-                                            </div>
-                                        ))}
+                                                    <img
+                                                        className="aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                                                        src={image.previewUrl}
+                                                        alt={image.file.name}
+                                                    />
+                                                    <span className="absolute left-2 top-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[10px] font-black text-white">
+                                                        Ảnh {index + 1}
+                                                    </span>
+                                                    {index === 0 && (
+                                                        <span className="absolute bottom-2 left-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase text-white shadow-sm">
+                                                            Ảnh bìa
+                                                        </span>
+                                                    )}
+                                                    <button
+                                                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-red-600 shadow-sm transition-all duration-200 hover:scale-110 hover:bg-red-50 active:scale-95"
+                                                        type="button"
+                                                        onClick={() => removeImage(image.id)}
+                                                        aria-label="Xóa ảnh"
+                                                    >
+                                                        <Icon name="trash" className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
-                            </section>
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
-                                        <Icon name="spark" />
-                                    </span>
+                            </SectionCard>
+                        </div>
+
+                        {/* STEP 4: Cấu hình hiển thị */}
+                        <div id="create-step-3" className="space-y-6">
+                            <SectionCard accent="amber">
+                                <SectionHeader
+                                    icon="spark"
+                                    iconClassName="bg-amber-100 text-amber-700"
+                                    title="Cấu hình hiển thị"
+                                    subtitle="Chọn loại tin và thời gian đăng. Tin thường được đẩy lên đầu miễn phí lần đầu sau khi đăng."
+                                />
+
+                                <div className="space-y-6">
+                                    {/* Loại tin */}
                                     <div>
-                                        <h2 className="text-lg font-black">Cấu hình hiển thị</h2>
-                                        <p className="text-sm text-slate-500">Chọn gói và thời gian đăng tin.</p>
-                                    </div>
-                                </div>
-
-                                <div className="mt-5 overflow-x-auto">
-                                    <table className="min-w-[760px] w-full border-collapse overflow-hidden rounded-lg text-sm">
-                                        <thead>
-                                            <tr className="bg-blue-200 text-slate-950">
-                                                <th className="w-32 border border-slate-400 px-3 py-4 text-left font-black">Thời gian</th>
-                                                {postTypes.map((postType) => (
-                                                    <th className="border border-slate-400 px-3 py-4 text-center font-black" key={postType.id}>
-                                                        {postType.name}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {PRICE_DURATIONS.map((durationDays) => (
-                                                <tr key={durationDays}>
-                                                    <th className="border border-slate-300 bg-slate-50 px-3 py-3 text-left font-black">
-                                                        Giá {durationDays} ngày
-                                                    </th>
-                                                    {postTypes.map((postType) => {
-                                                        const price = getPriceByDuration(postType, durationDays)
-                                                        const isSelected =
-                                                            form.postTypeId === String(postType.id) &&
-                                                            form.durationDays === String(durationDays)
-
-                                                        return (
-                                                            <td className="border border-slate-300 p-2" key={`${postType.id}-${durationDays}`}>
-                                                                <button
-                                                                    className={`h-12 w-full rounded-lg px-3 text-sm font-black transition ${
-                                                                        isSelected
-                                                                            ? 'bg-emerald-600 text-white shadow-sm'
-                                                                            : 'bg-white text-slate-800 hover:bg-emerald-50'
-                                                                    }`}
-                                                                    type="button"
-                                                                    disabled={!price}
-                                                                    onClick={() => handlePriceSelection(postType.id, durationDays)}
-                                                                >
-                                                                    {price ? formatMoney(price.price) : 'Chưa có giá'}
-                                                                </button>
-                                                            </td>
-                                                        )
-                                                    })}
-                                                </tr>
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <h3 className="text-sm font-black text-slate-800">
+                                                Loại tin <span className="text-red-500">*</span>
+                                            </h3>
+                                            <span className="text-xs font-semibold text-slate-400">
+                                                {postTypes.length} gói khả dụng
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                                            {postTypes.map((postType) => (
+                                                <PostTypeCard
+                                                    key={postType.id}
+                                                    postType={postType}
+                                                    isSelected={form.postTypeId === String(postType.id)}
+                                                    onSelect={handlePostTypeSelect}
+                                                />
                                             ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        </div>
+                                    </div>
 
-                                <p className="mt-4 text-sm font-semibold text-slate-600">
-                                    Quy định giá đẩy tin tham khảo theo bảng dưới, chưa bao gồm VAT.
-                                </p>
-
-                                <div className="mt-4 overflow-x-auto">
-                                    <table className="min-w-[640px] border-collapse text-sm">
-                                        <thead>
-                                            <tr className="bg-blue-200 text-slate-950">
-                                                {postTypes.map((postType) => (
-                                                    <th className="border border-slate-400 px-4 py-3 text-center font-black" key={postType.id}>
-                                                        {postType.name}
-                                                    </th>
+                                    {/* Thời gian đăng */}
+                                    <div>
+                                        <div className="mb-3 flex items-center justify-between">
+                                            <h3 className="text-sm font-black text-slate-800">
+                                                Thời gian đăng <span className="text-red-500">*</span>
+                                            </h3>
+                                            <span className="text-xs font-semibold text-slate-400">Chọn mốc phù hợp</span>
+                                        </div>
+                                        {sortedPrices.length === 0 ? (
+                                            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm font-semibold text-slate-500">
+                                                Vui lòng chọn loại tin trước để xem các mốc thời gian.
+                                            </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                                                {sortedPrices.map((price) => (
+                                                    <DurationOption
+                                                        key={price.days}
+                                                        days={price.days}
+                                                        price={price.price}
+                                                        isFirstFree={isFirstFreePush}
+                                                        isSelected={form.durationDays === String(price.days)}
+                                                        postTypeName={selectedPostType?.name}
+                                                        onSelect={() => handleDurationSelect(price.days)}
+                                                    />
                                                 ))}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                {postTypes.map((postType) => (
-                                                    <td className="border border-slate-300 px-4 py-3 font-semibold" key={postType.id}>
-                                                        {formatMoney(postType.pushPrice)}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </section>
-
-                            <div ref={alertRef}>
-                                {error && (
-                                    <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-700">
-                                        {error}
-                                        {draftPostId && (
-                                            <Link className="ml-2 underline" to={`/posts/${draftPostId}`}>
-                                                Xem tin nháp
-                                            </Link>
+                                            </div>
                                         )}
+                                    </div>
+
+                                </div>
+                            </SectionCard>
+
+                            <div ref={alertRef} className="space-y-3">
+                                {error && (
+                                    <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600">
+                                            <Icon name="info" className="h-4 w-4" />
+                                        </span>
+                                        <div className="flex-1 text-sm font-semibold text-red-700">
+                                            <p className="font-black text-red-800">Đăng tin chưa thành công</p>
+                                            <p className="mt-0.5">{error}</p>
+                                            {draftPostId && (
+                                                <Link
+                                                    className="mt-2 inline-flex items-center gap-1 font-black text-red-700 underline hover:text-red-800"
+                                                    to={`/posts/${draftPostId}`}
+                                                >
+                                                    Xem tin nháp vừa lưu
+                                                    <Icon name="back" className="h-3.5 w-3.5 rotate-180" />
+                                                </Link>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                                 {success && (
-                                    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
-                                        {success}
+                                    <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm animate-in fade-in slide-in-from-top-2">
+                                        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                                            <Icon name="check" className="h-4 w-4" />
+                                        </span>
+                                        <div className="flex-1 text-sm font-semibold text-emerald-700">
+                                            <p className="font-black text-emerald-800">Thành công</p>
+                                            <p className="mt-0.5">{success}</p>
+                                            {draftPostId && (
+                                                <Link
+                                                    className="mt-2 inline-flex items-center gap-1 font-black text-emerald-700 underline hover:text-emerald-800"
+                                                    to={`/posts/${draftPostId}`}
+                                                >
+                                                    Xem tin nháp
+                                                    <Icon name="back" className="h-3.5 w-3.5 rotate-180" />
+                                                </Link>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
+                        </div>
+                    </div>
 
-                            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                                        <Icon name="wallet" />
-                                    </span>
-                                    <div>
-                                        <h2 className="text-lg font-black">Tóm tắt thanh toán</h2>
-                                        <p className="text-sm text-slate-500">Áp dụng giảm giá theo hạng thành viên.</p>
-                                    </div>
+                    {/* ─── Sidebar: Thanh toán + Hành động ──────────────────── */}
+                    <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
+                        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                            <div className="flex items-center gap-3 border-b border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5">
+                                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                                    <Icon name="wallet" className="h-5 w-5" />
+                                </span>
+                                <div>
+                                    <h2 className="text-base font-black text-slate-950">Thanh toán gói đăng</h2>
+                                    <p className="text-xs font-semibold text-slate-500">Áp dụng giảm giá theo hạng thành viên</p>
                                 </div>
+                            </div>
 
-                                <div className="mt-5 space-y-3 text-sm">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">Số dư ví</span>
-                                        <strong className={hasEnoughBalance ? 'text-slate-950' : 'text-red-600'}>{formatMoney(walletBalance)}</strong>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">Hạng thành viên</span>
-                                        <strong>{membership?.levelName || 'Đồng'} - giảm {discountPercent}%</strong>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">Giá gốc</span>
-                                        <strong>{formatMoney(baseFee)}</strong>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">Giảm giá</span>
-                                        <strong className="text-emerald-700">-{formatMoney(discountAmount)}</strong>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">Tạm tính sau giảm</span>
-                                        <strong>{formatMoney(subtotalAfterDiscount)}</strong>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="font-bold text-slate-500">VAT {VAT_PERCENT}%</span>
-                                        <strong>{formatMoney(vatAmount)}</strong>
-                                    </div>
-                                    <div className="border-t border-slate-200 pt-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <span className="font-black text-slate-950">Tổng thanh toán</span>
-                                            <strong className="text-xl text-emerald-700">{formatMoney(finalFee)}</strong>
-                                        </div>
-                                    </div>
+                            <div className="space-y-3 p-5 text-sm">
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">Số dư ví</span>
+                                    <strong className={`text-base ${hasEnoughBalance ? 'text-slate-950' : 'text-red-600'}`}>
+                                        {formatMoney(walletBalance)}
+                                    </strong>
                                 </div>
-
-                                {!hasEnoughBalance && (
-                                    <Link
-                                        className="mt-4 flex h-11 items-center justify-center rounded-lg bg-red-600 px-4 text-sm font-black text-white hover:bg-red-700"
-                                        to={ROUTES.WALLET}
-                                    >
-                                        Nạp thêm tiền
-                                    </Link>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">Hạng thành viên</span>
+                                    <strong className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-amber-700">
+                                        <Icon name="crown" className="h-3.5 w-3.5" />
+                                        {membership?.levelName || 'Đồng'} · -{discountPercent}%
+                                    </strong>
+                                </div>
+                                <div className="my-2 h-px bg-slate-100" />
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">Giá gốc gói</span>
+                                    <strong>{formatMoney(baseFee)}</strong>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">Giảm hạng thành viên</span>
+                                    <strong className="text-emerald-700">-{formatMoney(discountAmount)}</strong>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">Tạm tính sau giảm</span>
+                                    <strong>{formatMoney(subtotalAfterDiscount)}</strong>
+                                </div>
+                                <div className="flex items-center justify-between gap-3">
+                                    <span className="font-semibold text-slate-500">VAT {VAT_PERCENT}%</span>
+                                    <strong>{formatMoney(vatAmount)}</strong>
+                                </div>
+                                <div className="my-2 h-px bg-slate-200" />
+                                <div className="flex items-baseline justify-between gap-3">
+                                    <span className="font-black text-slate-950">Tổng thanh toán</span>
+                                    <strong className="text-2xl font-black text-emerald-700">{formatMoney(finalFee)}</strong>
+                                </div>
+                                {isFirstFreePush && (
+                                    <p className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-black text-emerald-700">
+                                        <Icon name="gift" className="h-3.5 w-3.5" />
+                                        Bao gồm 1 lượt đẩy tin miễn phí
+                                    </p>
                                 )}
+                            </div>
 
-                                <label className="mt-5 flex gap-3 rounded-lg bg-slate-50 p-4 text-sm font-semibold text-slate-600">
+                            <div className="space-y-3 border-t border-slate-200 bg-slate-50/50 p-5">
+                                <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 text-sm font-semibold text-slate-600 ring-1 ring-slate-200 transition-all duration-200 hover:ring-emerald-300">
                                     <input
-                                        className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                        className="mt-0.5 h-4 w-4 cursor-pointer rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
                                         type="checkbox"
                                         name="agreed"
                                         checked={form.agreed}
                                         onChange={handleChange}
                                     />
-                                    <span>Tôi cam kết thông tin, giá và hình ảnh đúng thực tế; tin vi phạm có thể bị từ chối và xử lý theo quy định.</span>
+                                    <span>
+                                        Tôi cam kết thông tin, giá và hình ảnh đúng thực tế. Tin vi phạm có thể bị từ chối và xử lý theo quy định của TAYTRO.
+                                    </span>
                                 </label>
 
                                 <button
-                                    className="mt-5 h-12 w-full rounded-lg bg-emerald-600 px-5 text-sm font-black text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                    className="group/pay relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none"
                                     type="submit"
                                     disabled={isSubmitting || postTypes.length === 0}
                                 >
-                                    {isSubmitting ? submitStep || 'Đang xử lý...' : 'Lưu tin và thanh toán'}
+                                    {isSubmitting && submitStep ? (
+                                        <>
+                                            <SpinnerIcon className="h-4 w-4" />
+                                            <span>Đang xử lý...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="wallet" className="h-4 w-4 transition-transform duration-200 group-hover/pay:scale-110" />
+                                            <span>Lưu tin & Thanh toán</span>
+                                        </>
+                                    )}
                                 </button>
-                            </section>
+
+                                <button
+                                    className="group/draft flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-5 text-sm font-black text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                                    type="button"
+                                    onClick={handleSaveDraft}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting && submitStep.includes('nháp') ? (
+                                        <>
+                                            <SpinnerIcon className="h-4 w-4" />
+                                            <span>Đang lưu nháp...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="edit" className="h-4 w-4 transition-transform duration-200 group-hover/draft:scale-110" />
+                                            <span>Lưu tin nháp</span>
+                                        </>
+                                    )}
+                                </button>
+
+                                {!hasEnoughBalance && (
+                                    <Link
+                                        className="flex h-11 items-center justify-center gap-2 rounded-xl bg-red-600 px-4 text-sm font-black text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700 hover:shadow-md active:scale-[0.98]"
+                                        to={ROUTES.WALLET}
+                                    >
+                                        <Icon name="wallet" className="h-4 w-4" />
+                                        Nạp thêm tiền vào ví
+                                    </Link>
+                                )}
+
+                                <p className="pt-1 text-center text-[11px] font-semibold text-slate-400">
+                                    Bạn có thể lưu nháp để đăng sau khi đã chuẩn bị đủ ngân sách.
+                                </p>
+                            </div>
                         </div>
-                    </form>
-                )}
+
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h3 className="text-sm font-black text-slate-900">Mẹo đăng tin hiệu quả</h3>
+                            <ul className="mt-2 space-y-1.5 text-xs font-semibold text-slate-600">
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                                    Tiêu đề ngắn gọn, nêu bật ưu điểm phòng (vị trí, tiện ích, giá).
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                                    Ảnh đầu tiên nên là ảnh tổng quan phòng, sáng và sắc nét.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                                    Mô tả chi tiết giúp giảm thắc mắc và tăng lượng liên hệ thực sự.
+                                </li>
+                                <li className="flex items-start gap-2">
+                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
+                                    Đăng vào giờ cao điểm (8h-10h, 19h-22h) để tiếp cận nhiều người xem hơn.
+                                </li>
+                            </ul>
+                        </div>
+                    </aside>
+                </form>
             </section>
         </main>
     )

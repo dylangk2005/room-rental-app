@@ -142,18 +142,17 @@ const PostTypeCard = ({ postType, isSelected, onSelect }) => {
 
     return (
         <button
-            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
-                isSelected
-                    ? 'border-transparent shadow-sm ring-4'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
+            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
+                ? 'border-transparent shadow-sm ring-4'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+                }`}
             style={
                 isSelected
                     ? {
-                          borderColor: accentColor,
-                          backgroundColor: accentColor + '0f',
-                          '--tw-ring-color': accentColor + '30',
-                      }
+                        borderColor: accentColor,
+                        backgroundColor: accentColor + '0f',
+                        '--tw-ring-color': accentColor + '30',
+                    }
                     : undefined
             }
             type="button"
@@ -181,11 +180,10 @@ const DurationOption = ({ days, price, isSelected, isFirstFree, postTypeName, on
 
     return (
         <button
-            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
-                isSelected
-                    ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
-                    : 'border-slate-200 bg-white hover:border-emerald-300'
-            }`}
+            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
+                ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
+                : 'border-slate-200 bg-white hover:border-emerald-300'
+                }`}
             type="button"
             onClick={onSelect}
         >
@@ -492,11 +490,43 @@ const CreatePostPage = () => {
         setDraftPostId(null)
 
         if (!form.title.trim()) {
-            setError('Vui lòng nhập tiêu đề trước khi lưu nháp.')
+            setError('Vui lòng nhập tiêu đề.')
+            return
+        }
+        if (!form.description.trim()) {
+            setError('Vui lòng nhập mô tả.')
+            return
+        }
+        if (!form.address.trim()) {
+            setError('Vui lòng nhập địa chỉ.')
+            return
+        }
+        if (!form.provinceId) {
+            setError('Vui lòng chọn tỉnh/thành phố.')
+            return
+        }
+        if (!form.districtId) {
+            setError('Vui lòng chọn quận/huyện.')
+            return
+        }
+        if (!form.area || parseFloat(form.area) <= 0) {
+            setError('Vui lòng nhập diện tích hợp lệ.')
+            return
+        }
+        if (!form.rentalPrice || parseFloat(form.rentalPrice) <= 0) {
+            setError('Vui lòng nhập giá thuê hợp lệ.')
+            return
+        }
+        if (!form.postTypeId) {
+            setError('Vui lòng chọn loại tin đăng.')
+            return
+        }
+        if (!form.durationDays || parseInt(form.durationDays) <= 0) {
+            setError('Vui lòng chọn số ngày đăng.')
             return
         }
         if (images.length < 1) {
-            setError('Vui lòng tải lên ít nhất 1 ảnh phòng trước khi lưu nháp.')
+            setError('Vui lòng tải lên ít nhất 1 ảnh phòng.')
             return
         }
 
@@ -535,7 +565,7 @@ const CreatePostPage = () => {
 
         if (!hasEnoughBalance) {
             setError(
-                `Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán gói đăng tin này (${formatMoney(finalFee)}). Vui lòng nạp thêm tiền hoặc lưu tin nháp để đăng sau.`
+                `Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán gói đăng tin này (${formatMoney(finalFee)}). Vui lòng lưu tin nháp và nạp thêm tiền để đăng sau.`
             )
             return
         }
@@ -615,7 +645,7 @@ const CreatePostPage = () => {
             if (el) observer.observe(el)
         })
         return () => observer.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isLoading])
 
     if (isLoading) {
@@ -698,24 +728,22 @@ const CreatePostPage = () => {
                             return (
                                 <li className="flex items-center gap-2 sm:gap-3" key={step.id}>
                                     <button
-                                        className={`group/step flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 transition-all duration-200 active:scale-95 ${
-                                            isActive
-                                                ? 'bg-emerald-600 text-white shadow-sm'
-                                                : isComplete
-                                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                                                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                                        }`}
+                                        className={`group/step flex shrink-0 items-center gap-2 rounded-full px-3 py-1.5 transition-all duration-200 active:scale-95 ${isActive
+                                            ? 'bg-emerald-600 text-white shadow-sm'
+                                            : isComplete
+                                                ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                                                : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                                            }`}
                                         type="button"
                                         onClick={() => scrollToStep(step.id)}
                                     >
                                         <span
-                                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${
-                                                isActive
-                                                    ? 'bg-white text-emerald-700'
-                                                    : isComplete
-                                                        ? 'bg-emerald-600 text-white'
-                                                        : 'bg-slate-300 text-white'
-                                            }`}
+                                            className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black ${isActive
+                                                ? 'bg-white text-emerald-700'
+                                                : isComplete
+                                                    ? 'bg-emerald-600 text-white'
+                                                    : 'bg-slate-300 text-white'
+                                                }`}
                                         >
                                             {isComplete && !isActive ? <Icon name="check" className="h-3.5 w-3.5" /> : index + 1}
                                         </span>
@@ -1143,7 +1171,7 @@ const CreatePostPage = () => {
                                     ) : (
                                         <>
                                             <Icon name="wallet" className="h-4 w-4 transition-transform duration-200 group-hover/pay:scale-110" />
-                                            <span>Lưu tin & Thanh toán</span>
+                                            <span>Thanh toán</span>
                                         </>
                                     )}
                                 </button>

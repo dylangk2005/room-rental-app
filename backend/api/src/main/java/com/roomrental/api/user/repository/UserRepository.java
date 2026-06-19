@@ -18,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository <User, Integer>{
+    @EntityGraph(attributePaths = "membershipLevel")
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, Integer id);
@@ -27,6 +28,10 @@ public interface UserRepository extends JpaRepository <User, Integer>{
     @EntityGraph(attributePaths = "membershipLevel")
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForPayment(@Param("id") Integer id);
+
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    @EntityGraph(attributePaths = "membershipLevel")
+    Optional<User> findByIdWithMembership(@Param("id") Integer id);
 
     List<User> findByRole_Name(String roleName);
 

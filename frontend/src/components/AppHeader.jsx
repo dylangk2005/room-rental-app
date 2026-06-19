@@ -117,7 +117,7 @@ const NotificationItem = ({ notification, onClick }) => (
 )
 
 const AppHeader = () => {
-    const { user, logout } = useAuth()
+    const { user, logout, isAuthReady } = useAuth()
     const navigate = useNavigate()
     const menuRef = useRef(null)
     const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -180,7 +180,7 @@ const AppHeader = () => {
         return () => {
             ignore = true
         }
-    }, [user])
+    }, [user, isAuthReady])
 
     const loadQuickNotifications = async () => {
         setIsNotificationLoading(true)

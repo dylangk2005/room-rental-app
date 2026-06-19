@@ -49,12 +49,20 @@ const refreshClient = axios.create({
 
 const isAuthUrl = (url = '') => url.includes('/auth/login') || url.includes('/auth/refresh')
 
+// ─── Init: restore session from stored user ────────────────────────────────
 if (typeof window !== 'undefined') {
     if (!window.__taytroAuthReady) {
         try {
             const storedUser = localStorage.getItem(USER_STORAGE_KEY)
             if (storedUser && !getAccessToken()) {
-                window.__taytroAuthReady = refreshAccessToken()
+                window.__taytroAuthReady = refreshAccessToken().then((token) => {
+                    if (!token) {
+                        // Refresh failed — clear stale session so user sees login screen
+                        clearAccessToken()
+                        localStorage.removeItem(USER_STORAGE_KEY)
+                    }
+                    return !!token
+                })
             } else {
                 window.__taytroAuthReady = Promise.resolve(true)
             }
@@ -64,7 +72,13 @@ if (typeof window !== 'undefined') {
     }
 }
 
-axiosClient.interceptors.request.use((config) => {
+// ─── Request interceptor: wait for token to be ready ──────────────────────
+axiosClient.interceptors.request.use(async (config) => {
+    // Block all requests until the init-phase refresh completes (or fails)
+    if (window.__taytroAuthReady) {
+        await window.__taytroAuthReady
+    }
+
     const token = getAccessToken()
     if (token) {
         config.headers = config.headers || {}
@@ -84,7 +98,16 @@ axiosClient.interceptors.response.use(
         const status = error.response?.status
         const skipAuthRedirect = originalRequest?.skipAuthRedirect
 
-        if ((status === 401 || (status === 403 && getAccessToken())) && originalRequest && !originalRequest._retry && !isAuthUrl(originalRequest.url) && !skipAuthRedirect) {
+        const hasToken = !!getAccessToken()
+
+        // ── 401 or 403 → attempt token refresh ─────────────────────────────
+        const shouldRefresh =
+            !originalRequest._retry &&
+            !isAuthUrl(originalRequest?.url) &&
+            !skipAuthRedirect &&
+            (status === 401 || status === 403)
+
+        if (shouldRefresh) {
             originalRequest._retry = true
 
             try {
@@ -96,24 +119,17 @@ axiosClient.interceptors.response.use(
                 }
                 throw new Error('Refresh token không hợp lệ hoặc đã hết hạn')
             } catch (refreshError) {
-                const hasToken = getAccessToken()
-                if (hasToken) {
-                    clearAccessToken()
-                    localStorage.removeItem(USER_STORAGE_KEY)
-                }
+                clearAccessToken()
+                localStorage.removeItem(USER_STORAGE_KEY)
                 return Promise.reject(refreshError)
             }
         }
 
-        if (status === 401 && !isAuthUrl(originalRequest?.url) && !skipAuthRedirect && getAccessToken()) {
-            clearAccessToken()
-            localStorage.removeItem(USER_STORAGE_KEY)
-        }
+        // ── Log non-retry errors ──────────────────────────────────────────
         if (status === 403) {
             console.error('[API 403] Token không hợp lệ hoặc hết phiên:', originalRequest?.url, error.response?.data)
         }
-        if (status === 401) {
-            if (isAuthUrl(originalRequest?.url)) return Promise.reject(error)
+        if (status === 401 && !isAuthUrl(originalRequest?.url)) {
             console.error('[API 401] Phiên đăng nhập hết hạn hoặc token không hợp lệ:', originalRequest?.url, error.response?.data)
         }
         if (status === 500) {
@@ -123,5 +139,8 @@ axiosClient.interceptors.response.use(
         return Promise.reject(error)
     }
 )
+
+export const authReadyPromise = window.__taytroAuthReady || Promise.resolve(true)
+export const waitForAuth = () => authReadyPromise
 
 export default axiosClient

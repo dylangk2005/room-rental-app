@@ -1,6 +1,7 @@
 package com.roomrental.api.post.controller;
 
 import com.roomrental.api.common.dto.ApiResponse;
+import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.common.util.AuthHelper;
 import com.roomrental.api.post.dto.request.CreatePostRequest;
 import com.roomrental.api.post.dto.response.PostContactResponse;
@@ -98,8 +99,42 @@ public class PostController {
         request.setPostTypeId(postTypeId);
         request.setDurationDays(durationDays);
 
+        if (title == null || title.isBlank()) {
+            throw AppException.badRequest("Tiêu đề không được để trống");
+        }
+        if (title.length() > 255) {
+            throw AppException.badRequest("Tiêu đề tối đa 255 ký tự");
+        }
+        if (description == null || description.isBlank()) {
+            throw AppException.badRequest("Mô tả không được để trống");
+        }
+        if (address == null || address.isBlank()) {
+            throw AppException.badRequest("Địa chỉ không được để trống");
+        }
+        if (provinceId == null) {
+            throw AppException.badRequest("Tỉnh/thành không được để trống");
+        }
+        if (districtId == null) {
+            throw AppException.badRequest("Quận/huyện không được để trống");
+        }
+        if (area == null || area.compareTo(java.math.BigDecimal.ONE) < 0) {
+            throw AppException.badRequest("Diện tích tối thiểu 1 m²");
+        }
+        if (rentalPrice == null || rentalPrice.compareTo(new java.math.BigDecimal("1000")) < 0) {
+            throw AppException.badRequest("Giá thuê tối thiểu 1,000đ");
+        }
+        if (postTypeId == null) {
+            throw AppException.badRequest("Loại tin không được để trống");
+        }
+        if (durationDays == null || durationDays < 1) {
+            throw AppException.badRequest("Số ngày đăng tối thiểu 1 ngày");
+        }
+        if (images == null || images.isEmpty()) {
+            throw AppException.badRequest("Phải tải lên ít nhất 1 ảnh");
+        }
+
         return ResponseEntity.ok(ApiResponse.success(
-                "Đã lưu tin nháp, vui lòng thanh toán để đăng tin",
+                "Đã lưu tin nháp thành công",
                 postService.createPost(authHelper.getCurrentUserId(), request, images)));
     }
 

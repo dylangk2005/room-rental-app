@@ -6,7 +6,6 @@ import com.roomrental.api.post.dto.response.PostDetailResponse;
 import com.roomrental.api.post.dto.response.PostLocationResponse;
 import com.roomrental.api.post.dto.response.PostPageResponse;
 import com.roomrental.api.post.dto.request.UpdatePostRequest;
-import com.roomrental.api.post.entity.Post;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;

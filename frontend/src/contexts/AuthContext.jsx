@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import authApi from '../api/authApi'
+import { authReadyPromise } from '../api/axiosClient'
 
 const USER_STORAGE_KEY = 'taytro_user'
 
@@ -15,7 +16,13 @@ const AuthContext = createContext(null)
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => getStoredUser())
-    const [isAuthReady, setIsAuthReady] = useState(true)
+    // Block rendering protected content until the initial token refresh completes
+    const [isAuthReady, setIsAuthReady] = useState(false)
+
+    useEffect(() => {
+        // Wait for axiosClient's init-phase refresh to finish before allowing render
+        authReadyPromise.finally(() => setIsAuthReady(true))
+    }, [])
 
     useEffect(() => {
         const handleStorageChange = () => {

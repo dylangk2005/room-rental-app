@@ -16,6 +16,7 @@ import com.roomrental.api.common.util.RedisRateLimitService;
 import com.roomrental.api.integration.service.EmailService;
 import com.roomrental.api.pricing.entity.MembershipLevel;
 import com.roomrental.api.pricing.repository.MembershipLevelRepository;
+import com.roomrental.api.pricing.service.MembershipService;
 import com.roomrental.api.user.dto.response.UserResponse;
 import com.roomrental.api.user.entity.Role;
 import com.roomrental.api.user.entity.User;
@@ -67,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
     private final RedisRateLimitService rateLimitService;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+    private final MembershipService membershipService;
     private Boolean mustChangePassword;
 
     @Value("${app.cookie.secure:false}")
@@ -212,6 +214,10 @@ public class AuthServiceImpl implements AuthService {
         }
         clearFailedLogin(email);
 
+        // Refresh membership level based on current totalSpent
+        membershipService.refreshUserMembership(user);
+        userRepository.save(user);
+
         String sessionId = createSessionId();
 
         // Tạo access token
@@ -324,7 +330,11 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("Người dùng không tồn tại"));
 
-        // Kiểm tra trạng thái tài khoản
+        // Refresh membership level
+        membershipService.refreshUserMembership(user);
+        userRepository.save(user);
+
+        // Kiểm tra trạng thái tài khoản
         if (user.getStatus() != User.UserStatus.ACTIVE) {
             throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn không ở trạng thái hoạt động");
         }
@@ -684,3 +694,8 @@ public class AuthServiceImpl implements AuthService {
         revokeAllRefreshTokens(normalizedEmail);
     }
 }
+
+
+
+
+

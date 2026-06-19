@@ -164,7 +164,7 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
+    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
     @Override
     public PostPageResponse getActivePosts(int page, int size) {
         Page<Post> result = postRepository.findPublicActivePosts(
@@ -172,13 +172,13 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
-    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
+    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
     @Override
     public PostPageResponse searchPosts(Integer provinceId, Integer districtId,
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         BigDecimal minArea, BigDecimal maxArea,
                                         int page, int size) {
-        // Chú ý: chỉ tìm kiếm bài đăng public còn hiệu lực
+        // Chú ý: chỉ tìm kiếm bài đăng public còn hiệu lực
         Page<Post> result = postRepository.searchPosts(
                 PostStatus.ACTIVE, LocalDateTime.now(),
                 provinceId, districtId, minPrice, maxPrice, minArea, maxArea,
@@ -212,23 +212,23 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
-    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
+    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
     @Override
     public PostDetailResponse getPostDetail(Integer postId) {
-        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findDetailById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
-        // Lấy thông tin người dùng hiện tại, nếu có. Nếu không có (chưa đăng nhập) sẽ trả về null
+        // Lấy thông tin người dùng hiện tại, nếu có. Nếu không có (chưa đăng nhập) sẽ trả về null
         AuthHelper.CurrentUser currentUser = authHelper.getCurrentUserOrNull();
 
-        // Nếu bài đăng không ở trạng thái ACTIVE
-        // chỉ cho phép xem nếu người dùng là chủ bài đăng, đã yêu thích bài đăng này hoặc có quyền quản trị
+        // Nếu bài đăng không ở trạng thái ACTIVE
+        // chỉ cho phép xem nếu người dùng là chủ bài đăng, đã yêu thích bài đăng này hoặc có quyền quản trị
         if (!canViewPostDetail(post, currentUser)) {
             throw AppException.notFound("Không tìm thấy tin đăng");
         }
 
-        // Lấy danh sách URL ảnh của bài đăng
+        // Lấy danh sách URL ảnh của bài đăng
         List<String> imageUrls = postImageRepository.findByPostId(postId)
                 .stream()
                 .map(PostImage::getImageUrl)
@@ -241,22 +241,22 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(post, imageUrls, isFavorited);
     }
 
-    // Xem thông tin liên hệ của phòng trọ
+    // Xem thông tin liên hệ của phòng trọ
     @Override
     public PostContactResponse getPostContact(Integer postId) {
-        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
         AuthHelper.CurrentUser currentUser = authHelper.getCurrentUserOrNull();
 
-        // Nếu bài đăng không còn hiệu lực thì chỉ chủ tin hoặc nhân viên được xem liên hệ
+        // Nếu bài đăng không còn hiệu lực thì chỉ chủ tin hoặc nhân viên được xem liên hệ
         if (!isActiveAndNotExpired(post)
                 && (currentUser == null || (!isPostOwner(post, currentUser) && !isStaff(currentUser)))) {
             throw AppException.badRequest("Tin đăng không còn hiệu lực");
         }
 
-        // Lấy thông tin người dùng là chủ bài đăng
+        // Lấy thông tin người dùng là chủ bài đăng
         User owner = post.getUser();
 
         // Chưa đăng nhập thì chỉ ẩn số điện thoại, vẫn trả avatar + tên
@@ -270,7 +270,6 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    // Tạo mới bài đăng, có thể upload nhiều ảnh
     @Override
     @Transactional
     public PostDetailResponse createPost(Integer userId, CreatePostRequest request,
@@ -341,14 +340,14 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls, false);
     }
 
-    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
+    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
     @Override
     @Transactional
     public PostDetailResponse updatePost(Integer userId, Integer postId,
                                          UpdatePostRequest request,
                                          List<MultipartFile> newImages) {
 
-        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
@@ -417,11 +416,11 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls, favoriteRepository.existsByUser_IdAndPost_Id(userId, postId));
     }
 
-    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
+    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
     @Override
     @Transactional
     public void deletePost(Integer userId, Integer postId) {
-        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
+        // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
 
@@ -451,7 +450,7 @@ public class PostServiceImpl implements PostService {
 
     }
 
-    // Lấy danh sách bài đăng của người dùng, có phân trang
+    // Lấy danh sách bài đăng của người dùng, có phân trang
     @Override
     public PostPageResponse getMyPosts(Integer userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
@@ -459,7 +458,7 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
-    // Hàm tiện ích: Kiểm tra xem người dùng có bị cấm đăng tin không
+    // Hàm tiện ích: Kiểm tra xem người dùng có bị cấm đăng tin không
     private void ensureUserCanPost(User user) {
         if (user.getStatus() == User.UserStatus.BANNED) {
             throw AppException.forbidden("Tài khoản của bạn đã bị khóa");
@@ -492,7 +491,7 @@ public class PostServiceImpl implements PostService {
         }
     }
 
-    // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
+    // Hàm tiện ích: Kiểm tra xem người dùng có quyền xem chi tiết bài đăng không
     // Resolve province: ưu tiên provinceId, fallback tìm theo tên
     // Resolve province theo ID (bắt buộc)
     private Province resolveProvince(CreatePostRequest request) {
@@ -542,8 +541,8 @@ public class PostServiceImpl implements PostService {
             return true;
         }
 
-        // Nếu bài dăng không ở trạng thái ACTIVE thì chỉ cho phép xem nếu người dùng là chủ bài đăng
-        // hoặc đã yêu thích bài đăng này hoặc có quyền quản trị
+        // Nếu bài dăng không ở trạng thái ACTIVE thì chỉ cho phép xem nếu người dùng là chủ bài đăng
+        // hoặc đã yêu thích bài đăng này hoặc có quyền quản trị
         if (currentUser == null) {
             return false;
         }
@@ -562,15 +561,15 @@ public class PostServiceImpl implements PostService {
         return isFavoritedViewablePost(post, currentUser);
     }
 
-    // Hàm tiện ích: Kiểm tra xem bài đăng có đang hoạt động và chưa hết hạn không
+    // Hàm tiện ích: Kiểm tra xem bài đăng có đang hoạt động và chưa hết hạn không
     private boolean isActiveAndNotExpired(Post post) {
-        // Trả về true nếu bài đăng đang hoạt động và chưa hết hạn, ngược lại trả về false
+        // Trả về true nếu bài đăng đang hoạt động và chưa hết hạn, ngược lại trả về false
         return post.getStatus() == PostStatus.ACTIVE
                 && post.getEndAt() != null
                 && post.getEndAt().isAfter(LocalDateTime.now());
     }
 
-    // Hàm tiện ích: Kiểm tra xem người dùng đã yêu thích bài đăng này chưa và bài đăng có đang ở trạng thái có thể xem chi tiết không
+    // Hàm tiện ích: Kiểm tra xem người dùng đã yêu thích bài đăng này chưa và bài đăng có đang ở trạng thái có thể xem chi tiết không
     private boolean isFavoritedViewablePost(Post post, AuthHelper.CurrentUser currentUser) {
         boolean viewableStatus = post.getStatus() == PostStatus.ACTIVE
                 || post.getStatus() == PostStatus.EXPIRED;
@@ -579,20 +578,20 @@ public class PostServiceImpl implements PostService {
             return false;
         }
 
-        // Trả về true nếu người dùng đã yêu thích bài đăng này, ngược lại trả về false
+        // Trả về true nếu người dùng đã yêu thích bài đăng này, ngược lại trả về false
         return favoriteRepository.existsByUser_IdAndPost_Id(
                 currentUser.id(),
                 post.getId()
         );
     }
 
-    // Hàm tiện ích: Kiểm tra xem người dùng có phải là chủ bài đăng không
+    // Hàm tiện ích: Kiểm tra xem người dùng có phải là chủ bài đăng không
     private boolean isPostOwner(Post post, AuthHelper.CurrentUser currentUser) {
         return post.getUser() != null
                 && post.getUser().getId().equals(currentUser.id());
     }
 
-    // Hàm tiện ích: Kiểm tra xem người dùng có phải là nhân viên (MODERATOR, MANAGER, ADMIN) không
+    // Hàm tiện ích: Kiểm tra xem người dùng có phải là nhân viên (MODERATOR, MANAGER, ADMIN) không
     private boolean isStaff(AuthHelper.CurrentUser currentUser) {
         return switch (String.valueOf(currentUser.role())) {
             case "MODERATOR", "MANAGER", "ADMIN" -> true;

@@ -13,6 +13,8 @@ import PostDetailPage from './pages/posts/PostDetailPage'
 import CreatePostPage from './pages/posts/CreatePostPage'
 import PostPricingPage from './pages/posts/PostPricingPage'
 import ProfilePage from './pages/user/ProfilePage'
+import DepositPage from './pages/user/DepositPage'
+import PaymentResultPage from './pages/user/PaymentResultPage'
 import WalletPage from './pages/user/WalletPage'
 import FavoritesPage from './pages/user/FavoritesPage'
 import MyPostsPage from './pages/user/MyPostsPage'
@@ -71,6 +73,8 @@ function App() {
                     <Route path={ROUTES.CREATE_POST} element={<CreatePostPage />} />
 
                     <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
+                    <Route path={ROUTES.USER_DEPOSIT} element={<DepositPage />} />
+                    <Route path={ROUTES.PAYMENT_RESULT} element={<PaymentResultPage />} />
                     <Route path={ROUTES.WALLET} element={<WalletPage />} />
                     <Route path={ROUTES.MY_POSTS} element={<MyPostsPage />} />
                     <Route path={ROUTES.BOOST_POSTS} element={<BoostPostsPage />} />

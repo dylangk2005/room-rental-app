@@ -116,8 +116,8 @@ public class WalletController {
 
         String redirectUrl = UriComponentsBuilder
                 .fromHttpUrl(frontendUrl)
-                .path("/user/wallet")
-                .queryParam("deposit", result)
+                .path("/payment-result")
+                .queryParam("status", result)
                 .build()
                 .toUriString();
 

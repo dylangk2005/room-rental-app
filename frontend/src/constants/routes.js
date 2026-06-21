@@ -19,6 +19,7 @@ const ROUTES = {
     MY_POSTS: '/user/posts',
     DRAFTS: '/user/drafts',
     BOOST_POSTS: '/user/boost-posts',
+    EXTEND_POSTS: '/user/extend-posts',
     FAVORITES: '/user/favorites',
     USER_MEMBERSHIP: '/user/membership',
 

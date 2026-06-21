@@ -21,6 +21,7 @@ import FavoritesPage from './pages/user/FavoritesPage'
 import MyPostsPage from './pages/user/MyPostsPage'
 import DraftsPage from './pages/user/DraftsPage'
 import BoostPostsPage from './pages/user/BoostPostsPage'
+import ExtendPostPage from './pages/user/ExtendPostPage'
 import UserMembershipPage from './pages/user/UserMembershipPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
@@ -83,6 +84,7 @@ function App() {
                     <Route path={ROUTES.MY_POSTS} element={<MyPostsPage />} />
                     <Route path={ROUTES.DRAFTS} element={<DraftsPage />} />
                     <Route path={ROUTES.BOOST_POSTS} element={<BoostPostsPage />} />
+                    <Route path={ROUTES.EXTEND_POSTS} element={<ExtendPostPage />} />
                     <Route path={ROUTES.FAVORITES} element={<FavoritesPage />} />
                     <Route path={ROUTES.USER_MEMBERSHIP} element={<UserMembershipPage />} />
 

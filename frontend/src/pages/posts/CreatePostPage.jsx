@@ -67,6 +67,7 @@ const CreatePostPage = () => {
     const [success, setSuccess] = useState('')
     const [draftPostId, setDraftPostId] = useState(null)
     const [activeStep, setActiveStep] = useState(0)
+    const [confirmOpen, setConfirmOpen] = useState(false)
     const imagesRef = useRef([])
     const alertRef = useRef(null)
     const formTopRef = useRef(null)
@@ -983,7 +984,14 @@ const CreatePostPage = () => {
 
                                 <button
                                     className="group/pay relative flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-700 hover:to-emerald-800 hover:shadow-lg active:scale-[0.98] disabled:cursor-not-allowed disabled:from-slate-300 disabled:to-slate-300 disabled:shadow-none"
-                                    type="submit"
+                                    type="button"
+                                    onClick={() => {
+                                        const err = validateForm()
+                                        if (err) { setError(err); return }
+                                        if (!form.agreed) { setError('Vui lòng đồng ý với quy định đăng tin trước khi thanh toán.'); return }
+                                        if (!hasEnoughBalance) { setError(`Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán tin đăng này (${formatMoney(finalFee)}). Vui lòng lưu tin nháp và nạp thêm tiền để đăng sau.`); return }
+                                        setConfirmOpen(true)
+                                    }}
                                     disabled={isSubmitting || postTypes.length === 0}
                                 >
                                     {isSubmitting && submitStep ? (
@@ -1058,6 +1066,120 @@ const CreatePostPage = () => {
                     </aside>
                 </form>
             </section>
+
+            {/* Confirmation overlay */}
+            {confirmOpen && (
+                <div
+                    className="fixed inset-0 z-50 flex items-end bg-slate-950/50 p-4 backdrop-blur-sm transition-all duration-300 sm:items-center sm:justify-center"
+                    onClick={() => !isSubmitting && setConfirmOpen(false)}
+                    role="dialog"
+                    aria-modal="true"
+                >
+                    <div
+                        className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 zoom-in-95"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 p-5 text-white">
+                            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full bg-white/15 blur-2xl" />
+                            <div className="pointer-events-none absolute -bottom-10 -left-10 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+                            <div className="relative flex items-start justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                                        <Icon name="check" className="h-5 w-5" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-black">Xác nhận thanh toán</h2>
+                                        <p className="text-xs font-semibold text-white/80">Hành động không thể hoàn tác</p>
+                                    </div>
+                                </div>
+                                <button
+                                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-lg font-black text-white/80 backdrop-blur-sm transition-all hover:bg-white/20 active:scale-95 disabled:opacity-50"
+                                    type="button"
+                                    onClick={() => setConfirmOpen(false)}
+                                    disabled={isSubmitting}
+                                    aria-label="Đóng"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-5 space-y-4">
+                            <div className="flex flex-col items-center gap-4 py-2 text-center">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+                                    <Icon name="alert" className="h-7 w-7 text-amber-600" />
+                                </div>
+                                <div>
+                                    <p className="text-base font-black text-slate-900">Xác nhận thanh toán tin đăng?</p>
+                                    <p className="mt-1.5 text-sm text-slate-500">
+                                        <strong className="font-black text-emerald-600">{formatMoney(finalFee)}</strong> sẽ được trừ từ ví của bạn.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                                <button
+                                    className="inline-flex h-11 items-center justify-center rounded-xl border-2 border-slate-200 bg-white px-5 text-sm font-black text-slate-700 transition-all duration-200 hover:border-slate-300 hover:bg-slate-50 active:scale-95"
+                                    type="button"
+                                    onClick={() => setConfirmOpen(false)}
+                                    disabled={isSubmitting}
+                                >
+                                    Quay lại
+                                </button>
+                                <button
+                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 text-sm font-black text-white shadow-lg shadow-emerald-200 transition-all duration-200 hover:from-emerald-700 hover:to-teal-700 hover:shadow-xl hover:shadow-emerald-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                                    type="button"
+                                    onClick={async () => {
+                                        setConfirmOpen(false)
+                                        setIsSubmitting(true)
+                                        setSubmitStep('Đang tải ảnh, lưu tin và thanh toán...')
+                                        setError('')
+                                        setSuccess('')
+                                        setDraftPostId(null)
+
+                                        try {
+                                            setSubmitStep('Đang tải ảnh lên...')
+                                            const paymentResponse = await postApi.createAndPayPost(buildPayload())
+                                            const paidPostId = paymentResponse.data?.postId
+                                            const postId = paidPostId || draftPostId
+                                            setSuccess(`Tin đăng đã được thanh toán thành công! Bạn có thể xem tin tại mục quản lý tin đăng.`)
+                                            setForm(INITIAL_FORM)
+                                            setImages([])
+                                            setDraftPostId(null)
+                                            if (alertRef.current) {
+                                                alertRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                            }
+                                            if (postId) {
+                                                await refreshWallet()
+                                                await refreshMembership()
+                                            }
+                                        } catch (err) {
+                                            const message = err?.response?.data?.message || err?.message || 'Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.'
+                                            setError(message)
+                                        } finally {
+                                            setIsSubmitting(false)
+                                            setSubmitStep('')
+                                        }
+                                    }}
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <SpinnerIcon className="h-4 w-4" />
+                                            <span>{submitStep || 'Đang xử lý...'}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Icon name="check" className="h-4 w-4" />
+                                            <span>Xác nhận thanh toán</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </main>
     )
 }

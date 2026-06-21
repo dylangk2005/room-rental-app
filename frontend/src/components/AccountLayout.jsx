@@ -93,6 +93,12 @@ const Icon = ({ name, size = 18 }) => {
                 <path d="M7 7h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
         ),
+        clock: (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+        ),
     }
 
     return icons[name] || null
@@ -112,6 +118,7 @@ const NAV_GROUPS = [
             { key: 'posts', label: 'Tin đăng của tôi', to: ROUTES.MY_POSTS, icon: 'home' },
             { key: 'drafts', label: 'Tin nháp đã lưu', to: ROUTES.DRAFTS, icon: 'doc' },
             { key: 'boost', label: 'Đẩy tin đăng', to: ROUTES.BOOST_POSTS, icon: 'rocket' },
+            { key: 'extend', label: 'Gia hạn tin đăng', to: ROUTES.EXTEND_POSTS, icon: 'clock' },
         ],
     },
     {

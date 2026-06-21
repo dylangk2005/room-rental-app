@@ -33,6 +33,9 @@ public class UpdatePostRequest {
         @DecimalMin("1000")
         private BigDecimal rentalPrice;
 
+        private Integer postTypeId;
+        private Integer durationDays;
+
         // Danh sách URL ảnh muốn xóa (có thể null)
         private List<String> deleteImageUrls;
 }

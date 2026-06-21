@@ -279,15 +279,6 @@ const EmptyState = ({ activeTab }) => {
             </div>
             <h2 className="text-xl font-black text-slate-900">{cfg.title}</h2>
             <p className="mt-2 max-w-sm text-sm font-semibold text-slate-500">{cfg.desc}</p>
-            <Link
-                className="group/cta mt-6 inline-flex h-12 items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-6 text-sm font-black text-white shadow-lg shadow-emerald-200 transition-all duration-300 hover:scale-[1.04] hover:from-emerald-700 hover:to-teal-700 hover:shadow-xl active:scale-95"
-                to={ROUTES.CREATE_POST}
-            >
-                <span className="flex items-center gap-2">
-                    <Icon name="plus" className="h-4 w-4" />
-                    Đăng tin mới
-                </span>
-            </Link>
         </div>
     )
 }
@@ -512,18 +503,7 @@ const MyPostsPage = () => {
             activeKey="posts"
             title="Quản lý tin đăng"
             subtitle="Toàn bộ tin đăng phòng trọ của bạn."
-            actions={
-                <Link
-                    className="group/new relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-5 text-sm font-black text-white shadow-md shadow-emerald-200 transition-all duration-300 hover:scale-[1.04] hover:from-emerald-700 hover:to-teal-700 hover:shadow-lg hover:shadow-emerald-200 active:scale-95"
-                    to={ROUTES.CREATE_POST}
-                >
-                    <span className="relative z-10 flex items-center gap-2">
-                        <Icon name="plus" className="h-4 w-4" />
-                        Đăng tin mới
-                    </span>
-                    <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-emerald-700 to-teal-700 transition-transform duration-500 group-hover/new:translate-x-0" />
-                </Link>
-            }
+            actions={null}
         >
             {/* Floating toast */}
             <div className="pointer-events-none fixed inset-x-0 top-20 z-40 flex justify-center px-4 sm:top-24">

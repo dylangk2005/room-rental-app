@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useWallet } from '../../contexts/WalletContext'
 import ROUTES from '../../constants/routes'
@@ -6,14 +6,6 @@ import ROUTES from '../../constants/routes'
 const VAT_PERCENT = 8
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
-
-const calculateCost = (baseFee, discountPercent = 0) => {
-    const base = Number(baseFee || 0)
-    const discount = Math.round((base * Number(discountPercent || 0)) / 100)
-    const subtotal = Math.max(0, base - discount)
-    const tax = Math.round((subtotal * VAT_PERCENT) / 100)
-    return { base, discount, subtotal, tax, finalFee: subtotal + tax }
-}
 
 const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm }) => {
     const { balance } = useWallet()
@@ -28,18 +20,24 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
 
     if (!post) return null
 
-    const pricePerDay = Number(post.pricePerDay || post.pricePerDay == null ? 5000 : post.pricePerDay)
-    const durations = [
-        { days: 7, label: '7 ngày' },
-        { days: 15, label: '15 ngày' },
-        { days: 30, label: '30 ngày' },
-    ]
-    const [selectedDuration, setSelectedDuration] = useState(durations[0].days)
-    const cost = calculateCost(pricePerDay * selectedDuration, membership?.discountPercent)
-    const hasEnoughBalance = Number(balance || 0) >= cost.finalFee
+    const prices = post.prices || []
+    const durationDays = post.durationDays || 7
+    const selectedPriceEntry = prices.find((p) => p.days === durationDays)
+    let baseFee = selectedPriceEntry ? Number(selectedPriceEntry.price || 0) : 0
+
+    if (baseFee === 0 && post.postTypePushPrice) {
+        baseFee = Number(post.postTypePushPrice) * durationDays
+    }
+
+    const discountPercent = Number(membership?.discountPercent || 0)
+    const discount = Math.round((baseFee * discountPercent) / 100)
+    const subtotal = Math.max(0, baseFee - discount)
+    const tax = Math.round((subtotal * VAT_PERCENT) / 100)
+    const finalFee = subtotal + tax
+    const hasEnoughBalance = Number(balance || 0) >= finalFee
 
     const handleSubmit = () => {
-        onConfirm?.({ postId: post.id, durationDays: selectedDuration })
+        onConfirm?.({ postId: post.id, durationDays })
     }
 
     return (
@@ -50,7 +48,7 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
             aria-modal="true"
         >
             <div
-                className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 zoom-in-95"
+                className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl animate-in fade-in slide-in-from-bottom-4 zoom-in-95"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-600 p-5 text-white">
@@ -59,9 +57,9 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
                     <div className="relative">
                         <div className="flex items-start justify-between gap-4">
                             <div>
-                                <h2 className="text-xl font-black">Thanh toán tin nháp</h2>
+                                <h2 className="text-xl font-black">Xác nhận thanh toán</h2>
                                 <p className="mt-1 text-sm font-semibold text-emerald-100">
-                                    Chọn thời hạn hiển thị để đăng tin của bạn.
+                                    Kiểm tra thông tin trước khi thanh toán.
                                 </p>
                             </div>
                             <button
@@ -77,14 +75,24 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
                     </div>
                 </div>
 
-                <div className="space-y-5 p-5">
+                <div className="space-y-4 p-5">
                     <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                         <div className="flex items-center gap-3 bg-gradient-to-r from-slate-100 to-slate-50 px-4 py-2">
                             <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Tin đăng</span>
                         </div>
-                        <div className="p-4">
-                            <p className="line-clamp-2 font-black text-slate-900">{post.title || 'Không có tiêu đề'}</p>
-                            <p className="mt-1 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                        <div className="p-4 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                                {post.postTypeName && (
+                                    <span
+                                        className="inline-flex items-center rounded-full border border-white/50 bg-white/20 px-2.5 py-0.5 text-xs font-black text-white backdrop-blur-sm"
+                                        style={{ borderColor: 'rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.15)' }}
+                                    >
+                                        {post.postTypeName}
+                                    </span>
+                                )}
+                                <p className="font-black text-slate-900 line-clamp-2">{post.title || 'Không có tiêu đề'}</p>
+                            </div>
+                            <p className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
                                 <span>{post.district}, {post.province}</span>
                                 {post.area && <><span className="text-slate-300">·</span><span>{post.area} m²</span></>}
                                 {post.rentalPrice && <><span className="text-slate-300">·</span><span className="text-emerald-700 font-black">{formatMoney(post.rentalPrice)}/tháng</span></>}
@@ -92,52 +100,33 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
                         </div>
                     </div>
 
-                    <div>
-                        <p className="mb-2 text-xs font-black uppercase tracking-wider text-slate-500">Chọn thời hạn hiển thị</p>
-                        <div className="grid grid-cols-3 gap-2">
-                            {durations.map((d) => (
-                                <button
-                                    key={d.days}
-                                    type="button"
-                                    onClick={() => setSelectedDuration(d.days)}
-                                    className={`relative flex flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md active:scale-95 ${selectedDuration === d.days
-                                        ? 'border-emerald-500 bg-emerald-50 shadow-sm ring-4 ring-emerald-100'
-                                        : 'border-slate-200 bg-white hover:border-emerald-300'
-                                    }`}
-                                >
-                                    {selectedDuration === d.days && (
-                                        <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 text-white">
-                                            <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                            </svg>
-                                        </span>
-                                    )}
-                                    <span className="text-xs font-black uppercase tracking-wide text-slate-500">{d.label}</span>
-                                    <span className="text-base font-black text-emerald-700">{formatMoney(pricePerDay * d.days)}</span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
                     <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
                         <div className="flex items-center justify-between gap-3">
-                            <span className="font-bold text-slate-500">Phí hiển thị</span>
-                            <strong className="font-black text-slate-900">{formatMoney(cost.base)}</strong>
+                            <span className="font-bold text-slate-500">Loại tin</span>
+                            <strong className="font-black text-slate-900">{post.postTypeName || '—'}</strong>
                         </div>
-                        {cost.discount > 0 && (
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="font-bold text-slate-500">Thời hạn</span>
+                            <strong className="font-black text-slate-900">{durationDays} ngày</strong>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="font-bold text-slate-500">Phí hiển thị</span>
+                            <strong className="font-black text-slate-900">{formatMoney(baseFee)}</strong>
+                        </div>
+                        {discount > 0 && (
                             <div className="flex items-center justify-between gap-3">
-                                <span className="font-bold text-slate-500">Ưu đãi thành viên</span>
-                                <strong className="font-black text-emerald-700">-{formatMoney(cost.discount)}</strong>
+                                <span className="font-bold text-slate-500">Ưu đãi thành viên ({discountPercent}%)</span>
+                                <strong className="font-black text-emerald-700">-{formatMoney(discount)}</strong>
                             </div>
                         )}
                         <div className="flex items-center justify-between gap-3">
                             <span className="font-bold text-slate-500">VAT {VAT_PERCENT}%</span>
-                            <strong className="font-black text-slate-900">{formatMoney(cost.tax)}</strong>
+                            <strong className="font-black text-slate-900">{formatMoney(tax)}</strong>
                         </div>
                         <div className="border-t border-slate-200 pt-2">
                             <div className="flex items-center justify-between gap-3">
                                 <span className="font-black text-slate-950">Tổng thanh toán</span>
-                                <strong className="text-xl font-black text-emerald-700">{formatMoney(cost.finalFee)}</strong>
+                                <strong className="text-xl font-black text-emerald-700">{formatMoney(finalFee)}</strong>
                             </div>
                         </div>
                         <div className="flex items-center justify-between gap-3">
@@ -157,7 +146,9 @@ const PaymentDraftModal = ({ post, membership, isSubmitting, onClose, onConfirm 
                             </span>
                             <div>
                                 <p className="text-sm font-black text-red-800">Số dư ví không đủ</p>
-                                <p className="mt-0.5 text-xs font-semibold text-red-700">Bạn cần nạp thêm {formatMoney(cost.finalFee - Number(balance || 0))} để thanh toán tin nháp.</p>
+                                <p className="mt-0.5 text-xs font-semibold text-red-700">
+                                    Bạn cần nạp thêm {formatMoney(finalFee - Number(balance || 0))} để thanh toán.
+                                </p>
                             </div>
                         </div>
                     )}

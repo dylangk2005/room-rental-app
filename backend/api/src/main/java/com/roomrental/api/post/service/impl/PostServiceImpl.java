@@ -24,6 +24,7 @@ import com.roomrental.api.post.repository.PostImageRepository;
 import com.roomrental.api.post.repository.PostRepository;
 import com.roomrental.api.post.service.PostService;
 import com.roomrental.api.pricing.entity.PostType;
+import com.roomrental.api.pricing.repository.PostTypePriceRepository;
 import com.roomrental.api.pricing.repository.PostTypeRepository;
 import com.roomrental.api.user.entity.Role;
 import com.roomrental.api.user.entity.User;
@@ -57,6 +58,7 @@ public class PostServiceImpl implements PostService {
     private final FavoriteRepository favoriteRepository;
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
+    private final PostTypePriceRepository postTypePriceRepository;
 
     private static final int MAX_TOTAL_IMAGES = 12;
 
@@ -87,6 +89,7 @@ public class PostServiceImpl implements PostService {
                 .status(post.getStatus() != null ? post.getStatus().name() : null)
                 .endAt(post.getEndAt())
                 .pushTime(post.getPushTime())
+                .durationDays(post.getDurationDays())
                 .postTypeName(pt != null ? pt.getName() : null)
                 .postTypeTitleColor(pt != null ? pt.getTitleColor() : null)
                 .postTypeTitleSize(pt != null ? pt.getTitleSize() : null)
@@ -95,6 +98,12 @@ public class PostServiceImpl implements PostService {
                 .postTypeIsUppercase(pt != null ? Boolean.TRUE.equals(pt.getIsUppercase()) : null)
                 .postTypeHasRecommendTag(pt != null ? Boolean.TRUE.equals(pt.getHasRecommendTag()) : null)
                 .postTypeMaxImageLimit(pt != null ? pt.getMaxImageLimit() : null)
+                .prices(pt != null ? postTypePriceRepository.findByPostType_IdOrderById_DayAsc(pt.getId()).stream()
+                        .map(p -> PostSummaryResponse.PostTypePriceItem.builder()
+                                .days(p.getId().getDay())
+                                .price(p.getPrice())
+                                .build())
+                        .toList() : null)
                 .thumbnailUrl(thumbnailUrl)
                 .imageUrls(imageUrls)
                 .ownerId(owner != null ? owner.getId() : null)
@@ -307,6 +316,7 @@ public class PostServiceImpl implements PostService {
         post.setRentalPrice(request.getRentalPrice());
         post.setUser(user);
         post.setPostType(postType);
+        post.setDurationDays(request.getDurationDays());
         post.setStatus(PostStatus.DRAFT);
         post.setCreatedAt(LocalDateTime.now());
         post.setUpdatedAt(LocalDateTime.now());
@@ -365,6 +375,15 @@ public class PostServiceImpl implements PostService {
         post.setArea(request.getArea());
         post.setRentalPrice(request.getRentalPrice());
         post.setUpdatedAt(LocalDateTime.now());
+
+        if (request.getPostTypeId() != null) {
+            PostType updatePostType = postTypeRepository.findById(request.getPostTypeId())
+                    .orElseThrow(() -> AppException.notFound("Không tìm thấy loại bài đăng"));
+            post.setPostType(updatePostType);
+        }
+        if (request.getDurationDays() != null) {
+            post.setDurationDays(request.getDurationDays());
+        }
 
         // Xử lý xóa ảnh cũ nếu có
         if (request.getDeleteImageUrls() != null && !request.getDeleteImageUrls().isEmpty()) {

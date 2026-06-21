@@ -243,14 +243,7 @@ const BoostPostsPage = () => {
             activeKey="boost"
             title="Đẩy tin đăng"
             subtitle="Cập nhật thời gian đẩy để tin đang hoạt động có cơ hội xuất hiện cao hơn trong danh sách tìm kiếm."
-            actions={
-                <Link
-                    className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-black text-slate-800 hover:bg-slate-100"
-                    to={ROUTES.MY_POSTS}
-                >
-                    Quản lý tin đăng
-                </Link>
-            }
+            actions={null}
         >
             {isLoading && <LoadingState />}
 

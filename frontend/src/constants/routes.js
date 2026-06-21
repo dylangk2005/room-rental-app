@@ -15,7 +15,7 @@ const ROUTES = {
     WALLET: '/user/wallet',
     USER_DEPOSIT: '/user/deposit',
     PAYMENT_RESULT: '/payment-result',
-    USER_TRANSACTIONS: '/user/wallet?tab=deposit-history',
+    USER_TRANSACTIONS: '/user/wallet?tab=deposits',
     MY_POSTS: '/user/posts',
     DRAFTS: '/user/drafts',
     BOOST_POSTS: '/user/boost-posts',

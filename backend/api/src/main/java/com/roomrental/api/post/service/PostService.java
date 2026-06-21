@@ -32,5 +32,7 @@ public interface PostService {
 
     void deletePost(Integer userId, Integer postId);
 
+    void toggleVisibility(Integer userId, Integer postId);
+
     PostPageResponse getMyPosts(Integer userId, int page, int size);
 }

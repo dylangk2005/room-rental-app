@@ -25,6 +25,13 @@ const postApi = {
             headers: { 'Content-Type': undefined },
             timeout: 180000,
         }),
+    updatePost: (id, payload) =>
+        axiosClient.put(`/posts/${id}`, payload, {
+            headers: { 'Content-Type': undefined },
+            timeout: 180000,
+        }),
+    toggleVisibility: (id) => axiosClient.patch(`/posts/${id}/visibility`),
+    deletePost: (id) => axiosClient.delete(`/posts/${id}`),
 }
 
 export default postApi

@@ -369,12 +369,12 @@ public class PostServiceImpl implements PostService {
         // Xử lý xóa ảnh cũ nếu có
         if (request.getDeleteImageUrls() != null && !request.getDeleteImageUrls().isEmpty()) {
             for (String url : request.getDeleteImageUrls()) {
-                PostImage image = postImageRepository.findByImageUrl(url)
+                PostImage image = postImageRepository
+                        .findByPostIdAndImageUrl(postId, url)
                         .orElseThrow(() -> AppException.notFound("Không tìm thấy ảnh: " + url));
-                if (!image.getPost().getId().equals(postId)) {
-                    throw AppException.forbidden("Ảnh không thuộc tin đăng này");
-                }
-                cloudinaryService.deleteImage(url);
+                try {
+                    cloudinaryService.deleteImage(url);
+                } catch (Exception ignored) { /* ảnh đã bị xóa khỏi Cloudinary thì vẫn xóa DB */ }
                 postImageRepository.delete(image);
             }
         }
@@ -448,6 +448,37 @@ public class PostServiceImpl implements PostService {
                         + "\". Trạng thái mới: " + saved.getStatus() + "."
         );
 
+    }
+
+    @Override
+    @Transactional
+    public void toggleVisibility(Integer userId, Integer postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (!post.getUser().getId().equals(userId)) {
+            throw AppException.forbidden("Bạn không có quyền thực hiện thao tác này");
+        }
+
+        PostStatus current = post.getStatus();
+        PostStatus next;
+        if (current == PostStatus.HIDDEN) {
+            next = PostStatus.ACTIVE;
+        } else if (current == PostStatus.ACTIVE) {
+            next = PostStatus.HIDDEN;
+        } else {
+            throw AppException.badRequest("Chỉ có thể ẩn/hiện tin đang hoạt động");
+        }
+
+        post.setStatus(next);
+        post.setUpdatedAt(LocalDateTime.now());
+        Post saved = postRepository.save(post);
+
+        String action = (next == PostStatus.HIDDEN) ? "POST_HIDDEN" : "POST_VISIBLE";
+        String msg = (next == PostStatus.HIDDEN)
+                ? "Người dùng #" + userId + " ẩn tin #" + saved.getId()
+                : "Người dùng #" + userId + " hiện tin #" + saved.getId();
+        auditLogService.log(userId, action, AuditLog.TargetType.POST, saved.getId(), msg + ". Trạng thái mới: " + next + ".");
     }
 
     // Lấy danh sách bài đăng của người dùng, có phân trang

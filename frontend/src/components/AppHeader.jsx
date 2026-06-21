@@ -16,13 +16,11 @@ const getInitial = (name) => {
 }
 
 const accountLinks = [
-    { label: 'Quản lý tài khoản', to: ROUTES.PROFILE },
-    { label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING },
-    { label: 'Nạp tiền vào tài khoản', to: ROUTES.USER_DEPOSIT },
-    { label: 'Quản lý bài đăng', to: ROUTES.MY_POSTS },
-    { label: 'Đẩy tin đăng', to: ROUTES.BOOST_POSTS },
-    { label: 'Quản lý nạp tiền & thanh toán', to: ROUTES.USER_TRANSACTIONS },
-    { label: 'Danh sách yêu thích', to: ROUTES.FAVORITES },
+    { label: 'Hồ sơ cá nhân', to: ROUTES.PROFILE },
+    { label: 'Tin đăng của tôi', to: ROUTES.MY_POSTS },
+    { label: 'Nạp tiền vào ví', to: ROUTES.USER_DEPOSIT },
+    { label: 'Hạng & quyền lợi', to: ROUTES.USER_MEMBERSHIP },
+    { label: 'Tin yêu thích', to: ROUTES.FAVORITES },
 ]
 
 const getBackOfficeLinks = (role) => {

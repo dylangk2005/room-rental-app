@@ -18,6 +18,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -181,25 +183,8 @@ public class PostController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<PostDetailResponse>> updatePost(
             @PathVariable Integer id,
-            @RequestParam("title") String title,
-            @RequestParam("description") String description,
-            @RequestParam("address") String address,
-            @RequestParam("provinceId") Integer provinceId,
-            @RequestParam("districtId") Integer districtId,
-            @RequestParam("area") BigDecimal area,
-            @RequestParam("rentalPrice") BigDecimal rentalPrice,
-            @RequestParam(value = "deleteImageUrls", required = false) List<String> deleteImageUrls,
+            @ModelAttribute UpdatePostRequest request,
             @RequestParam(value = "newImages", required = false) List<MultipartFile> newImages) {
-
-        UpdatePostRequest request = new UpdatePostRequest();
-        request.setTitle(title);
-        request.setDescription(description);
-        request.setAddress(address);
-        request.setProvinceId(provinceId);
-        request.setDistrictId(districtId);
-        request.setArea(area);
-        request.setRentalPrice(rentalPrice);
-        request.setDeleteImageUrls(deleteImageUrls);
 
         return ResponseEntity.ok(ApiResponse.success(
                 "Cập nhật thành công",
@@ -219,5 +204,12 @@ public class PostController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(ApiResponse.success(postService.getMyPosts(authHelper.getCurrentUserId(), page, size)));
+    }
+
+    @RequestMapping(value = "/{id}/visibility", method = RequestMethod.PATCH)
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> toggleVisibility(@PathVariable Integer id) {
+        postService.toggleVisibility(authHelper.getCurrentUserId(), id);
+        return ResponseEntity.ok(ApiResponse.success("Cập nhật trạng thái hiển thị thành công", null));
     }
 }

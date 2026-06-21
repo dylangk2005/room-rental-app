@@ -10,14 +10,17 @@ const ROUTES = {
     POST_PRICING: '/bang-gia-tin-dang',
     POST_DETAIL: '/posts/:id',
     CREATE_POST: '/posts/create',
+    EDIT_POST: '/posts/:id/edit',
     PROFILE: '/user/profile',
     WALLET: '/user/wallet',
     USER_DEPOSIT: '/user/deposit',
     PAYMENT_RESULT: '/payment-result',
     USER_TRANSACTIONS: '/user/wallet?tab=deposit-history',
     MY_POSTS: '/user/posts',
+    DRAFTS: '/user/drafts',
     BOOST_POSTS: '/user/boost-posts',
     FAVORITES: '/user/favorites',
+    USER_MEMBERSHIP: '/user/membership',
 
     // Admin
     ADMIN: '/admin',

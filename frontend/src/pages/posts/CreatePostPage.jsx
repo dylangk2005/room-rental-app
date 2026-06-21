@@ -7,10 +7,23 @@ import postApi from '../../api/postApi'
 import walletApi from '../../api/walletApi'
 import AppHeader from '../../components/AppHeader'
 import ROUTES from '../../constants/routes'
+import { getPostTypeCategory, getPostTypeCategoryMeta } from '../../utils/postTypeStyles'
 import {
-    getPostTypeCategory,
-    getPostTypeCategoryMeta,
-} from '../../utils/postTypeStyles'
+    Icon,
+    SpinnerIcon,
+    SectionHeader,
+    SectionCard,
+    Field,
+    PostTypeCard,
+    DurationOption,
+    inputClassName,
+    textareaClassName,
+    formatMoney,
+    formatNumberInput,
+    onlyDigits,
+    getErrorMessage,
+    getTotalImageSize,
+} from '../../components/posts/PostFormComponents'
 
 const MAX_IMAGES = 12
 const BYTES_PER_MB = 1024 * 1024
@@ -35,172 +48,6 @@ const initialForm = {
     agreed: false,
 }
 
-const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
-
-const formatNumberInput = (value) => String(value || '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-
-const onlyDigits = (value) => value.replace(/\D/g, '')
-
-const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu. Vui lòng thử lại.') => {
-    const response = error.response?.data
-    const fieldErrors = response?.data
-
-    if (fieldErrors && typeof fieldErrors === 'object') {
-        return Object.values(fieldErrors).join('. ')
-    }
-
-    return response?.message || fallback
-}
-
-const getTotalImageSize = (items) => items.reduce((total, image) => total + Number(image.file?.size || 0), 0)
-
-// ─── Icons ────────────────────────────────────────────────────────────────
-const Icon = ({ name, className = 'h-5 w-5' }) => {
-    const paths = {
-        home: 'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5M9 21v-6h6v6',
-        image: 'M4 5h16v14H4zM8 13l2.5-2.5L14 14l2-2 4 4M8.5 8.5h.01',
-        wallet: 'M4 7h15a1 1 0 0 1 1 1v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12M16 13h4',
-        spark: 'M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z',
-        trash: 'M4 7h16M10 11v6M14 11v6M6 7l1 14h10l1-14M9 7V4h6v3',
-        map: 'M12 22s-7-7.5-7-13a7 7 0 1 1 14 0c0 5.5-7 13-7 13zM12 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
-        doc: 'M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9zM14 3v6h6M8 13h8M8 17h5',
-        upload: 'M12 16V4m0 0-4 4m4-4 4 4M4 20h16',
-        edit: 'M11 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z',
-        gift: 'M20 12v9H4v-9M2 7h20v5H2zM12 21V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7zM12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z',
-        check: 'M5 13l4 4L19 7',
-        info: 'M12 8v5m0 3h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
-        clock: 'M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z',
-        flash: 'M13 2 4 14h7l-1 8 9-12h-7l1-8z',
-        back: 'M15 18l-6-6 6-6',
-        crown: 'M3 17l2-8 4 4 3-7 3 7 4-4 2 8H3z',
-        star: 'M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z',
-    }
-
-    return (
-        <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 24 24">
-            <path d={paths[name]} stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
-        </svg>
-    )
-}
-
-const SpinnerIcon = ({ className = 'h-5 w-5' }) => (
-    <svg aria-hidden="true" className={`${className} animate-spin`} fill="none" viewBox="0 0 24 24">
-        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-    </svg>
-)
-
-const SectionHeader = ({ icon, iconClassName, title, subtitle }) => (
-    <div className="mb-5 flex items-start gap-3">
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${iconClassName}`}>
-            <Icon name={icon} className="h-5 w-5" />
-        </span>
-        <div className="min-w-0">
-            <h2 className="text-lg font-black text-slate-950 sm:text-xl">{title}</h2>
-            {subtitle && <p className="mt-1 text-sm font-semibold text-slate-500">{subtitle}</p>}
-        </div>
-    </div>
-)
-
-// ─── Section Card (hoverable) ─────────────────────────────────────────────
-const SectionCard = ({ children, accent = 'emerald' }) => {
-    const accents = {
-        emerald: 'hover:border-emerald-200 hover:shadow-emerald-100/60',
-        amber: 'hover:border-amber-200 hover:shadow-amber-100/60',
-        blue: 'hover:border-blue-200 hover:shadow-blue-100/60',
-        slate: 'hover:border-slate-300 hover:shadow-slate-200/60',
-        pink: 'hover:border-pink-200 hover:shadow-pink-100/60',
-    }
-    return (
-        <section className={`group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:p-6 ${accents[accent] || accents.emerald}`}>
-            {children}
-        </section>
-    )
-}
-
-const Field = ({ label, required, hint, children }) => (
-    <label className="block">
-        <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-black text-slate-800">
-                {label} {required && <span className="text-red-500">*</span>}
-            </span>
-            {hint && <span className="text-xs font-semibold text-slate-400">{hint}</span>}
-        </div>
-        {children}
-    </label>
-)
-
-const inputClassName =
-    'h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400'
-
-// ─── Post Type Card ───────────────────────────────────────────────────────
-const PostTypeCard = ({ postType, isSelected, onSelect }) => {
-    const accentColor = postType.titleColor || '#111827'
-    const category = getPostTypeCategory(postType.name, postType.priority)
-    const meta = getPostTypeCategoryMeta(category)
-    const isFree = Number(meta.imageLimit) === 1
-
-    return (
-        <button
-            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
-                ? 'border-transparent shadow-sm ring-4'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
-            style={
-                isSelected
-                    ? {
-                        borderColor: accentColor,
-                        backgroundColor: accentColor + '0f',
-                        '--tw-ring-color': accentColor + '30',
-                    }
-                    : undefined
-            }
-            type="button"
-            onClick={() => onSelect(postType.id)}
-        >
-            {isSelected && (
-                <span
-                    className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full text-white shadow-sm"
-                    style={{ backgroundColor: accentColor }}
-                >
-                    <Icon name="check" className="h-3.5 w-3.5" />
-                </span>
-            )}
-            <h3 className="text-base font-black text-slate-900">{postType.name}</h3>
-            <p className="text-xs font-semibold text-slate-500">
-                {isFree ? 'Hiển thị 1 ảnh đại diện' : `Hiển thị tối đa ${meta.imageLimit} ảnh đại diện`}
-            </p>
-        </button>
-    )
-}
-
-// ─── Duration Option ──────────────────────────────────────────────────────
-const DurationOption = ({ days, price, isSelected, isFirstFree, postTypeName, onSelect }) => {
-    const isNormal = postTypeName && postTypeName.toLowerCase().includes('thường')
-
-    return (
-        <button
-            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
-                ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
-                : 'border-slate-200 bg-white hover:border-emerald-300'
-                }`}
-            type="button"
-            onClick={onSelect}
-        >
-            <span className="flex items-center gap-1 text-xs font-black uppercase tracking-wide text-slate-500">
-                <Icon name="clock" className="h-3.5 w-3.5" />
-                {days} ngày
-            </span>
-            <span className="text-base font-black text-emerald-700">{formatMoney(price)}</span>
-            {isFirstFree && !isNormal && (
-                <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700">
-                    Lần đầu miễn phí đẩy
-                </span>
-            )}
-        </button>
-    )
-}
-
 const CreatePostPage = () => {
     const { user, login } = useAuth()
     const navigate = useNavigate()
@@ -214,6 +61,8 @@ const CreatePostPage = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [submitStep, setSubmitStep] = useState('')
+    const [isSavingDraft, setIsSavingDraft] = useState(false)
+    const [draftStep, setDraftStep] = useState('')
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [draftPostId, setDraftPostId] = useState(null)
@@ -261,7 +110,6 @@ const CreatePostPage = () => {
                 const loadedProvinces = Array.isArray(provincesData) ? provincesData : (provincesData?.data || [])
                 setProvinces(loadedProvinces)
 
-                // Tự động chọn tỉnh đầu tiên và load districts
                 if (loadedProvinces.length > 0) {
                     const firstProvince = loadedProvinces[0]
                     setForm((current) => ({
@@ -530,8 +378,8 @@ const CreatePostPage = () => {
             return
         }
 
-        setIsSubmitting(true)
-        setSubmitStep('Đang lưu tin nháp...')
+        setIsSavingDraft(true)
+        setDraftStep('Đang lưu tin nháp...')
 
         try {
             const response = await postApi.createPost(buildPayload())
@@ -541,8 +389,8 @@ const CreatePostPage = () => {
         } catch (submitError) {
             setError(getErrorMessage(submitError, 'Không lưu được tin nháp. Vui lòng thử lại.'))
         } finally {
-            setSubmitStep('')
-            setIsSubmitting(false)
+            setDraftStep('')
+            setIsSavingDraft(false)
         }
     }
 
@@ -565,7 +413,7 @@ const CreatePostPage = () => {
 
         if (!hasEnoughBalance) {
             setError(
-                `Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán gói đăng tin này (${formatMoney(finalFee)}). Vui lòng lưu tin nháp và nạp thêm tiền để đăng sau.`
+                `Số dư ví hiện tại (${formatMoney(walletBalance)}) chưa đủ để thanh toán tin đăng này (${formatMoney(finalFee)}). Vui lòng lưu tin nháp và nạp thêm tiền để đăng sau.`
             )
             return
         }
@@ -593,7 +441,6 @@ const CreatePostPage = () => {
         }
     }
 
-    // ─── Stepper (visual only, no logic gates form) ────────────────────────
     const steps = [
         { id: 0, label: 'Thông tin cơ bản', icon: 'home' },
         { id: 1, label: 'Vị trí & Mô tả', icon: 'map' },
@@ -602,39 +449,26 @@ const CreatePostPage = () => {
     ]
 
     const isStepComplete = (stepId) => {
-        if (stepId === 0) {
-            return form.title.trim() && form.rentalPrice && form.area
-        }
-        if (stepId === 1) {
-            return form.provinceId && form.districtId && form.address.trim() && form.description.trim()
-        }
-        if (stepId === 2) {
-            return images.length >= 1
-        }
-        if (stepId === 3) {
-            return form.postTypeId && form.durationDays
-        }
+        if (stepId === 0) return form.title.trim() && form.rentalPrice && form.area
+        if (stepId === 1) return form.provinceId && form.districtId && form.address.trim() && form.description.trim()
+        if (stepId === 2) return images.length >= 1
+        if (stepId === 3) return form.postTypeId && form.durationDays
         return false
     }
 
     const scrollToStep = (stepId) => {
         const element = document.getElementById(`create-step-${stepId}`)
-        if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
+        if (element) element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
 
     useEffect(() => {
-        // Theo dõi section đang hiển thị để tô sáng stepper
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         const id = entry.target.id
                         const match = id.match(/create-step-(\d+)/)
-                        if (match) {
-                            setActiveStep(Number(match[1]))
-                        }
+                        if (match) setActiveStep(Number(match[1]))
                     }
                 })
             },
@@ -666,7 +500,6 @@ const CreatePostPage = () => {
         <main className="min-h-screen bg-gradient-to-b from-slate-50 via-emerald-50/30 to-slate-50 text-slate-950">
             <AppHeader />
 
-            {/* ─── Hero ─────────────────────────────────────────────────────── */}
             <section className="relative overflow-hidden border-b border-slate-200 bg-white">
                 <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-emerald-100/50 blur-3xl" />
                 <div className="pointer-events-none absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-amber-100/40 blur-3xl" />
@@ -718,7 +551,6 @@ const CreatePostPage = () => {
                 </div>
             </section>
 
-            {/* ─── Sticky Stepper ──────────────────────────────────────────── */}
             <div className="sticky top-16 z-10 border-b border-slate-200 bg-white/95 backdrop-blur">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <ol className="flex items-center gap-2 overflow-x-auto py-3 text-sm font-bold sm:gap-4">
@@ -759,11 +591,9 @@ const CreatePostPage = () => {
                 </div>
             </div>
 
-            {/* ─── Form ────────────────────────────────────────────────────── */}
             <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
                 <form className="mx-auto grid max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]" onSubmit={handleSubmit} ref={formTopRef}>
                     <div className="space-y-6">
-                        {/* STEP 1: Thông tin cơ bản */}
                         <div id="create-step-0">
                             <SectionCard accent="emerald">
                                 <SectionHeader
@@ -822,7 +652,6 @@ const CreatePostPage = () => {
                             </SectionCard>
                         </div>
 
-                        {/* STEP 2: Vị trí & Mô tả */}
                         <div id="create-step-1" className="space-y-6">
                             <SectionCard accent="blue">
                                 <SectionHeader
@@ -887,7 +716,7 @@ const CreatePostPage = () => {
                                     subtitle="Nêu rõ tiện ích, nội thất, giờ giấc, nội quy và điểm mạnh của phòng để thu hút người thuê."
                                 />
                                 <textarea
-                                    className="min-h-44 w-full rounded-xl border border-slate-300 bg-white p-4 text-sm font-semibold leading-7 text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400"
+                                    className={textareaClassName}
                                     name="description"
                                     value={form.description}
                                     onChange={handleChange}
@@ -896,7 +725,6 @@ const CreatePostPage = () => {
                             </SectionCard>
                         </div>
 
-                        {/* STEP 3: Hình ảnh */}
                         <div id="create-step-2">
                             <SectionCard accent="pink">
                                 <SectionHeader
@@ -977,7 +805,6 @@ const CreatePostPage = () => {
                             </SectionCard>
                         </div>
 
-                        {/* STEP 4: Cấu hình hiển thị */}
                         <div id="create-step-3" className="space-y-6">
                             <SectionCard accent="amber">
                                 <SectionHeader
@@ -988,7 +815,6 @@ const CreatePostPage = () => {
                                 />
 
                                 <div className="space-y-6">
-                                    {/* Loại tin */}
                                     <div>
                                         <div className="mb-3 flex items-center justify-between">
                                             <h3 className="text-sm font-black text-slate-800">
@@ -1010,7 +836,6 @@ const CreatePostPage = () => {
                                         </div>
                                     </div>
 
-                                    {/* Thời gian đăng */}
                                     <div>
                                         <div className="mb-3 flex items-center justify-between">
                                             <h3 className="text-sm font-black text-slate-800">
@@ -1038,7 +863,6 @@ const CreatePostPage = () => {
                                             </div>
                                         )}
                                     </div>
-
                                 </div>
                             </SectionCard>
 
@@ -1087,7 +911,6 @@ const CreatePostPage = () => {
                         </div>
                     </div>
 
-                    {/* ─── Sidebar: Thanh toán + Hành động ──────────────────── */}
                     <aside className="space-y-4 lg:sticky lg:top-32 lg:self-start">
                         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                             <div className="flex items-center gap-3 border-b border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-amber-50 p-5">
@@ -1095,7 +918,7 @@ const CreatePostPage = () => {
                                     <Icon name="wallet" className="h-5 w-5" />
                                 </span>
                                 <div>
-                                    <h2 className="text-base font-black text-slate-950">Thanh toán gói đăng</h2>
+                                    <h2 className="text-base font-black text-slate-950">Thanh toán tin đăng</h2>
                                     <p className="text-xs font-semibold text-slate-500">Áp dụng giảm giá theo hạng thành viên</p>
                                 </div>
                             </div>
@@ -1180,12 +1003,12 @@ const CreatePostPage = () => {
                                     className="group/draft flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-300 bg-white px-5 text-sm font-black text-slate-800 transition-all duration-200 hover:-translate-y-0.5 hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 hover:shadow-md active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                                     type="button"
                                     onClick={handleSaveDraft}
-                                    disabled={isSubmitting}
+                                    disabled={isSavingDraft}
                                 >
-                                    {isSubmitting && submitStep.includes('nháp') ? (
+                                    {isSavingDraft ? (
                                         <>
                                             <SpinnerIcon className="h-4 w-4" />
-                                            <span>Đang lưu nháp...</span>
+                                            <span>{draftStep || 'Đang lưu nháp...'}</span>
                                         </>
                                     ) : (
                                         <>

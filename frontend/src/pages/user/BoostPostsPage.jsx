@@ -248,7 +248,7 @@ const BoostPostsPage = () => {
                     className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-black text-slate-800 hover:bg-slate-100"
                     to={ROUTES.MY_POSTS}
                 >
-                    Quản lý bài đăng
+                    Quản lý tin đăng
                 </Link>
             }
         >
@@ -291,7 +291,7 @@ const BoostPostsPage = () => {
                                     className="inline-flex h-11 items-center justify-center rounded-lg bg-emerald-600 px-5 text-sm font-black text-white hover:bg-emerald-700"
                                     to={ROUTES.MY_POSTS}
                                 >
-                                    Xem bài đăng của tôi
+                                    Xem tin đăng của tôi
                                 </Link>
                                 <Link
                                     className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 px-5 text-sm font-black text-slate-700 hover:bg-slate-100"

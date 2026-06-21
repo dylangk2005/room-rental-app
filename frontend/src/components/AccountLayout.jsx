@@ -75,18 +75,65 @@ const Icon = ({ name, size = 18 }) => {
                 <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
         ),
+        doc: (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M14 2v6h6M9 13h6M9 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+        crown: (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M2 18l3-9 5 4 2-8 2 8 5-4 3 9H2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 18h20v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+        ),
+        tag: (
+            <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M7 7h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+        ),
     }
 
     return icons[name] || null
 }
 
-const accountMenuItems = [
-    { key: 'account', label: 'Hồ sơ cá nhân', to: ROUTES.PROFILE, icon: 'user' },
-    { key: 'deposit', label: 'Nạp tiền', to: ROUTES.USER_DEPOSIT, icon: 'plus' },
-    { key: 'posts', label: 'Bài đăng của tôi', to: ROUTES.MY_POSTS, icon: 'home' },
-    { key: 'boost', label: 'Đẩy tin đăng', to: ROUTES.BOOST_POSTS, icon: 'rocket' },
-    { key: 'transactions', label: 'Lịch sử giao dịch', to: ROUTES.USER_TRANSACTIONS, icon: 'history' },
-    { key: 'favorites', label: 'Yêu thích', to: ROUTES.FAVORITES, icon: 'heart' },
+// ─── Navigation groups ────────────────────────────────────────────────────
+const NAV_GROUPS = [
+    {
+        label: 'Thông tin cá nhân',
+        items: [
+            { key: 'account', label: 'Hồ sơ cá nhân', to: ROUTES.PROFILE, icon: 'user' },
+        ],
+    },
+    {
+        label: 'Tin đăng',
+        items: [
+            { key: 'posts', label: 'Tin đăng của tôi', to: ROUTES.MY_POSTS, icon: 'home' },
+            { key: 'drafts', label: 'Tin nháp đã lưu', to: ROUTES.DRAFTS, icon: 'doc' },
+            { key: 'boost', label: 'Đẩy tin đăng', to: ROUTES.BOOST_POSTS, icon: 'rocket' },
+        ],
+    },
+    {
+        label: 'Tài chính',
+        items: [
+            { key: 'deposit', label: 'Nạp tiền vào ví', to: ROUTES.USER_DEPOSIT, icon: 'plus' },
+            { key: 'transactions', label: 'Lịch sử giao dịch', to: ROUTES.USER_TRANSACTIONS, icon: 'history' },
+            { key: 'pricing', label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING, icon: 'tag' },
+        ],
+    },
+    {
+        label: 'Hạng thành viên',
+        items: [
+            { key: 'membership', label: 'Hạng & quyền lợi', to: ROUTES.USER_MEMBERSHIP, icon: 'crown' },
+        ],
+    },
+    {
+        label: 'Khác',
+        items: [
+            { key: 'favorites', label: 'Tin yêu thích', to: ROUTES.FAVORITES, icon: 'heart' },
+        ],
+    },
 ]
 
 // ─── Mobile Menu Item ──────────────────────────────────────────────────────
@@ -147,6 +194,7 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
     useEffect(() => {
         loadBalance()
     }, [activeKey, loadBalance])
+
     useEffect(() => {
         if (!scrollRef.current || !activeKey) return
         const activeEl = scrollRef.current.querySelector(`[data-key="${activeKey}"]`)
@@ -154,6 +202,9 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
             activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
         }
     }, [activeKey])
+
+    // Flatten all nav items for mobile menu
+    const mobileItems = NAV_GROUPS.flatMap((g) => g.items)
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -193,7 +244,7 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
                     ref={scrollRef}
                     className="flex gap-2 overflow-x-auto px-4 pb-3 scrollbar-none"
                 >
-                    {accountMenuItems.map((item) => (
+                    {mobileItems.map((item) => (
                         <div key={item.key} data-key={item.key}>
                             <MobileMenuItem
                                 item={item}
@@ -254,24 +305,28 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
                         </Link>
                     </div>
 
-                    {/* Navigation */}
+                    {/* Navigation — grouped */}
                     <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div className="border-b border-slate-100 px-4 py-3">
-                            <p className="text-xs font-black uppercase tracking-wider text-slate-400">Quản lý tài khoản</p>
-                        </div>
-                        <nav className="flex flex-col gap-0.5 p-2">
-                            {accountMenuItems.map((item) => (
-                                <DesktopNavItem
-                                    key={item.key}
-                                    item={item}
-                                    isActive={item.key === activeKey}
-                                    isHovered={hoveredKey === item.key}
-                                    onMouseEnter={() => setHoveredKey(item.key)}
-                                    onMouseLeave={() => setHoveredKey(null)}
-                                    onClick={() => {}}
-                                />
-                            ))}
-                        </nav>
+                        {NAV_GROUPS.map((group) => (
+                            <div key={group.label}>
+                                <div className="border-b border-slate-100 px-4 py-3 first:pt-3 last:border-b-0">
+                                    <p className="text-xs font-black uppercase tracking-wider text-slate-400">{group.label}</p>
+                                </div>
+                                <nav className="flex flex-col gap-0.5 px-2 pb-2 last:pb-3">
+                                    {group.items.map((item) => (
+                                        <DesktopNavItem
+                                            key={item.key}
+                                            item={item}
+                                            isActive={item.key === activeKey}
+                                            isHovered={hoveredKey === item.key}
+                                            onMouseEnter={() => setHoveredKey(item.key)}
+                                            onMouseLeave={() => setHoveredKey(null)}
+                                            onClick={() => {}}
+                                        />
+                                    ))}
+                                </nav>
+                            </div>
+                        ))}
                     </div>
                 </aside>
 

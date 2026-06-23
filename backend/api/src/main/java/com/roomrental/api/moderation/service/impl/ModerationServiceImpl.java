@@ -13,6 +13,7 @@ import com.roomrental.api.moderation.service.ModerationLogService;
 import com.roomrental.api.moderation.service.ModerationService;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
+import static com.roomrental.api.notification.service.impl.NotificationServiceImpl.formatMoney;
 import com.roomrental.api.payment.entity.Payment;
 import com.roomrental.api.payment.repository.PaymentRepository;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
@@ -171,7 +172,7 @@ public class ModerationServiceImpl implements ModerationService {
 
         notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
                 "Tin \"" + saved.getTitle() + "\" bị từ chối. Lý do: "
-                        + reason + ". Hệ thống đã hoàn " + refundAmount + "đ vào ví của bạn.");
+                        + reason + ". Hệ thống đã hoàn " + formatMoney(refundAmount) + " vào ví của bạn.");
 
         return mapDetail(saved);
     }

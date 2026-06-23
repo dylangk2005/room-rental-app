@@ -5,6 +5,7 @@ import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
+import static com.roomrental.api.notification.service.impl.NotificationServiceImpl.formatMoney;
 import com.roomrental.api.payment.dto.request.BoostPaymentRequest;
 import com.roomrental.api.payment.dto.response.PaymentResponse;
 import com.roomrental.api.payment.dto.request.PayPostRequest;
@@ -97,8 +98,8 @@ public class PaymentServiceImpl implements PaymentService {
                 "Thanh toán đăng tin thành công. Tin \"" + post.getTitle()
                         + "\" đã được chuyển sang trạng thái chờ duyệt. "
                         + "Thời hạn hiển thị " + request.getDurationDays()
-                        + " ngày sẽ bắt đầu tính sau khi tin được moderator duyệt. "
-                        + "Phí đã thanh toán: " + cost.finalFee() + "đ."
+                        + " ngày sẽ bắt đầu tính sau khi tin được nhân viên kiểm duyệt xác nhận. "
+                        + "Phí đã thanh toán: " + formatMoney(cost.finalFee()) + "."
         );
 
         auditLogService.log(
@@ -181,7 +182,7 @@ public class PaymentServiceImpl implements PaymentService {
                 "Gia hạn tin thành công. Tin \"" + post.getTitle()
                         + "\" đã được gia hạn thêm " + request.getDurationDays()
                         + " ngày. Ngày hết hạn mới: " + post.getEndAt()
-                        + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
+                        + ". Phí đã thanh toán: " + formatMoney(cost.finalFee()) + "."
         );
 
         auditLogService.log(
@@ -260,7 +261,7 @@ public class PaymentServiceImpl implements PaymentService {
                 Notification.NotificationType.POST_INFORMATION,
                 "Đẩy tin thành công. Tin \"" + post.getTitle()
                         + "\" đã được cập nhật thời gian đẩy tin lúc " + post.getPushTime()
-                        + ". Phí đã thanh toán: " + cost.finalFee() + "đ."
+                        + ". Phí đã thanh toán: " + formatMoney(cost.finalFee()) + "."
         );
 
         auditLogService.log(

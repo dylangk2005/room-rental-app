@@ -6,6 +6,7 @@ import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.integration.service.VnPayService;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
+import static com.roomrental.api.notification.service.impl.NotificationServiceImpl.formatMoney;
 import com.roomrental.api.payment.dto.response.DepositInitResponse;
 import com.roomrental.api.payment.dto.request.DepositRequest;
 import com.roomrental.api.payment.dto.response.WalletBalanceResponse;
@@ -260,12 +261,12 @@ public class WalletServiceImpl implements WalletService {
                 user.getId(),
                 Notification.NotificationType.SYSTEM_INFORMATION,
                 "Nạp tiền thành công qua VNPAY. Số tiền nạp: "
-                        + deposit.getNetAmount()
-                        + "đ. Số dư trước giao dịch: "
-                        + openingBalance
-                        + "đ. Số dư hiện tại: "
-                        + closingBalance
-                        + "đ. Mã giao dịch: "
+                        + formatMoney(deposit.getNetAmount())
+                        + ". Số dư trước giao dịch: "
+                        + formatMoney(openingBalance)
+                        + ". Số dư hiện tại: "
+                        + formatMoney(closingBalance)
+                        + ". Mã giao dịch: "
                         + deposit.getTransactionRef()
                         + "."
         );

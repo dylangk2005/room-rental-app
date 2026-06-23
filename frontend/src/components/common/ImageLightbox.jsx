@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import SafeImage from './SafeImage'
 
 const ImageLightbox = ({ images = [], title = '', startIndex = 0, onClose }) => {
     const [index, setIndex] = useState(startIndex)
@@ -93,10 +94,11 @@ const ImageLightbox = ({ images = [], title = '', startIndex = 0, onClose }) => 
                         </button>
                     )}
 
-                    <img
+                    <SafeImage
                         key={currentImage}
                         className="slide-in-from-bottom-3 max-h-full max-w-full select-none rounded-2xl object-contain shadow-2xl"
                         src={currentImage}
+                        fallbackSrc="https://picsum.photos/seed/lightbox-fallback/1200/800"
                         alt={title ? `${title} - ảnh ${safeIndex + 1}` : `Ảnh ${safeIndex + 1}`}
                         draggable={false}
                         onClick={(event) => event.stopPropagation()}
@@ -133,7 +135,7 @@ const ImageLightbox = ({ images = [], title = '', startIndex = 0, onClose }) => 
                                 onClick={() => setIndex(imageIndex)}
                                 aria-label={`Xem ảnh ${imageIndex + 1}`}
                             >
-                                <img className="h-full w-full object-cover" src={image} alt="" />
+                                <SafeImage className="h-full w-full object-cover" src={image} fallbackSrc="https://picsum.photos/seed/thumb-fallback/300/200" alt="" />
                             </button>
                         ))}
                     </div>

@@ -103,6 +103,7 @@ const CreatePostPage = () => {
                     .sort((a, b) => Number(a.priority || 0) - Number(b.priority || 0))
                     .filter((item, index, arr) => arr.findIndex((t) => t.name === item.name) === index)
                 setPostTypes(sortedPostTypes)
+
                 const walletData = walletResult.status === 'fulfilled' ? walletResult.value : null
                 setWalletBalance(walletData?.balance ?? walletData?.data?.balance ?? 0)
                 const membershipData = membershipResult.status === 'fulfilled' ? membershipResult.value : null
@@ -1143,15 +1144,21 @@ const CreatePostPage = () => {
                                             const paidPostId = paymentResponse.data?.postId
                                             const postId = paidPostId || draftPostId
                                             setSuccess(`Tin đăng đã được thanh toán thành công! Bạn có thể xem tin tại mục quản lý tin đăng.`)
-                                            setForm(INITIAL_FORM)
+                                            setForm(initialForm)
                                             setImages([])
                                             setDraftPostId(null)
                                             if (alertRef.current) {
                                                 alertRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
                                             }
                                             if (postId) {
-                                                await refreshWallet()
-                                                await refreshMembership()
+                                                try {
+                                                    const [walletData, membershipData] = await Promise.all([
+                                                        walletApi.getBalance(),
+                                                        membershipApi.getMyLevel(),
+                                                    ])
+                                                    setWalletBalance(walletData?.balance ?? walletData?.data?.balance ?? 0)
+                                                    setMembership(membershipData?.data ?? membershipData)
+                                                } catch (_) {}
                                             }
                                         } catch (err) {
                                             const message = err?.response?.data?.message || err?.message || 'Đã xảy ra lỗi khi thanh toán. Vui lòng thử lại.'

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
+import SafeImage from '../../components/common/SafeImage'
 import membershipApi from '../../api/membershipApi'
 import userApi from '../../api/userApi'
 import AccountLayout from '../../components/AccountLayout'
@@ -464,6 +465,7 @@ const ProfilePage = () => {
     const [profileForm, setProfileForm] = useState({ fullName: '', phoneNumber: '' })
     const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [isSavingProfile, setIsSavingProfile] = useState(false)
     const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
     const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -559,6 +561,25 @@ const ProfilePage = () => {
         const timer = window.setTimeout(loadProfile, 0)
         return () => window.clearTimeout(timer)
     }, [loadProfile])
+
+    // ─── Auth guard ──────────────────────────────────────────────────────────────
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.PROFILE } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     // ─── Membership ────────────────────────────────────────────────────────────
     const totalSpent = Number(membership?.totalSpent ?? profile?.totalSpent ?? 0)

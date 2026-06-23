@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
@@ -77,12 +78,32 @@ const Toast = ({ message, type = 'error', onClose }) => {
 
 // ─── Main DepositPage ─────────────────────────────────────────────────────────
 const DepositPage = () => {
-    const { login } = useAuth()
+    const { user, login } = useAuth()
+    const navigate = useNavigate()
     const { balance } = useWallet()
+    const [isVerifying, setIsVerifying] = useState(false)
     const [amount, setAmount] = useState('')
     const [isDepositing, setIsDepositing] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.USER_DEPOSIT } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     const numericAmount = Number(amount || 0)
     const isAmountValid = numericAmount >= MIN_DEPOSIT

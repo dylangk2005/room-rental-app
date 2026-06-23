@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import membershipApi from '../../api/membershipApi'
+import authApi from '../../api/authApi'
 import AccountLayout from '../../components/AccountLayout'
+import ROUTES from '../../constants/routes'
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
@@ -53,10 +57,31 @@ const CheckIcon = () => (
 )
 
 const UserMembershipPage = () => {
+    const { login } = useAuth()
+    const navigate = useNavigate()
     const [myLevel, setMyLevel] = useState(null)
     const [levels, setLevels] = useState([])
+    const [isVerifying, setIsVerifying] = useState(false)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.USER_MEMBERSHIP } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     const loadData = async () => {
         setLoading(true)

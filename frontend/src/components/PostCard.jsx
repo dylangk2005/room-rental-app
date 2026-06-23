@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency, formatDate } from '../utils/postFormatters'
+import SafeImage from './common/SafeImage'
 import {
     getPostTypeTitleColor,
     getPostTypeCategory,
@@ -218,11 +219,12 @@ const PostImageGallery = ({ post }) => {
     const previewImages = (sourceImages.length > 0 ? sourceImages : [fallbackUrl]).slice(0, limit)
     const showImageCount = previewImages.length > 1
 
-    const renderImage = (src, index, className = '') => (
+    const renderImage = (src, index, className = '', postId = post.id) => (
         <div className={`relative overflow-hidden bg-slate-100 ${className}`} key={`${src}-${index}`}>
-            <img
+            <SafeImage
                 className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                 src={src}
+                fallbackSrc={`https://picsum.photos/seed/taytro-${postId}/900/650`}
                 alt={`${post.title} - ảnh ${index + 1}`}
                 loading="lazy"
             />

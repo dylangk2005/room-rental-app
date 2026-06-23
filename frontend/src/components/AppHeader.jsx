@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import authApi from '../api/authApi'
 import notificationApi from '../api/notificationApi'
+import SafeImage from './common/SafeImage'
 import ROUTES from '../constants/routes'
 
 const QUICK_NOTIFICATION_LIMIT = 4
@@ -20,6 +21,7 @@ const accountLinks = [
     { label: 'Tin đăng của tôi', to: ROUTES.MY_POSTS },
     { label: 'Nạp tiền vào ví', to: ROUTES.USER_DEPOSIT },
     { label: 'Hạng & quyền lợi', to: ROUTES.USER_MEMBERSHIP },
+    { label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING },
     { label: 'Tin yêu thích', to: ROUTES.FAVORITES },
 ]
 
@@ -297,10 +299,7 @@ const AppHeader = () => {
                     <span className="text-xl font-black text-slate-950">TAYTRO</span>
                 </Link>
 
-                <nav className="hidden items-center gap-6 text-sm font-bold text-slate-600 md:flex">
-                </nav>
-
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                     {user ? (
                         <>
                             <Link
@@ -337,9 +336,10 @@ const AppHeader = () => {
                                     aria-expanded={isMenuOpen}
                                 >
                                     {user.avatar ? (
-                                        <img
+                                        <SafeImage
                                             className="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
                                             src={user.avatar}
+                                            fallbackSrc="https://picsum.photos/seed/avatar-header/200/200"
                                             alt={user.fullName || 'Tài khoản'}
                                         />
                                     ) : (

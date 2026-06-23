@@ -198,6 +198,7 @@ const BoostCard = ({ post, membership, balance, onBoost, index }) => {
                         src={getPostImage(post)}
                         alt={post.title}
                         loading="lazy"
+                        onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/post${post.id}/640/420` }}
                     />
                     {/* Post type badge on image */}
                     <div className="absolute bottom-2 left-2">
@@ -384,7 +385,7 @@ const BoostModal = ({ post, membership, balance, isSubmitting, onClose, onConfir
                             {/* Post info */}
                             <div className="flex gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
                                 <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200">
-                                    <img className="h-full w-full object-cover" src={getPostImage(post)} alt={post.title} />
+                                    <img className="h-full w-full object-cover" src={getPostImage(post)} alt={post.title} onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/post${post.id}/200/200` }} />
                                 </div>
                                 <div className="min-w-0 flex-1">
                                     <div className="flex flex-wrap items-center gap-1.5">
@@ -629,6 +630,7 @@ const BoostPostsPage = () => {
     const [membership, setMembership] = useState(null)
     const [posts, setPosts] = useState([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [selectedPost, setSelectedPost] = useState(null)
     const [successPost, setSuccessPost] = useState(null)
@@ -643,9 +645,6 @@ const BoostPostsPage = () => {
         setIsLoading(true)
         setError('')
         try {
-            const refreshResponse = await authApi.refresh()
-            login(refreshResponse.data)
-
             const [postsResult, membershipResult] = await Promise.allSettled([
                 postApi.getMyPosts({ page: 0, size: 50 }),
                 membershipApi.getMyLevel(),
@@ -658,20 +657,35 @@ const BoostPostsPage = () => {
             setPosts(postsResult.value.data?.posts || [])
             setMembership(membershipResult.status === 'fulfilled' ? membershipResult.value.data : null)
         } catch (loadError) {
-            if (loadError.response?.status === 401) {
-                navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.BOOST_POSTS } })
-                return
-            }
             setError(getErrorMessage(loadError, 'Không tải được danh sách. Vui lòng thử lại.'))
         } finally {
             setIsLoading(false)
         }
-    }, [navigate])
+    }, [])
 
     useEffect(() => {
+        if (isVerifying) return
         const timer = window.setTimeout(loadPage, 0)
         return () => window.clearTimeout(timer)
-    }, [loadPage])
+    }, [loadPage, isVerifying])
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.BOOST_POSTS } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     const handleConfirmBoost = async () => {
         if (!selectedPost) return

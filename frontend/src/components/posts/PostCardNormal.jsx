@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '../../utils/postFormatters'
+import SafeImage from '../common/SafeImage'
 import {
     getPostTypeTitleColor,
     getPostTypeCategory,
@@ -133,8 +134,9 @@ const OwnerAvatar = ({ name, avatarUrl }) => {
     const initials = getOwnerInitials(name)
     if (avatarUrl) {
         return (
-            <img
+            <SafeImage
                 src={avatarUrl}
+                fallbackSrc={`https://picsum.photos/seed/owner-${name}/200/200`}
                 alt={name || 'Người đăng'}
                 className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-slate-200"
                 loading="lazy"
@@ -153,9 +155,10 @@ const OwnerAvatar = ({ name, avatarUrl }) => {
 
 const renderImageTile = (src, index, className = '') => (
     <div className={`relative overflow-hidden bg-slate-100 ${className}`} key={`${src}-${index}`}>
-        <img
+        <SafeImage
             className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
             src={src}
+            fallbackSrc={`https://picsum.photos/seed/taytro-tile/900/650`}
             alt={`ảnh ${index + 1}`}
             loading="lazy"
         />

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import moderationApi from '../../api/moderationApi'
 import postApi from '../../api/postApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
+import SafeImage from '../../components/common/SafeImage'
 import { EmptyState, LoadingRows, Message, Pagination } from '../../components/BackOfficeParts'
 import { formatDateTime, formatMoney, getErrorMessage } from '../../utils/backOfficeFormatters'
 
@@ -137,7 +138,7 @@ const ModerationPostsPage = () => {
                             <div className="space-y-5">
                                 {selectedPost.imageUrls?.length > 0 && (
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        {selectedPost.imageUrls.map((url) => <img className="h-56 w-full rounded-lg object-cover" key={url} src={url} alt={selectedPost.title} />)}
+                                        {selectedPost.imageUrls.map((url) => <SafeImage className="h-56 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/mod-post/640/420" alt={selectedPost.title} />)}
                                     </div>
                                 )}
                                 <div className="grid gap-3 sm:grid-cols-3">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import reportApi from '../../api/reportApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
+import SafeImage from '../../components/common/SafeImage'
 import { EmptyState, LoadingRows, Message, Pagination } from '../../components/BackOfficeParts'
 import { formatDateTime, getErrorMessage } from '../../utils/backOfficeFormatters'
 
@@ -148,7 +149,7 @@ const ReportsPage = () => {
                                 </section>
                                 {selectedReport.imageUrls?.length > 0 && (
                                     <div className="grid gap-3 sm:grid-cols-2">
-                                        {selectedReport.imageUrls.map((url) => <img className="h-56 w-full rounded-lg object-cover" key={url} src={url} alt="Bằng chứng báo cáo" />)}
+                                        {selectedReport.imageUrls.map((url) => <SafeImage className="h-56 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/report-img/640/420" alt="Bằng chứng báo cáo" />)}
                                     </div>
                                 )}
                             </div>

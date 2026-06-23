@@ -537,6 +537,7 @@ const EditPostPage = () => {
                                         className="aspect-[4/3] w-full object-cover"
                                         src={url}
                                         alt="Ảnh hiện tại"
+                                        onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/existing-img/640/420` }}
                                     />
                                     <span className="absolute left-2 top-2 rounded-full bg-slate-900/80 px-2 py-0.5 text-[10px] font-black text-white">
                                         Hiện tại
@@ -560,6 +561,7 @@ const EditPostPage = () => {
                                         className="aspect-[4/3] w-full object-cover"
                                         src={image.previewUrl}
                                         alt={image.file.name}
+                                        onError={(e) => { e.currentTarget.src = `https://picsum.photos/seed/new-img/640/420` }}
                                     />
                                     <span className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase text-white">
                                         Mới

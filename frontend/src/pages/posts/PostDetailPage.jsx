@@ -7,6 +7,7 @@ import postApi from '../../api/postApi'
 import reportApi from '../../api/reportApi'
 import AppHeader from '../../components/AppHeader'
 import ImageLightbox from '../../components/common/ImageLightbox'
+import SafeImage from '../../components/common/SafeImage'
 import ErrorBoundary from '../../components/common/ErrorBoundary'
 import ToastContainer, { useToast } from '../../components/common/Toast'
 import { copyText } from '../../components/common/clipboard'
@@ -199,9 +200,10 @@ const ImageGallery = ({ post, isExpired, onOpenLightbox }) => {
                     onTransitionEnd={handleTrackTransitionEnd}
                 >
                     {carouselImages.map((imageUrl, index) => (
-                        <img
+                        <SafeImage
                             className="h-full w-full shrink-0 select-none object-cover"
                             src={imageUrl}
+                            fallbackSrc="https://picsum.photos/seed/detail-fallback/1200/800"
                             alt={`${post.title ?? 'Tin đăng'} - ảnh ${hasMultipleImages ? ((index + images.length - 1) % images.length) + 1 : index + 1}`}
                             key={`${imageUrl}-${index}`}
                             draggable={false}
@@ -265,7 +267,7 @@ const ImageGallery = ({ post, isExpired, onOpenLightbox }) => {
                             aria-label={`Xem ảnh ${index + 1}`}
                             disabled={isAnimating}
                         >
-                            <img className="h-full w-full object-cover" src={imageUrl} alt={`${post.title} - ảnh ${index + 1}`} />
+                            <SafeImage className="h-full w-full object-cover" src={imageUrl} fallbackSrc="https://picsum.photos/seed/detail-thumb/640/420" alt={`${post.title} - ảnh ${index + 1}`} />
                         </button>
                     ))}
                 </div>

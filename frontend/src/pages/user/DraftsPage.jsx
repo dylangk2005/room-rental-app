@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
@@ -323,11 +324,13 @@ const Toast = ({ toast }) => {
 }
 
 const DraftsPage = () => {
+    const { login } = useAuth()
     const { balance } = useWallet()
     const navigate = useNavigate()
     const [posts, setPosts] = useState([])
     const [membership, setMembership] = useState(null)
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [error, setError] = useState('')
     const [deletingPostId, setDeletingPostId] = useState('')
     const [confirmDelete, setConfirmDelete] = useState(null)
@@ -340,7 +343,6 @@ const DraftsPage = () => {
             setIsLoading(true)
             setError('')
             try {
-                await authApi.refresh()
                 const [postsResult, membershipResult] = await Promise.allSettled([
                     postApi.getMyPosts({ page: 0, size: 100 }),
                     membershipApi.getMyLevel(),
@@ -354,10 +356,6 @@ const DraftsPage = () => {
                     setMembership(membershipResult.value.data ?? null)
                 }
             } catch (e) {
-                if (e.response?.status === 401) {
-                    navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.DRAFTS } })
-                    return
-                }
                 setError(getErrorMessage(e))
             } finally {
                 setIsLoading(false)
@@ -369,6 +367,24 @@ const DraftsPage = () => {
     useEffect(() => {
         loadDrafts()
     }, [loadDrafts])
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.DRAFTS } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     useEffect(() => {
         if (!toast.message) return

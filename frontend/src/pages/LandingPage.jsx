@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import ROUTES from '../constants/routes'
+import SafeImage from '../components/common/SafeImage'
 
 const SearchIcon = ({ className }) => (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -236,7 +237,7 @@ const LandingPage = () => {
                                     type="button"
                                 >
                                     {user.avatar ? (
-                                        <img className="h-full w-full object-cover" src={user.avatar} alt={user.fullName || 'Tài khoản'} />
+                                        <SafeImage className="h-full w-full object-cover" src={user.avatar} fallbackSrc="https://picsum.photos/seed/avatar-landing/200/200" alt={user.fullName || 'Tài khoản'} />
                                     ) : (
                                         (user.fullName || 'T').charAt(0).toUpperCase()
                                     )}

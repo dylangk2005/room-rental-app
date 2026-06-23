@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useWallet } from '../../contexts/WalletContext'
 import authApi from '../../api/authApi'
 import postApi from '../../api/postApi'
@@ -388,10 +389,12 @@ const LoadingSkeleton = () => (
 // ─── Page ─────────────────────────────────────────────────────────────────────
 const MyPostsPage = () => {
     const { balance } = useWallet()
+    const { login } = useAuth()
     const navigate = useNavigate()
     const [posts, setPosts] = useState([])
     const [pageInfo, setPageInfo] = useState({ currentPage: 0, totalPages: 0, totalElements: 0 })
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [error, setError] = useState('')
     const [activeTab, setActiveTab] = useState('ALL')
     const [deletingId, setDeletingId] = useState('')
@@ -399,11 +402,23 @@ const MyPostsPage = () => {
     const [togglingId, setTogglingId] = useState('')
     const [toast, setToast] = useState({ type: '', message: '' })
 
+    const verifyAuth = useCallback(async () => {
+        try {
+            const res = await authApi.refresh()
+            login(res.data)
+        } catch {
+            navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.MY_POSTS } })
+            return false
+        }
+        return true
+    }, [login, navigate])
+
     const loadPosts = useCallback(async () => {
         setIsLoading(true)
         setError('')
         try {
-            await authApi.refresh()
+            const ok = await verifyAuth()
+            if (!ok) return
             // Fetch ALL pages at once so filtering by status works correctly
             let allPosts = []
             let page = 0
@@ -418,14 +433,31 @@ const MyPostsPage = () => {
             setPosts(allPosts)
             setPageInfo({ currentPage: 0, totalPages: 1, totalElements: allPosts.length })
         } catch (e) {
-            if (e.response?.status === 401) { navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.MY_POSTS } }); return }
             setError(getErrorMessage(e))
         } finally {
             setIsLoading(false)
         }
-    }, [navigate])
+    }, [verifyAuth])
 
     useEffect(() => { loadPosts() }, [loadPosts])
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.MY_POSTS } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     useEffect(() => {
         if (!toast.message) return

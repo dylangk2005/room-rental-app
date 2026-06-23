@@ -4,6 +4,7 @@ import AppHeader from './AppHeader'
 import { useAuth } from '../contexts/AuthContext'
 import { useWallet } from '../contexts/WalletContext'
 import ROUTES from '../constants/routes'
+import SafeImage from '../components/common/SafeImage'
 
 const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
@@ -126,7 +127,6 @@ const NAV_GROUPS = [
         items: [
             { key: 'deposit', label: 'Nạp tiền vào ví', to: ROUTES.USER_DEPOSIT, icon: 'plus' },
             { key: 'transactions', label: 'Lịch sử giao dịch', to: ROUTES.USER_TRANSACTIONS, icon: 'history' },
-            { key: 'pricing', label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING, icon: 'tag' },
         ],
     },
     {
@@ -138,6 +138,7 @@ const NAV_GROUPS = [
     {
         label: 'Khác',
         items: [
+            { key: 'pricing', label: 'Bảng giá gói tin', to: ROUTES.POST_PRICING, icon: 'tag' },
             { key: 'favorites', label: 'Tin yêu thích', to: ROUTES.FAVORITES, icon: 'heart' },
         ],
     },
@@ -223,7 +224,7 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
                     {/* Avatar */}
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-emerald-200 bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-sm">
                         {user?.avatar ? (
-                            <img className="h-full w-full object-cover" src={user.avatar} alt={user.fullName || 'Tài khoản'} />
+                            <SafeImage className="h-full w-full object-cover" src={user.avatar} fallbackSrc="https://picsum.photos/seed/avatar-account/200/200" alt={user.fullName || 'Tài khoản'} />
                         ) : (
                             <span className="text-sm font-black text-emerald-700">{getInitial(user?.fullName)}</span>
                         )}
@@ -279,7 +280,7 @@ const AccountLayout = ({ activeKey, title, subtitle, children, actions }) => {
                             <div className="-mt-10 mb-3">
                                 <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-4 border-white bg-gradient-to-br from-emerald-100 to-emerald-50 shadow-md">
                                     {user?.avatar ? (
-                                        <img className="h-full w-full object-cover" src={user.avatar} alt={user.fullName || 'Tài khoản'} />
+                                        <SafeImage className="h-full w-full object-cover" src={user.avatar} fallbackSrc="https://picsum.photos/seed/avatar-profile/200/200" alt={user.fullName || 'Tài khoản'} />
                                     ) : (
                                         <span className="text-xl font-black text-emerald-700">{getInitial(user?.fullName)}</span>
                                     )}

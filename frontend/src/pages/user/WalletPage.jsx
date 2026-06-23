@@ -557,6 +557,7 @@ const WalletPage = () => {
     const [transactions, setTransactions] = useState([])
     const [pageInfo, setPageInfo] = useState({ currentPage: 0, totalPages: 0, totalElements: 0 })
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [selectedTx, setSelectedTx] = useState(null)
     const [depositResult, setDepositResult] = useState('')
 
@@ -567,7 +568,6 @@ const WalletPage = () => {
     const loadPage = useCallback(async (page = 0) => {
         setIsLoading(true)
         try {
-            await authApi.refresh().then((r) => login(r.data))
             const txType = activeTab === 'deposits' ? 'DEPOSIT' : 'PAYMENT'
             const result = await walletApi.getTransactions({ page, size: 15, type: txType })
             const data = result.data || {}
@@ -577,14 +577,30 @@ const WalletPage = () => {
                 totalPages: data.totalPages || 0,
                 totalElements: data.totalElements || 0,
             })
-        } catch (err) {
-            if (err.response?.status === 401) {
-                navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.WALLET } })
-            }
+        } catch {
+            // non-critical
         } finally {
             setIsLoading(false)
         }
-    }, [activeTab, navigate])
+    }, [activeTab])
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.WALLET } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     useEffect(() => {
         const result = searchParams.get('deposit')

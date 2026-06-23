@@ -43,17 +43,14 @@ const FavoritesPage = () => {
         totalElements: 0,
     })
     const [isLoading, setIsLoading] = useState(true)
+    const [isVerifying, setIsVerifying] = useState(false)
     const [error, setError] = useState('')
 
     const loadFavorites = useCallback(
         async (page = 0) => {
             setIsLoading(true)
             setError('')
-
             try {
-                const refreshResponse = await authApi.refresh()
-                login(refreshResponse.data)
-
                 const [favoritesResult] = await Promise.allSettled([
                     favoriteApi.getFavorites({ page, size: 9 }),
                 ])
@@ -70,29 +67,36 @@ const FavoritesPage = () => {
                     totalElements: data.totalElements || 0,
                 })
             } catch (loadError) {
-                if (loadError.response?.status === 401) {
-                    logout()
-                    navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.FAVORITES } })
-                    return
-                }
-
                 setError(getErrorMessage(loadError))
             } finally {
                 setIsLoading(false)
             }
         },
-        [navigate]
+        []
     )
 
     useEffect(() => {
-        const timer = window.setTimeout(() => {
-            loadFavorites(0)
-        }, 0)
-
-        return () => {
-            window.clearTimeout(timer)
-        }
+        const timer = window.setTimeout(() => { loadFavorites(0) }, 0)
+        return () => { window.clearTimeout(timer) }
     }, [loadFavorites])
+
+    useEffect(() => {
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await authApi.refresh()
+                if (!cancelled) login(res.data)
+            } catch {
+                if (!cancelled) navigate(ROUTES.LOGIN, { replace: true, state: { from: ROUTES.FAVORITES } })
+                return
+            } finally {
+                if (!cancelled) setIsVerifying(false)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [login, navigate])
+
+    if (isVerifying) return null
 
     const loadPage = (nextPage) => {
         if (nextPage < 0 || nextPage >= pageInfo.totalPages) return

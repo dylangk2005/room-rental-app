@@ -1,5 +1,7 @@
 import { formatDateTime, formatMoney } from '../../utils/backOfficeFormatters'
 
+import SafeImage from '../../components/common/SafeImage'
+
 const InfoBox = ({ label, value }) => (
     <div className="rounded-lg bg-slate-50 p-3">
         <p className="text-xs font-black uppercase text-slate-500">{label}</p>
@@ -54,7 +56,7 @@ const PostBlock = ({ post }) => {
                 {post.imageUrls?.length > 0 && (
                     <div className="mt-4 grid gap-3 sm:grid-cols-2">
                         {post.imageUrls.map((url) => (
-                            <img className="h-44 w-full rounded-lg object-cover" key={url} src={url} alt="Ảnh bài đăng" />
+                            <SafeImage className="h-44 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/post-img/640/420" alt="Ảnh bài đăng" />
                         ))}
                     </div>
                 )}
@@ -86,7 +88,7 @@ const ReportBlock = ({ report }) => {
             {report.imageUrls?.length > 0 && (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     {report.imageUrls.map((url) => (
-                        <img className="h-44 w-full rounded-lg object-cover" key={url} src={url} alt="Ảnh bằng chứng báo cáo" />
+                        <SafeImage className="h-44 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/report-evidence/640/420" alt="Ảnh bằng chứng báo cáo" />
                     ))}
                 </div>
             )}
@@ -138,7 +140,7 @@ const ReporterColumn = ({ report }) => {
             {report.imageUrls?.length > 0 && (
                 <div className="mt-4 grid gap-3">
                     {report.imageUrls.map((url) => (
-                        <img className="max-h-72 w-full rounded-lg object-contain" key={url} src={url} alt="Ảnh bằng chứng báo cáo" />
+                        <SafeImage className="max-h-72 w-full rounded-lg object-contain" key={url} src={url} fallbackSrc="https://picsum.photos/seed/report-evidence-large/1200/800" alt="Ảnh bằng chứng báo cáo" />
                     ))}
                 </div>
             )}
@@ -182,7 +184,7 @@ const ReportedColumn = ({ detail }) => {
                         {post.imageUrls?.length > 0 && (
                             <div className="mt-4 grid gap-3 sm:grid-cols-2">
                                 {post.imageUrls.map((url) => (
-                                    <img className="h-56 w-full rounded-lg object-cover" key={url} src={url} alt="Ảnh bài đăng bị báo cáo" />
+                                    <SafeImage className="h-56 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/reported-post/640/420" alt="Ảnh bài đăng bị báo cáo" />
                                 ))}
                             </div>
                         )}

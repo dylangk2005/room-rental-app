@@ -96,4 +96,10 @@ public class MembershipServiceImpl implements MembershipService {
     private BigDecimal nullSafe(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
     }
+
+    @Override
+    public void refreshCache() {
+        redisCacheService.delete(MEMBERSHIP_LEVELS_CACHE_KEY);
+        getLevels();
+    }
 }

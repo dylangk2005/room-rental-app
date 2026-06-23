@@ -36,11 +36,11 @@ INSERT INTO roles (role_id, name, description) VALUES
 (4, 'USER', 'Người dùng thông thường');
 
 INSERT INTO membership_levels (id, name, min_spent, discount_percent, updated_at) VALUES
-(1, '', 0, 0, NOW()),
-(2, 'Dong', 500000, 5, NOW()),
-(3, 'Bac', 2000000, 10, NOW()),
-(4, 'Vang', 7000000, 15, NOW()),
-(5, 'Kim cuong', 15000000, 25, NOW());
+(1, 'Sắt', 0, 0, NOW()),
+(2, 'Đồng', 500000, 5, NOW()),
+(3, 'Bạc', 2000000, 10, NOW()),
+(4, 'Vàng', 7000000, 15, NOW()),
+(5, 'Kim cương', 15000000, 25, NOW());
 
 INSERT INTO users
 (id, full_name, email, password, phone_number, avatar, status, account_balance, total_spent, created_at, role_id, membership_level_id, must_change_password)

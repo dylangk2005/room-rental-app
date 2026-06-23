@@ -27,4 +27,10 @@ public class MembershipController {
     public ResponseEntity<ApiResponse<MyMembershipResponse>> getMyLevel() {
         return ResponseEntity.ok(ApiResponse.success("Lấy hạng thành viên hiện tại thành công", membershipService.getMyLevel(authHelper.getCurrentUserId())));
     }
+
+    @PostMapping("/levels/refresh")
+    public ResponseEntity<ApiResponse<Void>> refreshCache() {
+        membershipService.refreshCache();
+        return ResponseEntity.ok(ApiResponse.success("Đã làm mới cache hạng thành viên", null));
+    }
 }

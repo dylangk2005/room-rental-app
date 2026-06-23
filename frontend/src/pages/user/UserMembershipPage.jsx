@@ -10,20 +10,40 @@ const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ
 
 const TIERS = [
     {
+        name: 'Sắt',
+        color: 'from-slate-500 to-gray-600',
+        bg: 'bg-gradient-to-br from-slate-50 to-gray-100',
+        border: 'border-slate-300',
+        iconBg: 'bg-gradient-to-br from-slate-500 to-gray-600',
+        badge: 'bg-slate-100 text-slate-700',
+        iconColor: 'text-slate-700',
+        iconTextColor: 'text-white',
+        tierBg: 'bg-slate-500',
+        rowHighlight: 'bg-slate-50',
+    },
+    {
         name: 'Đồng',
-        color: 'from-orange-400 to-amber-500',
+        color: 'from-orange-500 to-red-600',
         bg: 'bg-gradient-to-br from-orange-50 to-amber-50',
-        border: 'border-amber-200',
-        iconBg: 'bg-gradient-to-br from-orange-400 to-amber-500',
-        badge: 'bg-amber-100 text-amber-700',
+        border: 'border-orange-300',
+        iconBg: 'bg-gradient-to-br from-orange-600 to-rose-600',
+        badge: 'bg-orange-100 text-orange-700',
+        iconColor: 'text-orange-700',
+        iconTextColor: 'text-white',
+        tierBg: 'bg-orange-600',
+        rowHighlight: 'bg-orange-50',
     },
     {
         name: 'Bạc',
-        color: 'from-slate-400 to-gray-500',
-        bg: 'bg-gradient-to-br from-slate-50 to-gray-100',
-        border: 'border-slate-300',
-        iconBg: 'bg-gradient-to-br from-slate-400 to-gray-500',
-        badge: 'bg-slate-100 text-slate-600',
+        color: 'from-gray-300 to-slate-400',
+        bg: 'bg-gradient-to-br from-gray-50 to-slate-100',
+        border: 'border-gray-300',
+        iconBg: 'bg-gradient-to-br from-gray-300 to-gray-500',
+        badge: 'bg-gray-200 text-gray-700',
+        iconColor: 'text-gray-700',
+        iconTextColor: 'text-white',
+        tierBg: 'bg-gray-300',
+        rowHighlight: 'bg-gray-100',
     },
     {
         name: 'Vàng',
@@ -32,23 +52,104 @@ const TIERS = [
         border: 'border-yellow-300',
         iconBg: 'bg-gradient-to-br from-yellow-400 to-amber-500',
         badge: 'bg-yellow-100 text-amber-700',
+        iconColor: 'text-amber-600',
+        iconTextColor: 'text-white',
+        tierBg: 'bg-yellow-400',
+        rowHighlight: 'bg-yellow-50',
     },
     {
         name: 'Kim cương',
-        color: 'from-sky-400 to-blue-600',
-        bg: 'bg-gradient-to-br from-sky-50 to-blue-50',
-        border: 'border-blue-200',
-        iconBg: 'bg-gradient-to-br from-sky-400 to-blue-600',
+        color: 'from-cyan-400 to-blue-600',
+        bg: 'bg-gradient-to-br from-cyan-50 to-blue-50',
+        border: 'border-cyan-200',
+        iconBg: 'bg-gradient-to-br from-cyan-400 to-blue-600',
         badge: 'bg-blue-100 text-blue-700',
+        iconColor: 'text-blue-700',
+        iconTextColor: 'text-white',
+        tierBg: 'bg-blue-500',
+        rowHighlight: 'bg-cyan-50',
     },
 ]
 
-const CrownIcon = ({ className = '' }) => (
-    <svg className={className} width="40" height="40" viewBox="0 0 24 24" fill="none">
-        <path d="M2 18l3-9 5 4 2-8 2 8 5-4 3 9H2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        <path d="M2 18h20v2a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-2z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+const ShieldIcon = ({ className = '' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" width="28" height="28">
+        <path
+            d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6l-8-4Z"
+            fill="currentColor"
+            opacity="0.25"
+        />
+        <path
+            d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.5C16.5 22.15 20 17.25 20 12V6l-8-4Z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 )
+
+const MedalIcon = ({ className = '' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" width="28" height="28">
+        <circle cx="12" cy="14" r="6" fill="currentColor" opacity="0.25" />
+        <circle cx="12" cy="14" r="6" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M12 8V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M9 6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M10.5 13l1 1.5 2-2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+)
+
+const CrownIcon = ({ className = '' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" width="28" height="28">
+        <path
+            d="M2 18l3-9 5 4 2-8 2 8 5-4 3 9H2z"
+            fill="currentColor"
+            opacity="0.25"
+        />
+        <path
+            d="M2 18l3-9 5 4 2-8 2 8 5-4 3 9H2z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        />
+        <path d="M2 18h20" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M7 18v2M12 18v2M17 18v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+)
+
+const StarIcon = ({ className = '' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" width="28" height="28">
+        <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 16.8l-6.2 4.5 2.4-7.4L2 9.4h7.6z" />
+    </svg>
+)
+
+const GemIcon = ({ className = '' }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" width="28" height="28">
+        <path
+            d="M6 3h12l4 6-10 13L2 9l4-6z"
+            fill="currentColor"
+            opacity="0.25"
+        />
+        <path
+            d="M6 3h12l4 6-10 13L2 9l4-6z"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+        />
+        <path d="M2 9h20" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M12 9v13" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        <path d="M8.5 3l3.5 6 3.5-6" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+    </svg>
+)
+
+const getTierIcon = (tierName) => {
+    if (tierName === 'Kim cương') return GemIcon
+    if (tierName === 'Vàng') return StarIcon
+    if (tierName === 'Bạc') return CrownIcon
+    if (tierName === 'Đồng') return MedalIcon
+    return ShieldIcon
+}
 
 const CheckIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
@@ -87,6 +188,7 @@ const UserMembershipPage = () => {
         setLoading(true)
         setError('')
         try {
+            await membershipApi.refreshCache()
             const [levelRes, levelsRes] = await Promise.all([
                 membershipApi.getMyLevel(),
                 membershipApi.getLevels(),
@@ -138,24 +240,29 @@ const UserMembershipPage = () => {
             ) : (
                 <div className="space-y-6">
                     {/* ── Current Tier Hero ─────────────────────────────────── */}
-                    <div className={`overflow-hidden rounded-2xl border ${currentTier.border} ${currentTier.bg} p-6`}>
+                    <div className={`overflow-hidden rounded-2xl border-2 ${currentTier.border} ${currentTier.bg} p-6`}>
                         <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center sm:gap-6">
                             {/* Icon */}
-                            <div className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl ${currentTier.iconBg} text-white shadow-lg`}>
-                                <CrownIcon />
+                            <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl ${currentTier.iconBg} shadow-lg`}>
+                                {(() => {
+                                    const TierIcon = getTierIcon(currentTier.name)
+                                    return <TierIcon className={currentTier.iconTextColor} />
+                                })()}
                             </div>
 
                             {/* Info */}
                             <div className="flex-1 text-center sm:text-left">
                                 <p className="text-xs font-black uppercase tracking-wider text-slate-500">Hạng hiện tại</p>
-                                <p className="mt-1 text-3xl font-black text-slate-900">{myLevel?.levelName || 'Đồng'}</p>
-                                <div className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${currentTier.badge}`}>
+                                <p className="mt-1 text-3xl font-black text-slate-900">
+                                    {myLevel?.levelName || 'Sắt'}
+                                </p>
+                                <div className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-black ${currentTier.badge}`}>
                                     <span>Chi tiêu: {formatMoney(myLevel?.totalSpent || 0)}</span>
                                 </div>
                             </div>
 
                             {/* Discount badge */}
-                            <div className="shrink-0 rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-center shadow-sm">
+                            <div className="shrink-0 rounded-2xl border-2 border-emerald-200 bg-white px-5 py-4 text-center shadow-sm">
                                 <p className="text-xs font-bold text-emerald-600">Giảm giá</p>
                                 <p className="mt-1 text-3xl font-black text-emerald-600">{myLevel?.discountPercent || 0}%</p>
                                 <p className="mt-0.5 text-xs font-semibold text-slate-500">khi đăng tin</p>
@@ -169,7 +276,7 @@ const UserMembershipPage = () => {
                                     <span>Tiến trình lên {nextTier.name}</span>
                                     <span>{progress}%</span>
                                 </div>
-                                <div className="h-3 w-full overflow-hidden rounded-full bg-white shadow-inner">
+                                <div className="h-3 w-full overflow-hidden rounded-full bg-white shadow-inner ring-1 ring-slate-200">
                                     <div
                                         className={`h-full rounded-full bg-gradient-to-r ${currentTier.color} transition-all duration-700`}
                                         style={{ width: `${progress}%` }}
@@ -212,20 +319,32 @@ const UserMembershipPage = () => {
                                                 const isActive = myLevel?.levelName === level.name
                                                 const isReached = (myLevel?.totalSpent || 0) >= level.minSpent
                                                 return (
-                                                    <tr key={level.id} className={isActive ? 'bg-emerald-50' : 'hover:bg-slate-50'}>
+                                                    <tr
+                                                        key={level.id}
+                                                        className={`transition-colors duration-150 ${
+                                                            isActive
+                                                                ? `${tier.bg} ring-1 ring-inset ${tier.border}`
+                                                                : 'hover:bg-slate-50'
+                                                        }`}
+                                                    >
                                                         <td className="px-5 py-3.5">
-                                                            <div className="flex items-center gap-2">
-                                                                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${tier.iconBg} text-white`}>
-                                                                    <span className="text-xs font-black">{level.name.charAt(0)}</span>
+                                                            <div className="flex items-center gap-2.5">
+                                                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${tier.iconBg} shadow-sm`}>
+                                                                    {(() => {
+                                                                        const TierIcon = getTierIcon(level.name)
+                                                                        return <TierIcon className={tier.iconTextColor} />
+                                                                    })()}
                                                                 </div>
-                                                                <span className={`font-black ${isActive ? 'text-emerald-700' : 'text-slate-800'}`}>
-                                                                    {level.name}
-                                                                </span>
-                                                                {isActive && (
-                                                                    <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
-                                                                        HIỆN TẠI
+                                                                <div className="flex flex-col">
+                                                                    <span className={`font-black text-sm ${isActive ? tier.iconColor : 'text-slate-800'}`}>
+                                                                        {level.name}
                                                                     </span>
-                                                                )}
+                                                                    {isActive && (
+                                                                        <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black text-white">
+                                                                            HIỆN TẠI
+                                                                        </span>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </td>
                                                         <td className="px-5 py-3.5 font-semibold text-slate-700">
@@ -233,7 +352,7 @@ const UserMembershipPage = () => {
                                                         </td>
                                                         <td className="px-5 py-3.5">
                                                             <span className={`inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-black ${
-                                                                isActive ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-700'
+                                                                isActive ? `${tier.iconBg} text-white` : 'bg-slate-100 text-slate-700'
                                                             }`}>
                                                                 -{level.discountPercent}%
                                                             </span>
@@ -244,7 +363,8 @@ const UserMembershipPage = () => {
                                                                     <CheckIcon /> Đạt
                                                                 </span>
                                                             ) : (
-                                                                <span className="text-xs font-semibold text-slate-400">Chưa đạt</span>
+                                                                <span className="text-xs font-semibold text-slate-400">Chưa đạt
+                                                                </span>
                                                             )}
                                                         </td>
                                                     </tr>

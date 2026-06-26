@@ -1,4 +1,4 @@
-export const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
+export const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')}\u00A0đ`
 
 export const formatDateTime = (value) => {
     if (!value) return '-'

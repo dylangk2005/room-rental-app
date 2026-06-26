@@ -14,6 +14,9 @@ import com.roomrental.api.payment.repository.PaymentRepository;
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.post.repository.PostRepository;
+import com.roomrental.api.post.repository.PostRepository.PostTypeStatsView;
+import com.roomrental.api.pricing.entity.PostType;
+import com.roomrental.api.pricing.repository.PostTypeRepository;
 import com.roomrental.api.user.entity.User;
 import com.roomrental.api.user.repository.UserRepository;
 import java.math.BigDecimal;
@@ -21,6 +24,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +39,7 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     private final PostRepository postRepository;
     private final PaymentRepository paymentRepository;
     private final ModerationLogRepository moderationLogRepository;
+    private final PostTypeRepository postTypeRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,12 +60,21 @@ public class ManagerStatsServiceImpl implements ManagerStatsService {
     public PostStatsResponse getPostStats(LocalDate from, LocalDate to) {
         DateRange range = resolveRange(from, to);
 
-        List<PostTypeStatsResponse> byPostType = postRepository
+        Map<String, Long> postCountByType = postRepository
                 .countPostsByType(range.from(), range.to())
                 .stream()
-                .map(item -> PostTypeStatsResponse.builder()
-                        .postTypeName(item.getPostTypeName())
-                        .totalPosts(nullSafe(item.getTotalPosts()))
+                .collect(Collectors.toMap(
+                        PostTypeStatsView::getPostTypeName,
+                        item -> nullSafe(item.getTotalPosts())
+                ));
+
+        List<PostTypeStatsResponse> byPostType = postTypeRepository
+                .findAllByOrderByPriorityAsc()
+                .stream()
+                .map(pt -> PostTypeStatsResponse.builder()
+                        .postTypeName(pt.getName())
+                        .priority(pt.getPriority())
+                        .totalPosts(postCountByType.getOrDefault(pt.getName(), 0L))
                         .build())
                 .toList();
 

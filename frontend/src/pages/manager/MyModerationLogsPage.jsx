@@ -52,7 +52,9 @@ const LogEntry = ({ log, onDetailClick }) => (
             </div>
 
             {log.reason && (
-                <p className="mt-1.5 line-clamp-2 text-xs font-semibold text-slate-500">{log.reason}</p>
+                <p className="mt-1.5 line-clamp-2 text-xs font-semibold text-slate-500">
+                    <span className="font-black text-slate-400">Lý do:</span> {log.reason}
+                </p>
             )}
         </div>
 

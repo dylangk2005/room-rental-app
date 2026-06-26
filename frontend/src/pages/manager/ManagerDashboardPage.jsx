@@ -38,7 +38,7 @@ const ManagerDashboardPage = () => {
     }, [])
 
     return (
-        <BackOfficeLayout section="manager" title="Tổng quan quản lý" subtitle="Thống kê vận hành, doanh thu, giá tin đăng và hạng thành viên. Quản lý không xử lý duyệt tin hoặc báo cáo.">
+        <BackOfficeLayout section="manager" title="Tổng quan quản lý" subtitle="Thống kê vận hành, doanh thu, giá tin đăng và hạng thành viên.">
             <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[180px_180px_auto]" onSubmit={(event) => {
                 event.preventDefault()
                 loadStats()
@@ -87,9 +87,45 @@ const ManagerDashboardPage = () => {
             <section className="mt-6 rounded-lg border border-slate-200 bg-white p-5">
                 <h2 className="text-lg font-black text-slate-950">Thống kê theo loại tin</h2>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {(stats.posts.byPostType || []).map((item) => (
-                        <StatCard key={item.postTypeName} label={item.postTypeName} value={item.totalPosts} />
-                    ))}
+                    {(stats.posts.byPostType || []).map((item) => {
+                        const name = item.postTypeName || ''
+                        const priority = item.priority || 0
+                        const tierMap = {
+                            'Tin thường': { desc: 'Tin được đăng', gradient: 'from-emerald-400 to-teal-500', icon: '📋' },
+                            'Tin VIP2': { desc: 'Tin VIP2 cao cấp', gradient: 'from-blue-500 to-indigo-600', icon: '🌟' },
+                            'Tin VIP1': { desc: 'Tin VIP1 nổi bật', gradient: 'from-pink-500 via-rose-500 to-red-500', icon: '💎' },
+                            'Tin VIP Nổi Bật': { desc: 'Tin nổi bật nhất', gradient: 'from-red-500 via-rose-500 to-pink-500', icon: '🔥' },
+                        }
+                        const tier = tierMap[name] || {
+                            desc: name,
+                            gradient: priority === 1 ? 'from-red-500 via-rose-500 to-pink-500'
+                                : priority === 2 ? 'from-pink-500 via-rose-500 to-red-500'
+                                    : priority === 3 ? 'from-blue-500 to-indigo-600'
+                                        : 'from-emerald-400 to-teal-500',
+                            icon: priority === 1 ? '🔥' : priority === 2 ? '💎' : priority === 3 ? '🌟' : '📌',
+                        }
+                        return (
+                            <div
+                                key={item.postTypeName}
+                                className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-600/5"
+                            >
+                                <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${tier.gradient}`} />
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-lg" role="img" aria-hidden="true">{tier.icon}</span>
+                                            <h3 className="font-black text-slate-950 truncate">{item.postTypeName}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="shrink-0 rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 px-3 py-1.5 text-center shadow-sm ring-1 ring-slate-200">
+                                        <span className="block text-lg font-black text-slate-800 leading-tight">{item.totalPosts}</span>
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">tin</span>
+                                    </div>
+                                </div>
+                                <div className={`mt-3 h-1 w-full rounded-full bg-gradient-to-r ${tier.gradient} opacity-10`} />
+                            </div>
+                        )
+                    })}
                 </div>
             </section>
 

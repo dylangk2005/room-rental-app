@@ -6,7 +6,7 @@ import { EmptyState, LoadingRows, FilterBar, StatusBadge, Pagination, Toast } fr
 import { formatDateTime, formatRelativeTime, formatActionLabel, formatTargetType, getErrorMessage } from '../../utils/backOfficeFormatters'
 import ModerationTargetDetailModal from './ModerationTargetDetailModal'
 
-const initialFilters = { moderatorId: '', action: '', targetType: '', targetId: '', page: 0, size: 10 }
+const initialFilters = { moderatorId: '', moderatorName: '', moderatorEmail: '', action: '', targetType: '', targetId: '', page: 0, size: 10 }
 
 const normalizeFilters = (filters) => ({
     ...filters,
@@ -54,13 +54,11 @@ const LogEntry = ({ log, onDetailClick, isManager }) => (
                     label={formatActionLabel(log.action)}
                     variant={actionBadgeVariant[log.action] || 'neutral'}
                 />
-                <span className="text-xs font-semibold text-slate-400">·</span>
-                <span className="text-xs font-semibold text-slate-400">{formatRelativeTime(log.createdAt)}</span>
             </div>
 
             <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-slate-500">Kiểm duyệt viên:</span>
+                    <span className="text-xs font-semibold text-slate-500">KDV:</span>
                     <span className="text-xs font-bold text-slate-700">{log.moderatorName || '-'}</span>
                 </div>
                 {isManager && (
@@ -72,7 +70,9 @@ const LogEntry = ({ log, onDetailClick, isManager }) => (
             </div>
 
             {log.reason && (
-                <p className="mt-1.5 line-clamp-1 text-xs font-semibold text-slate-500">{log.reason}</p>
+                <p className="mt-1.5 line-clamp-1 text-xs font-semibold text-slate-500">
+                    <span className="font-black text-slate-400">Lý do:</span> {log.reason}
+                </p>
             )}
         </div>
 
@@ -151,12 +151,11 @@ const ModerationLogsPage = () => {
             <form onSubmit={handleFilter}>
                 <FilterBar className="mb-5 flex-nowrap overflow-x-auto">
                     <input
-                        className="h-10 min-w-32 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors sm:max-w-40"
-                        placeholder="ID KDV"
-                        type="number"
-                        min="1"
-                        value={filters.moderatorId}
-                        onChange={(e) => setFilters((f) => ({ ...f, moderatorId: e.target.value }))}
+                        className="h-10 min-w-52 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors sm:max-w-72"
+                        placeholder="Kiểm duyệt viên (ID, tên, email)"
+                        type="text"
+                        value={filters.moderatorName}
+                        onChange={(e) => setFilters((f) => ({ ...f, moderatorId: e.target.value, moderatorName: e.target.value, moderatorEmail: e.target.value }))}
                     />
                     <select
                         className="h-10 min-w-36 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors"

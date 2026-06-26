@@ -421,7 +421,7 @@ const ModerationPostsPage = () => {
     }
 
     return (
-        <BackOfficeLayout section="manager" title="Duyệt tin đăng" subtitle="Xem và kiểm duyệt các tin đăng đang chờ phê duyệt.">
+        <BackOfficeLayout section="moderator" title="Duyệt tin đăng" subtitle="Xem và kiểm duyệt các tin đăng đang chờ phê duyệt.">
             {/* Filter */}
             <FilterBar className="mb-5">
                 {/* Status pills */}

@@ -35,7 +35,7 @@ const getBackOfficeLinks = (role) => {
     }
 
     if (role === 'MODERATOR') {
-        return [{ label: 'Đi tới dashboard', to: ROUTES.MANAGER_MODERATION_POSTS, highlight: true }]
+        return [{ label: 'Đi tới dashboard', to: ROUTES.MODERATOR_HOME, highlight: true }]
     }
 
     return []

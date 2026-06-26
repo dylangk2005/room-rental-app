@@ -9,7 +9,7 @@ import ModerationTargetDetailModal from './ModerationTargetDetailModal'
 const initialFilters = { action: '', targetType: '', targetId: '', page: 0, size: 10 }
 
 const actionFilters = [
-    { value: '', label: 'Tất cả hành động' },
+    { value: '', label: 'Tất cả hành động' },
     { value: 'ACCEPT_POST', label: 'Duyệt tin' },
     { value: 'REJECT_POST', label: 'Từ chối tin' },
     { value: 'HIDDEN_POST', label: 'Ẩn tin' },
@@ -21,7 +21,7 @@ const actionFilters = [
 ]
 
 const targetTypeFilters = [
-    { value: '', label: 'Tất cả đối tượng' },
+    { value: '', label: 'Tất cả đối tượng' },
     { value: 'POST', label: 'Tin đăng' },
     { value: 'REPORT', label: 'Báo cáo' },
     { value: 'USER', label: 'Người dùng' },
@@ -89,7 +89,7 @@ const MyModerationLogsPage = () => {
     }
 
     return (
-        <BackOfficeLayout section="manager" title="Nhật ký kiểm duyệt" subtitle="Xem lại các thao tác kiểm duyệt bạn đã thực hiện.">
+        <BackOfficeLayout section="moderator" title="Nhật ký kiểm duyệt" subtitle="Xem lại các thao tác kiểm duyệt bạn đã thực hiện.">
             {/* Filter */}
             <form onSubmit={handleFilter}>
                 <FilterBar className="mb-5 flex-nowrap overflow-x-auto">

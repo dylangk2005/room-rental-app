@@ -389,7 +389,7 @@ const ReportsPage = () => {
     }
 
     return (
-        <BackOfficeLayout section="manager" title="Quản lý báo cáo" subtitle="Xem và xử lý các báo cáo từ người dùng về tin đăng vi phạm.">
+        <BackOfficeLayout section="moderator" title="Quản lý báo cáo" subtitle="Xem và xử lý các báo cáo từ người dùng về tin đăng vi phạm.">
             {/* Header with export button */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                 {/* Status tabs */}

@@ -10,7 +10,7 @@ const USER_STORAGE_KEY = 'taytro_user'
 const getRoleLandingRoute = (role, fallback) => {
     if (role === 'ADMIN') return ROUTES.ADMIN_DASHBOARD
     if (role === 'MANAGER') return ROUTES.MANAGER_DASHBOARD
-    if (role === 'MODERATOR') return ROUTES.MANAGER_MODERATION_POSTS
+    if (role === 'MODERATOR') return ROUTES.MODERATOR_HOME
     return fallback
 }
 

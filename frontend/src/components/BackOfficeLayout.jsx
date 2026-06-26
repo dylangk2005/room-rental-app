@@ -56,8 +56,8 @@ const managerLinks = [
     { label: 'Nhật ký kiểm duyệt', to: ROUTES.MANAGER_MODERATION_LOGS, roles: ['MANAGER'], Icon: HistoryIcon },
     { label: 'Giá tin đăng', to: ROUTES.MANAGER_PRICING, roles: ['MANAGER'], Icon: TagIcon },
     { label: 'Hạng thành viên', to: ROUTES.MANAGER_MEMBERSHIP, roles: ['MANAGER'], Icon: StarIcon },
-    { label: 'Duyệt tin', to: ROUTES.MANAGER_MODERATION_POSTS, roles: ['MODERATOR'], Icon: FileCheckIcon },
-    { label: 'Quản lý báo cáo', to: ROUTES.MANAGER_REPORTS, roles: ['MODERATOR'], Icon: FlagIcon },
+    { label: 'Duyệt tin', to: ROUTES.MODERATOR_HOME, roles: ['MODERATOR'], Icon: FileCheckIcon },
+    { label: 'Quản lý báo cáo', to: ROUTES.MODERATOR_REPORTS, roles: ['MODERATOR'], Icon: FlagIcon },
     { label: 'Quản lý người dùng', to: ROUTES.MODERATOR_USERS, roles: ['MODERATOR'], Icon: UsersIcon },
     { label: 'Nhật ký kiểm duyệt', to: ROUTES.MODERATOR_MY_LOGS, roles: ['MODERATOR'], Icon: HistoryIcon },
 ]
@@ -73,11 +73,13 @@ const adminLinks = [
 const BackOfficeLayout = ({ section = 'admin', title, subtitle, actions, children }) => {
     const location = useLocation()
     const { user } = useAuth()
-    const links = section === 'manager'
+    const links = section === 'moderator'
+        ? managerLinks.filter((link) => user?.role && link.roles.includes(user.role))
+        : section === 'manager'
         ? managerLinks.filter((link) => user?.role && link.roles.includes(user.role))
         : adminLinks
 
-    const sectionLabel = section === 'manager' ? (user?.role === 'MODERATOR' ? 'Kiểm duyệt' : 'Quản lý') : 'Quản trị'
+    const sectionLabel = section === 'moderator' ? 'Kiểm duyệt' : section === 'manager' ? 'Quản lý' : 'Quản trị'
     const roleBadgeClass = user?.role === 'MODERATOR'
         ? 'bg-amber-400/20 text-amber-300'
         : user?.role === 'MANAGER'

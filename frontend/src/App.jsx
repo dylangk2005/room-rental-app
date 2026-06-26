@@ -29,11 +29,11 @@ import InternalUsersPage from './pages/admin/InternalUsersPage'
 import AuditLogsPage from './pages/admin/AuditLogsPage'
 import BackupsPage from './pages/admin/BackupsPage'
 import ManagerDashboardPage from './pages/manager/ManagerDashboardPage'
-import ModerationPostsPage from './pages/manager/ModerationPostsPage'
-import ReportsPage from './pages/manager/ReportsPage'
+import ModerationPostsPage from './pages/moderator/ModerationPostsPage'
+import ReportsPage from './pages/moderator/ReportsPage'
 import ModerationLogsPage from './pages/manager/ModerationLogsPage'
-import MyModerationLogsPage from './pages/manager/MyModerationLogsPage'
-import ModeratorUsersPage from './pages/manager/ModeratorUsersPage'
+import MyModerationLogsPage from './pages/moderator/MyModerationLogsPage'
+import ModeratorUsersPage from './pages/moderator/ModeratorUsersPage'
 import PricingPage from './pages/manager/PricingPage'
 import MembershipPage from './pages/manager/MembershipPage'
 
@@ -47,7 +47,7 @@ const RoleRoute = ({ roles, children }) => {
 const ManagerHomeRedirect = () => {
     const { user } = useAuth()
     if (!user) return <Navigate to={ROUTES.LOGIN} replace />
-    if (user.role === 'MODERATOR') return <Navigate to={ROUTES.MANAGER_MODERATION_POSTS} replace />
+    if (user.role === 'MODERATOR') return <Navigate to={ROUTES.MODERATOR_HOME} replace />
     if (user.role === 'MANAGER') return <Navigate to={ROUTES.MANAGER_DASHBOARD} replace />
     return <Navigate to={ROUTES.HOME} replace />
 }
@@ -97,13 +97,15 @@ function App() {
 
                     <Route path={ROUTES.MANAGER} element={<ManagerHomeRedirect />} />
                     <Route path={ROUTES.MANAGER_DASHBOARD} element={<RoleRoute roles={['MANAGER']}><ManagerDashboardPage /></RoleRoute>} />
-                    <Route path={ROUTES.MANAGER_MODERATION_POSTS} element={<RoleRoute roles={['MODERATOR']}><ModerationPostsPage /></RoleRoute>} />
-                    <Route path={ROUTES.MANAGER_REPORTS} element={<RoleRoute roles={['MODERATOR']}><ReportsPage /></RoleRoute>} />
                     <Route path={ROUTES.MANAGER_MODERATION_LOGS} element={<RoleRoute roles={['MANAGER']}><ModerationLogsPage /></RoleRoute>} />
-                    <Route path={ROUTES.MODERATOR_USERS} element={<RoleRoute roles={['MODERATOR']}><ModeratorUsersPage /></RoleRoute>} />
-                    <Route path={ROUTES.MODERATOR_MY_LOGS} element={<RoleRoute roles={['MODERATOR']}><MyModerationLogsPage /></RoleRoute>} />
                     <Route path={ROUTES.MANAGER_PRICING} element={<RoleRoute roles={['MANAGER']}><PricingPage /></RoleRoute>} />
                     <Route path={ROUTES.MANAGER_MEMBERSHIP} element={<RoleRoute roles={['MANAGER']}><MembershipPage /></RoleRoute>} />
+
+                    <Route path={ROUTES.MODERATOR_HOME} element={<RoleRoute roles={['MODERATOR']}><ModerationPostsPage /></RoleRoute>} />
+                    <Route path={ROUTES.MODERATOR_MODERATION_POSTS} element={<RoleRoute roles={['MODERATOR']}><ModerationPostsPage /></RoleRoute>} />
+                    <Route path={ROUTES.MODERATOR_REPORTS} element={<RoleRoute roles={['MODERATOR']}><ReportsPage /></RoleRoute>} />
+                    <Route path={ROUTES.MODERATOR_USERS} element={<RoleRoute roles={['MODERATOR']}><ModeratorUsersPage /></RoleRoute>} />
+                    <Route path={ROUTES.MODERATOR_MY_LOGS} element={<RoleRoute roles={['MODERATOR']}><MyModerationLogsPage /></RoleRoute>} />
                     </Routes>
                 </BrowserRouter>
                 </WalletProvider>

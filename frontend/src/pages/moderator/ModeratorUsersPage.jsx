@@ -497,7 +497,7 @@ const ModeratorUsersPage = () => {
     ]
 
     return (
-        <BackOfficeLayout section="manager" title="Quản lý người dùng" subtitle="Theo dõi và xử lý người dùng thường — cảnh cáo, khóa đăng tin hoặc ban tài khoản.">
+        <BackOfficeLayout section="moderator" title="Quản lý người dùng" subtitle="Theo dõi và xử lý người dùng thường — cảnh cáo, khóa đăng tin hoặc ban tài khoản.">
             {/* Filter */}
             <form onSubmit={submitFilters}>
                 <FilterBar className="mb-5">

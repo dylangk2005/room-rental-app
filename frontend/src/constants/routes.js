@@ -34,13 +34,16 @@ const ROUTES = {
     // Manager
     MANAGER: '/manager',
     MANAGER_DASHBOARD: '/manager/dashboard',
-    MANAGER_MODERATION_POSTS: '/manager/moderation/posts',
-    MANAGER_REPORTS: '/manager/reports',
     MANAGER_MODERATION_LOGS: '/manager/moderation-logs',
-    MODERATOR_USERS: '/moderator/users',
-    MODERATOR_MY_LOGS: '/moderator/my-logs',
     MANAGER_PRICING: '/manager/pricing',
     MANAGER_MEMBERSHIP: '/manager/membership',
+
+    // Moderator
+    MODERATOR_HOME: '/moderator',
+    MODERATOR_MODERATION_POSTS: '/moderator/moderation/posts',
+    MODERATOR_REPORTS: '/moderator/reports',
+    MODERATOR_USERS: '/moderator/users',
+    MODERATOR_MY_LOGS: '/moderator/my-logs',
 }
 
 export default ROUTES

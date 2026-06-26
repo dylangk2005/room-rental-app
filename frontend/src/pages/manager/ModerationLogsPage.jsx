@@ -4,7 +4,7 @@ import moderationApi from '../../api/moderationApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
 import { EmptyState, LoadingRows, FilterBar, StatusBadge, Pagination, Toast } from '../../components/BackOfficeParts'
 import { formatDateTime, formatActionLabel, formatTargetType, getErrorMessage } from '../../utils/backOfficeFormatters'
-import ModerationTargetDetailModal from './ModerationTargetDetailModal'
+import ModerationTargetDetailModal from '../moderator/ModerationTargetDetailModal'
 
 const initialFilters = { moderatorId: '', moderatorName: '', moderatorEmail: '', action: '', targetType: '', targetId: '', page: 0, size: 10 }
 

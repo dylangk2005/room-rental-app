@@ -93,4 +93,10 @@ public interface UserRepository extends JpaRepository <User, Integer>{
             @Param("to") LocalDateTime to,
             @Param("keyword") String keyword
     );
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.name IN :roleNames")
+    long countInternalUsers(@Param("roleNames") List<String> roleNames);
+
+    @Query("SELECT COUNT(u) FROM User u LEFT JOIN u.role r WHERE (:status IS NULL OR u.status = :status) AND (:role IS NULL OR r.name = :role)")
+    long countByStatusAndRole(@Param("status") User.UserStatus status, @Param("role") String role);
 }

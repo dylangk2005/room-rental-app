@@ -83,6 +83,149 @@ const ROLE_LABELS = {
 
 export const formatRole = (role) => ROLE_LABELS[role] || role || '-'
 
+const AUDIT_TARGET_TYPE_LABELS = {
+    SYSTEM: 'Hệ thống',
+    USER: 'Người dùng',
+    POST: 'Tin đăng',
+    TRANSACTION: 'Giao dịch',
+    REPORT: 'Báo cáo',
+    DEPOSIT: 'Nạp tiền',
+    MEMBERSHIP: 'Gói thành viên',
+    INTERNAL_USER: 'Tài khoản nội bộ',
+    BACKUP: 'Sao lưu',
+}
+
+export const formatAuditTargetType = (type) => AUDIT_TARGET_TYPE_LABELS[type] || type || '-'
+
+const AUDIT_ACTION_LABELS = {
+    // Auth
+    LOGIN: 'Đăng nhập',
+    LOGIN_SUCCESS: 'Đăng nhập thành công',
+    LOGIN_FAILED: 'Đăng nhập thất bại',
+    LOGOUT: 'Đăng xuất',
+    LOGOUT_SUCCESS: 'Đăng xuất thành công',
+
+    // CRUD
+    CREATE: 'Tạo mới',
+    UPDATE: 'Cập nhật',
+    DELETE: 'Xóa',
+
+    // Post management
+    ACCEPT_POST: 'Duyệt tin',
+    APPROVE: 'Phê duyệt',
+    REJECT_POST: 'Từ chối tin',
+    REJECT: 'Từ chối',
+    HIDDEN_POST: 'Ẩn tin',
+    DELETE_POST: 'Xóa tin',
+    UPDATE_POST_TYPE_PRICE: 'Cập nhật giá tin',
+
+    // Report management
+    ACCEPT_REPORT: 'Chấp nhận báo cáo',
+    RESOLVE: 'Giải quyết',
+    RESOLVE_REPORT: 'Giải quyết báo cáo',
+
+    // User management
+    UPDATE_USER_STATUS: 'Cập nhật trạng thái người dùng',
+    BAN: 'Cấm',
+    BAN_USER: 'Cấm người dùng',
+    BAN_ACCOUNT: 'Cấm tài khoản',
+    UNBAN: 'Bỏ cấm',
+    UNBAN_USER: 'Bỏ cấm người dùng',
+
+    // Moderation
+    WARNING: 'Cảnh cáo',
+    LOCK_POST: 'Khóa đăng tin',
+
+    // Account
+    ACTIVATE: 'Kích hoạt',
+    DEACTIVATE: 'Vô hiệu hóa',
+
+    // System
+    BACKUP: 'Sao lưu',
+    SYSTEM_BACKUP: 'Sao lưu hệ thống',
+    RUN_DATABASE_BACKUP: 'Sao lưu cơ sở dữ liệu',
+    RESTORE: 'Khôi phục',
+    EXPORT: 'Xuất dữ liệu',
+    IMPORT: 'Nhập dữ liệu',
+
+    // Transaction
+    PAYMENT: 'Thanh toán',
+    DEPOSIT: 'Nạp tiền',
+    DEPOSIT_INIT: 'Khởi tạo nạp tiền',
+    REFUND: 'Hoàn tiền',
+    PURCHASE: 'Mua gói',
+
+    // Membership
+    CREATE_MEMBERSHIP: 'Tạo gói thành viên',
+    UPDATE_MEMBERSHIP: 'Cập nhật gói thành viên',
+}
+
+export const formatAuditAction = (action) => AUDIT_ACTION_LABELS[action] || action || '-'
+
+const AUDIT_ACTION_VARIANTS = {
+    // Auth
+    LOGIN: 'info',
+    LOGIN_SUCCESS: 'success',
+    LOGIN_FAILED: 'danger',
+    LOGOUT: 'neutral',
+    LOGOUT_SUCCESS: 'success',
+
+    // CRUD
+    CREATE: 'success',
+    UPDATE: 'info',
+    DELETE: 'danger',
+
+    // Post management
+    ACCEPT_POST: 'success',
+    APPROVE: 'success',
+    REJECT_POST: 'danger',
+    REJECT: 'danger',
+    HIDDEN_POST: 'warning',
+    DELETE_POST: 'danger',
+    UPDATE_POST_TYPE_PRICE: 'info',
+
+    // Report management
+    ACCEPT_REPORT: 'success',
+    RESOLVE: 'success',
+
+    // User management
+    UPDATE_USER_STATUS: 'info',
+    BAN: 'danger',
+    BAN_USER: 'danger',
+    BAN_ACCOUNT: 'danger',
+    UNBAN: 'success',
+    UNBAN_USER: 'success',
+
+    // Moderation
+    WARNING: 'warning',
+    LOCK_POST: 'danger',
+
+    // Account
+    ACTIVATE: 'success',
+    DEACTIVATE: 'warning',
+
+    // System
+    BACKUP: 'info',
+    SYSTEM_BACKUP: 'info',
+    RUN_DATABASE_BACKUP: 'info',
+    RESTORE: 'success',
+    EXPORT: 'info',
+    IMPORT: 'info',
+
+    // Transaction
+    PAYMENT: 'success',
+    DEPOSIT: 'success',
+    DEPOSIT_INIT: 'info',
+    REFUND: 'warning',
+    PURCHASE: 'success',
+
+    // Membership
+    CREATE_MEMBERSHIP: 'success',
+    UPDATE_MEMBERSHIP: 'info',
+}
+
+export const getAuditActionVariant = (action) => AUDIT_ACTION_VARIANTS[action] || 'neutral'
+
 export const getInitial = (name) => {
     const safeName = name ?? ''
     const trimmedName = safeName.trim()

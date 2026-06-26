@@ -131,16 +131,38 @@ export const StatCard = ({ label, value, tone = 'slate', icon }) => {
     )
 }
 
-export const StatusBadge = ({ label, variant = 'neutral' }) => {
+export const StatusBadge = ({ label, variant = 'neutral', showIcon = false }) => {
     const variants = {
-        success: 'bg-emerald-50 text-emerald-700 ring-emerald-200 border border-emerald-200',
-        warning: 'bg-amber-50 text-amber-700 ring-amber-200 border border-amber-200',
-        danger: 'bg-red-50 text-red-700 ring-red-200 border border-red-200',
-        info: 'bg-blue-50 text-blue-700 ring-blue-200 border border-blue-200',
-        neutral: 'bg-slate-100 text-slate-600 ring-slate-200 border border-slate-200',
+        success: { classes: 'bg-emerald-50 text-emerald-700 ring-emerald-200 border border-emerald-200', icon: (
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            </svg>
+        )},
+        warning: { classes: 'bg-amber-50 text-amber-700 ring-amber-200 border border-amber-200', icon: (
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+        )},
+        danger: { classes: 'bg-red-50 text-red-700 ring-red-200 border border-red-200', icon: (
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+        )},
+        info: { classes: 'bg-blue-50 text-blue-700 ring-blue-200 border border-blue-200', icon: (
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+        )},
+        neutral: { classes: 'bg-slate-100 text-slate-600 ring-slate-200 border border-slate-200', icon: (
+            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+        )},
     }
+    const config = variants[variant] || variants.neutral
     return (
-        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-black ${variants[variant] || variants.neutral}`}>
+        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${config.classes}`}>
+            {showIcon && config.icon}
             {label}
         </span>
     )
@@ -262,6 +284,32 @@ export const Toast = ({ type = 'info', message, onClose }) => {
             {onClose && (
                 <button className="shrink-0 text-lg font-black opacity-60 transition-opacity hover:opacity-100" type="button" onClick={onClose}>×</button>
             )}
+        </div>
+    )
+}
+
+export const Modal = ({ isOpen, onClose, title, children }) => {
+    if (!isOpen) return null
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+            <div className="w-full max-w-lg animate-in zoom-in-95 fade-in duration-200 rounded-2xl border border-slate-200 bg-white shadow-2xl">
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                    <h3 className="text-lg font-black text-slate-950">{title}</h3>
+                    <button
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        type="button"
+                        onClick={onClose}
+                    >
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+                <div className="p-6">
+                    {children}
+                </div>
+            </div>
         </div>
     )
 }

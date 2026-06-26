@@ -2,6 +2,96 @@ import { useState } from 'react'
 import managerApi from '../api/managerApi'
 import { ActionButton, Toast } from './BackOfficeParts'
 
+const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return ''
+    const [y, m, d] = dateStr.split('-')
+    return `${d}/${m}/${y}`
+}
+
+const DateInput = ({ value, onChange, placeholder }) => {
+    const [open, setOpen] = useState(false)
+    const today = new Date()
+    const [viewDate, setViewDate] = useState(() => {
+        if (!value) return new Date(today.getFullYear(), today.getMonth(), 1)
+        const [y, m, d] = value.split('-')
+        return new Date(parseInt(y), parseInt(m) - 1, 1)
+    })
+
+    const displayValue = formatDateDisplay(value)
+
+    const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+    const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+    const daysInMonth = getDaysInMonth(viewDate)
+    const firstDay = getFirstDayOfMonth(viewDate)
+
+    const prevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+    const nextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+
+    const handleSelectDate = (day) => {
+        const y = viewDate.getFullYear()
+        const m = String(viewDate.getMonth() + 1).padStart(2, '0')
+        const d = String(day).padStart(2, '0')
+        onChange(`${y}-${m}-${d}`)
+        setOpen(false)
+    }
+
+    const selectedDate = value ? new Date(value.split('-')[0], parseInt(value.split('-')[1]) - 1, parseInt(value.split('-')[2])) : null
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
+
+    return (
+        <div className="relative">
+            <input
+                className="w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                type="text"
+                value={displayValue}
+                readOnly
+                placeholder={placeholder}
+                onClick={() => setOpen(true)}
+            />
+            {open && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                        <div className="mb-2 flex items-center justify-between">
+                            <button type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <span className="text-sm font-semibold">{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span>
+                            <button type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                            {days.map(d => <div key={d} className="text-xs font-semibold text-slate-500 py-1">{d}</div>)}
+                            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+                            {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const day = i + 1
+                                const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                                const isSelected = value === dateStr
+                                const isToday = todayStr === dateStr
+                                return (
+                                    <button
+                                        key={day}
+                                        type="button"
+                                        onClick={() => handleSelectDate(day)}
+                                        className={`h-8 w-8 rounded-full text-sm ${isSelected ? 'bg-emerald-500 text-white' : isToday ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-slate-100'}`}
+                                    >
+                                        {day}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
+
 const exportTypes = [
     { key: 'posts', label: 'Danh sách Tin đăng', icon: '📝', roles: ['MANAGER', 'MODERATOR'] },
     { key: 'users', label: 'Danh sách Người dùng', icon: '👥', roles: ['MANAGER'] },
@@ -13,7 +103,6 @@ const ExportModal = ({ onClose, userRole }) => {
     const [selectedType, setSelectedType] = useState('posts')
     const [filters, setFilters] = useState({
         status: '',
-        keyword: '',
         from: '',
         to: '',
         paymentType: '',
@@ -55,7 +144,6 @@ const ExportModal = ({ onClose, userRole }) => {
     const buildRequest = () => {
         const request = {}
         if (filters.status) request.status = filters.status
-        if (filters.keyword) request.keyword = filters.keyword
         if (filters.from) request.from = filters.from
         if (filters.to) request.to = filters.to
         if (filters.paymentType) request.paymentType = filters.paymentType
@@ -66,62 +154,38 @@ const ExportModal = ({ onClose, userRole }) => {
         switch (selectedType) {
             case 'posts':
                 return (
-                    <div className="space-y-3">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-bold text-slate-700">Trạng thái</label>
-                            <select
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.status}
-                                onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
-                            >
-                                <option value="">Tất cả</option>
-                                <option value="PENDING">Chờ duyệt</option>
-                                <option value="ACTIVE">Đang hiển thị</option>
-                                <option value="EXPIRED">Hết hạn</option>
-                                <option value="REJECTED">Bị từ chối</option>
-                                <option value="HIDDEN">Ẩn</option>
-                                <option value="DRAFT">Nháp</option>
-                                <option value="DELETED">Đã xóa</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-bold text-slate-700">Từ khóa</label>
-                            <input
-                                type="text"
-                                placeholder="Mã tin hoặc tiêu đề..."
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.keyword}
-                                onChange={(e) => setFilters(f => ({ ...f, keyword: e.target.value }))}
-                            />
-                        </div>
+                    <div>
+                        <label className="mb-1.5 block text-sm font-bold text-slate-700">Trạng thái</label>
+                        <select
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                            value={filters.status}
+                            onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
+                        >
+                            <option value="">Tất cả</option>
+                            <option value="PENDING">Chờ duyệt</option>
+                            <option value="ACTIVE">Đang hiển thị</option>
+                            <option value="EXPIRED">Hết hạn</option>
+                            <option value="REJECTED">Bị từ chối</option>
+                            <option value="HIDDEN">Ẩn</option>
+                            <option value="DRAFT">Nháp</option>
+                            <option value="DELETED">Đã xóa</option>
+                        </select>
                     </div>
                 )
             case 'users':
                 return (
-                    <div className="space-y-3">
-                        <div>
-                            <label className="mb-1.5 block text-sm font-bold text-slate-700">Trạng thái</label>
-                            <select
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.status}
-                                onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
-                            >
-                                <option value="">Tất cả</option>
-                                <option value="ACTIVE">Hoạt động</option>
-                                <option value="INACTIVE">Chưa kích hoạt</option>
-                                <option value="BANNED">Bị khóa</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="mb-1.5 block text-sm font-bold text-slate-700">Từ khóa</label>
-                            <input
-                                type="text"
-                                placeholder="Tên, email, SĐT..."
-                                className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.keyword}
-                                onChange={(e) => setFilters(f => ({ ...f, keyword: e.target.value }))}
-                            />
-                        </div>
+                    <div>
+                        <label className="mb-1.5 block text-sm font-bold text-slate-700">Trạng thái</label>
+                        <select
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
+                            value={filters.status}
+                            onChange={(e) => setFilters(f => ({ ...f, status: e.target.value }))}
+                        >
+                            <option value="">Tất cả</option>
+                            <option value="ACTIVE">Hoạt động</option>
+                            <option value="INACTIVE">Chưa kích hoạt</option>
+                            <option value="BANNED">Bị khóa</option>
+                        </select>
                     </div>
                 )
             case 'transactions':
@@ -195,7 +259,7 @@ const ExportModal = ({ onClose, userRole }) => {
                                     type="button"
                                     onClick={() => {
                                         setSelectedType(type.key)
-                                        setFilters({ status: '', keyword: '', from: '', to: '', paymentType: '' })
+                                        setFilters({ status: '', from: '', to: '', paymentType: '' })
                                     }}
                                     className={`flex items-center gap-2.5 rounded-xl border px-4 py-3 text-sm font-bold transition-all ${
                                         selectedType === type.key
@@ -213,18 +277,8 @@ const ExportModal = ({ onClose, userRole }) => {
                     <div className="mb-5">
                         <label className="mb-2 block text-sm font-bold text-slate-700">Thời gian</label>
                         <div className="grid grid-cols-2 gap-3">
-                            <input
-                                type="date"
-                                className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.from}
-                                onChange={(e) => setFilters(f => ({ ...f, from: e.target.value }))}
-                            />
-                            <input
-                                type="date"
-                                className="rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-semibold focus:border-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-200"
-                                value={filters.to}
-                                onChange={(e) => setFilters(f => ({ ...f, to: e.target.value }))}
-                            />
+                            <DateInput value={filters.from} onChange={(val) => setFilters(f => ({ ...f, from: val }))} placeholder="dd/mm/yy" />
+                            <DateInput value={filters.to} onChange={(val) => setFilters(f => ({ ...f, to: val }))} placeholder="dd/mm/yy" />
                         </div>
                     </div>
 

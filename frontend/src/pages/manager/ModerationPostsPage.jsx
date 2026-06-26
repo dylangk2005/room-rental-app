@@ -39,20 +39,7 @@ const PostCard = ({ post, onClick }) => (
         type="button"
         onClick={onClick}
     >
-        <div className="flex gap-4">
-            {/* Thumbnail */}
-            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-slate-100">
-                <SafeImage
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    src={post.firstImageUrl}
-                    fallbackSrc="https://picsum.photos/seed/post-thumb/200/200"
-                    alt={post.title}
-                />
-                <div className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-slate-900/70 text-[10px] font-black text-white">
-                    {post.imageCount}
-                </div>
-            </div>
-
+        <div className="flex items-center gap-4">
             {/* Info */}
             <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
@@ -72,9 +59,9 @@ const PostCard = ({ post, onClick }) => (
                     <span className="font-black text-emerald-600">{formatMoney(post.rentalPrice)}</span>
                 </div>
 
-                <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-400">
                     <span
-                        className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-black"
+                        className="inline-flex rounded-full px-2.5 py-0.5 font-black"
                         style={{
                             backgroundColor: post.postTypeTitleColor ? `${post.postTypeTitleColor}20` : '#fef3c7',
                             color: post.postTypeTitleColor || '#92400e',
@@ -82,17 +69,15 @@ const PostCard = ({ post, onClick }) => (
                     >
                         {post.postTypeName}
                     </span>
-                    <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-400">
-                        <SafeImage
-                            className="h-5 w-5 shrink-0 rounded-full object-cover"
-                            src={post.ownerAvatar}
-                            fallbackSrc={getAvatarUrl(post.ownerName, 40)}
-                            alt={post.ownerName}
-                        />
-                        <span>{post.ownerName}</span>
-                        <span>·</span>
-                        <span>{formatRelativeTime(post.createdAt)}</span>
-                    </div>
+                    <SafeImage
+                        className="h-5 w-5 shrink-0 rounded-full object-cover"
+                        src={post.ownerAvatar}
+                        fallbackSrc={getAvatarUrl(post.ownerName, 40)}
+                        alt={post.ownerName}
+                    />
+                    <span>{post.ownerName}</span>
+                    <span>·</span>
+                    <span>{formatRelativeTime(post.createdAt)}</span>
                 </div>
             </div>
 

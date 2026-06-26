@@ -5,6 +5,95 @@ import ExportModal from '../../components/ExportModal'
 import { Message, StatCard } from '../../components/BackOfficeParts'
 import { formatMoney, getErrorMessage } from '../../utils/backOfficeFormatters'
 
+const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return ''
+    const [y, m, d] = dateStr.split('-')
+    return `${d}/${m}/${y}`
+}
+
+const DateInput = ({ value, onChange, placeholder }) => {
+    const [open, setOpen] = useState(false)
+    const today = new Date()
+    const [viewDate, setViewDate] = useState(() => {
+        if (!value) return new Date(today.getFullYear(), today.getMonth(), 1)
+        const [y, m, d] = value.split('-')
+        return new Date(parseInt(y), parseInt(m) - 1, 1)
+    })
+
+    const displayValue = formatDateDisplay(value)
+
+    const getDaysInMonth = (date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
+    const getFirstDayOfMonth = (date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+
+    const days = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
+    const daysInMonth = getDaysInMonth(viewDate)
+    const firstDay = getFirstDayOfMonth(viewDate)
+
+    const prevMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))
+    const nextMonth = () => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))
+
+    const handleSelectDate = (day) => {
+        const y = viewDate.getFullYear()
+        const m = String(viewDate.getMonth() + 1).padStart(2, '0')
+        const d = String(day).padStart(2, '0')
+        onChange(`${y}-${m}-${d}`)
+        setOpen(false)
+    }
+
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
+    const monthNames = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12']
+
+    return (
+        <div className="relative h-11">
+            <input
+                className="h-full w-full cursor-pointer rounded-lg border border-slate-300 bg-white px-3 text-sm font-semibold text-slate-700"
+                type="text"
+                value={displayValue}
+                readOnly
+                placeholder={placeholder}
+                onClick={() => setOpen(true)}
+            />
+            {open && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+                    <div className="absolute left-0 top-full z-50 mt-1 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+                        <div className="mb-2 flex items-center justify-between">
+                            <button type="button" onClick={prevMonth} className="p-1 hover:bg-slate-100 rounded">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <span className="text-sm font-semibold">{monthNames[viewDate.getMonth()]} {viewDate.getFullYear()}</span>
+                            <button type="button" onClick={nextMonth} className="p-1 hover:bg-slate-100 rounded">
+                                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1 text-center">
+                            {days.map(d => <div key={d} className="text-xs font-semibold text-slate-500 py-1">{d}</div>)}
+                            {Array.from({ length: firstDay }).map((_, i) => <div key={`empty-${i}`} />)}
+                            {Array.from({ length: daysInMonth }).map((_, i) => {
+                                const day = i + 1
+                                const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                                const isSelected = value === dateStr
+                                const isToday = todayStr === dateStr
+                                return (
+                                    <button
+                                        key={day}
+                                        type="button"
+                                        onClick={() => handleSelectDate(day)}
+                                        className={`h-8 w-8 rounded-full text-sm ${isSelected ? 'bg-emerald-500 text-white' : isToday ? 'bg-emerald-100 text-emerald-700' : 'hover:bg-slate-100'}`}
+                                    >
+                                        {day}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
+
 const ManagerDashboardPage = () => {
     const [range, setRange] = useState({ from: '', to: '' })
     const [stats, setStats] = useState({ users: {}, posts: {}, revenue: {} })
@@ -39,13 +128,13 @@ const ManagerDashboardPage = () => {
 
     return (
         <BackOfficeLayout section="manager" title="Tổng quan quản lý" subtitle="Thống kê vận hành, doanh thu, giá tin đăng và hạng thành viên.">
-            <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[180px_180px_auto]" onSubmit={(event) => {
+            <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={(event) => {
                 event.preventDefault()
                 loadStats()
             }}>
-                <input className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold" type="date" value={range.from} onChange={(event) => setRange((current) => ({ ...current, from: event.target.value }))} />
-                <input className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold" type="date" value={range.to} onChange={(event) => setRange((current) => ({ ...current, to: event.target.value }))} />
-                <button className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-black text-white disabled:opacity-60" type="submit" disabled={loading}>
+                <DateInput value={range.from} onChange={(val) => setRange(r => ({ ...r, from: val }))} placeholder="dd/mm/yyyy" />
+                <DateInput value={range.to} onChange={(val) => setRange(r => ({ ...r, to: val }))} placeholder="dd/mm/yyyy" />
+                <button className="h-11 whitespace-nowrap rounded-lg bg-slate-900 px-4 text-sm font-black text-white disabled:opacity-60" type="submit" disabled={loading}>
                     {loading ? 'Đang tải...' : 'Cập nhật'}
                 </button>
             </form>

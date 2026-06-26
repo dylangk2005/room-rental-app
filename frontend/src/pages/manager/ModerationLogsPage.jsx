@@ -3,7 +3,7 @@ import { flushSync } from 'react-dom'
 import moderationApi from '../../api/moderationApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
 import { EmptyState, LoadingRows, FilterBar, StatusBadge, Pagination, Toast } from '../../components/BackOfficeParts'
-import { formatDateTime, formatRelativeTime, formatActionLabel, formatTargetType, getErrorMessage } from '../../utils/backOfficeFormatters'
+import { formatDateTime, formatActionLabel, formatTargetType, getErrorMessage } from '../../utils/backOfficeFormatters'
 import ModerationTargetDetailModal from './ModerationTargetDetailModal'
 
 const initialFilters = { moderatorId: '', moderatorName: '', moderatorEmail: '', action: '', targetType: '', targetId: '', page: 0, size: 10 }
@@ -15,7 +15,7 @@ const normalizeFilters = (filters) => ({
 })
 
 const actionFilters = [
-    { value: '', label: 'Tất cả' },
+    { value: '', label: 'Tất cả hành động' },
     { value: 'ACCEPT_POST', label: 'Duyệt tin' },
     { value: 'REJECT_POST', label: 'Từ chối tin' },
     { value: 'HIDDEN_POST', label: 'Ẩn tin' },
@@ -27,7 +27,7 @@ const actionFilters = [
 ]
 
 const targetTypeFilters = [
-    { value: '', label: 'Tất cả' },
+    { value: '', label: 'Tất cả đối tượng' },
     { value: 'POST', label: 'Tin đăng' },
     { value: 'REPORT', label: 'Báo cáo' },
     { value: 'USER', label: 'Người dùng' },
@@ -44,57 +44,6 @@ const actionBadgeVariant = {
     LOCK_POST: 'amber',
     BAN_ACCOUNT: 'danger',
 }
-
-const LogEntry = ({ log, onDetailClick, isManager }) => (
-    <div className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-600/5">
-        {/* Content */}
-        <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge
-                    label={formatActionLabel(log.action)}
-                    variant={actionBadgeVariant[log.action] || 'neutral'}
-                />
-            </div>
-
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold text-slate-500">KDV:</span>
-                    <span className="text-xs font-bold text-slate-700">{log.moderatorName || '-'}</span>
-                </div>
-                {isManager && (
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-semibold text-slate-500">Email:</span>
-                        <span className="text-xs font-semibold text-slate-600">{log.moderatorEmail || '-'}</span>
-                    </div>
-                )}
-            </div>
-
-            {log.reason && (
-                <p className="mt-1.5 line-clamp-1 text-xs font-semibold text-slate-500">
-                    <span className="font-black text-slate-400">Lý do:</span> {log.reason}
-                </p>
-            )}
-        </div>
-
-        {/* Target */}
-        <div className="shrink-0">
-            {log.targetType && log.targetId ? (
-                <button
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 transition-all duration-150 hover:scale-[1.03] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 active:scale-[0.98]"
-                    type="button"
-                    onClick={() => onDetailClick(log)}
-                >
-                    <span className="text-[10px] font-black uppercase text-slate-400">{formatTargetType(log.targetType)}</span>
-                    <span className="font-black">#{log.targetId}</span>
-                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
-                </button>
-            ) : (
-                <span className="text-xs font-semibold text-slate-400">-</span>
-            )}
-            <p className="mt-1 text-right text-[11px] font-semibold text-slate-400">{formatDateTime(log.createdAt)}</p>
-        </div>
-    </div>
-)
 
 const ModerationLogsPage = () => {
     const [filters, setFilters] = useState(initialFilters)
@@ -190,18 +139,66 @@ const ModerationLogsPage = () => {
 
             {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
-            {/* Log list */}
-            <div className="space-y-3">
+            {/* Log table */}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 {loading ? (
-                    <LoadingRows rows={5} />
+                    <div className="p-4"><LoadingRows rows={5} /></div>
                 ) : pageData.logs.length === 0 ? (
                     <EmptyState message="Chưa có nhật ký kiểm duyệt." />
                 ) : (
-                    pageData.logs.map((log) => (
-                        <LogEntry key={log.id} log={log} onDetailClick={openTargetDetail} isManager />
-                    ))
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50 text-left text-xs font-black uppercase text-slate-500">
+                                <tr>
+                                    <th className="px-4 py-3">Người thao tác</th>
+                                    <th className="px-4 py-3">Thao tác</th>
+                                    <th className="px-4 py-3">Đối tượng</th>
+                                    <th className="px-4 py-3">Lý do</th>
+                                    <th className="px-4 py-3">Thời gian</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {pageData.logs.map((log) => (
+                                    <tr
+                                        key={log.id}
+                                        className="cursor-pointer transition-colors hover:bg-slate-50"
+                                        onClick={() => openTargetDetail(log)}
+                                    >
+                                        <td className="px-4 py-3">
+                                            <p className="font-bold text-slate-950">{log.moderatorName || '-'}</p>
+                                            <p className="text-xs text-slate-500">{log.moderatorEmail || '-'}</p>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <StatusBadge
+                                                label={formatActionLabel(log.action)}
+                                                variant={actionBadgeVariant[log.action] || 'neutral'}
+                                            />
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {log.targetType && log.targetId ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
+                                                        {formatTargetType(log.targetType)}
+                                                    </span>
+                                                    <span className="font-bold text-slate-600">#{log.targetId}</span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-400">-</span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 max-w-xs">
+                                            <p className="line-clamp-2 text-slate-600">{log.reason || '-'}</p>
+                                        </td>
+                                        <td className="px-4 py-3 whitespace-nowrap text-slate-600">
+                                            {formatDateTime(log.createdAt)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-            </div>
+            </section>
 
             <Pagination pageInfo={pageData} onPageChange={(page) => {
                 const next = { ...filters, page }

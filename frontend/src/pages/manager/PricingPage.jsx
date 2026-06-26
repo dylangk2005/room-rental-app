@@ -187,7 +187,7 @@ const PostTypeCard = ({ type, onEdit }) => {
                             )}
                             {isUppercase && (
                                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-bold uppercase tracking-wider text-slate-600">
-                                    UPPERCASE
+                                    In hoa tiêu đề
                                 </span>
                             )}
                         </div>

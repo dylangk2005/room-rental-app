@@ -27,15 +27,15 @@ const accountLinks = [
 
 const getBackOfficeLinks = (role) => {
     if (role === 'ADMIN') {
-        return [{ label: 'Dashboard', to: ROUTES.ADMIN_DASHBOARD }]
+        return [{ label: 'Đi tới dashboard', to: ROUTES.ADMIN_DASHBOARD, highlight: true }]
     }
 
     if (role === 'MANAGER') {
-        return [{ label: 'Dashboard', to: ROUTES.MANAGER_DASHBOARD }]
+        return [{ label: 'Đi tới dashboard', to: ROUTES.MANAGER_DASHBOARD, highlight: true }]
     }
 
     if (role === 'MODERATOR') {
-        return [{ label: 'Dashboard', to: ROUTES.MANAGER_MODERATION_POSTS }]
+        return [{ label: 'Đi tới dashboard', to: ROUTES.MANAGER_MODERATION_POSTS, highlight: true }]
     }
 
     return []
@@ -525,7 +525,9 @@ const AppHeader = () => {
                                         <div className="max-h-96 overflow-y-auto p-2">
                                             {[...getBackOfficeLinks(user.role), ...accountLinks].map((item) => (
                                                 <Link
-                                                    className="flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700"
+                                                    className={item.highlight
+                                                        ? 'mb-1 flex min-h-10 items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-100'
+                                                        : 'flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700'}
                                                     key={item.to}
                                                     to={item.to}
                                                     onClick={() => setIsMenuOpen(false)}

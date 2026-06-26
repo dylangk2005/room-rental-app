@@ -6,7 +6,7 @@ import SafeImage from '../../components/common/SafeImage'
 import { EmptyState, LoadingRows, FilterBar, StatusBadge, ActionButton, Pagination, Toast } from '../../components/BackOfficeParts'
 import { formatDateTime, formatRelativeTime, getErrorMessage, getAvatarUrl, formatStatusLabel } from '../../utils/backOfficeFormatters'
 
-const initialPenalty = { user: null, action: 'NONE', reason: '', lockDays: 7 }
+const initialPenalty = { user: null, action: 'NONE', reason: '', lockDays: 7, hasTimedBan: false }
 
 const penaltyOptions = [
     { value: 'NONE', label: 'Không xử phạt', description: 'Gỡ tất cả hình phạt hiện tại', variant: 'neutral' },
@@ -99,6 +99,9 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
     const activePenalties = getActivePenalties(penalty.user)
     const historyPenalties = penalty.historyPenalties || []
     const isPermanentBan = penalty.isPermanentBan
+    const displayPenaltyOptions = penalty.hasTimedBan
+        ? penaltyOptions.filter(o => o.value === 'NONE' || o.value === 'BAN_FOREVER')
+        : penaltyOptions
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-3 py-6">
@@ -152,24 +155,12 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
                         </div>
                     )}
 
-                    {/* Permanent ban warning */}
-                    {isPermanentBan && (
-                        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
-                            <p className="flex items-start gap-2 text-sm font-bold text-red-800">
-                                <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-                                </svg>
-                                Tài khoản này đã bị ban vĩnh viễn. Không thể ghi đè hoặc thay đổi.
-                            </p>
-                        </div>
-                    )}
-
                     {/* Penalty type */}
                     {!isPermanentBan && (
                         <div>
                             <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Hình thức xử phạt</h3>
                             <div className="space-y-2">
-                                {penaltyOptions.map((option) => (
+                                {displayPenaltyOptions.map((option) => (
                                     <label
                                         key={option.value}
                                         className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all ${
@@ -487,12 +478,14 @@ const ModeratorUsersPage = () => {
     const handlePenaltyActionChange = (user) => {
         const activePenalties = getActivePenalties(user)
         const hasPermanentBan = activePenalties.some(p => p.type === 'BAN_ACCOUNT' && !p.endDate)
+        const hasTimedBan = activePenalties.some(p => p.type === 'BAN_ACCOUNT' && p.endDate)
 
         setPenalty({
             ...initialPenalty,
             user,
             action: 'NONE',
             isPermanentBan: hasPermanentBan,
+            hasTimedBan: hasTimedBan,
             historyPenalties: user.penalties || []
         })
     }

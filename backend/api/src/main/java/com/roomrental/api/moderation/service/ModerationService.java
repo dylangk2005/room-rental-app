@@ -18,6 +18,8 @@ public interface ModerationService {
 
     AdminUserPageResponse getNormalUsers(User.UserStatus status, String keyword, int page, int size);
 
+    AdminUserPageResponse getUserDetail(Integer userId);
+
     void banUser(Integer moderatorId, Integer userId, BanUserRequest request);
     void clearUserPenalties(Integer moderatorId, Integer userId);
 }

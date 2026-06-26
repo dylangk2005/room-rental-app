@@ -13,22 +13,25 @@ import org.springframework.data.repository.query.Param;
 public interface UserPenaltyRepository extends JpaRepository<UserPenalty, Integer> {
      Page<UserPenalty> findByUserId(Integer userId, Pageable pageable);
 
-     List<UserPenalty> findByUserIdAndTypeInAndEndDateAfter(
-             Integer userId,
-             List<UserPenalty.PenaltyType> types,
-             LocalDateTime now
-     );
+    List<UserPenalty> findByUserIdAndTypeInAndEndDateAfterAndIsActiveTrue(
+            Integer userId,
+            List<UserPenalty.PenaltyType> types,
+            LocalDateTime now
+    );
 
-     @Query("""
-          SELECT p FROM UserPenalty p
-          WHERE p.user.id = :userId
-            AND (p.endDate IS NULL OR p.endDate > :now)
-          ORDER BY p.createdAt DESC
-     """)
-     List<UserPenalty> findActiveByUserId(
-             @Param("userId") Integer userId,
-             @Param("now") LocalDateTime now
-     );
+    @Query("""
+         SELECT p FROM UserPenalty p
+         WHERE p.user.id = :userId
+           AND p.isActive = true
+           AND (p.endDate IS NULL OR p.endDate > :now)
+         ORDER BY p.createdAt DESC
+    """)
+    List<UserPenalty> findActiveByUserId(
+            @Param("userId") Integer userId,
+            @Param("now") LocalDateTime now
+    );
+
+    List<UserPenalty> findByUserIdOrderByCreatedAtDesc(Integer userId);
 
      void deleteByUserIdAndTypeIn(Integer userId, List<UserPenalty.PenaltyType> types);
 
@@ -38,6 +41,7 @@ public interface UserPenaltyRepository extends JpaRepository<UserPenalty, Intege
           SELECT COUNT(p) FROM UserPenalty p
           WHERE p.user.id = :userId
             AND p.type = :type
+            AND p.isActive = true
             AND (p.endDate IS NULL OR p.endDate > :now)
      """)
      long countActivePenalties(

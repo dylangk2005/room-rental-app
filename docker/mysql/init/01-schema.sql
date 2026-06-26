@@ -57,9 +57,12 @@ CREATE TABLE IF NOT EXISTS user_penalties (
     reason TEXT,
     start_date TIMESTAMP NULL,
     end_date TIMESTAMP NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     user_id INT,
-    CONSTRAINT fk_user_penalties_user FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_user_penalties_user FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_user_penalties_user_id (user_id),
+    INDEX idx_user_penalties_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS deposits (

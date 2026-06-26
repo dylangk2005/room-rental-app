@@ -514,7 +514,7 @@ public class PostServiceImpl implements PostService {
             throw AppException.forbidden("Tài khoản của bạn đã bị khóa");
         }
 
-        boolean locked = !userPenaltyRepository.findByUserIdAndTypeInAndEndDateAfter(
+        boolean locked = !userPenaltyRepository.findByUserIdAndTypeInAndEndDateAfterAndIsActiveTrue(
                 user.getId(),
                 List.of(UserPenalty.PenaltyType.LOCK_POST),
                 LocalDateTime.now()

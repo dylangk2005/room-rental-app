@@ -270,6 +270,22 @@ public class ModerationServiceImpl implements ModerationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AdminUserPageResponse getUserDetail(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        AdminUserResponse response = mapUserResponseWithPenalties(user);
+
+        return AdminUserPageResponse.builder()
+                .users(List.of(response))
+                .currentPage(0)
+                .totalPages(1)
+                .totalElements(1)
+                .build();
+    }
+
+    @Override
     @Transactional
     public void banUser(Integer moderatorId, Integer userId, BanUserRequest request) {
         User user = userRepository.findById(userId)
@@ -296,6 +312,7 @@ public class ModerationServiceImpl implements ModerationService {
         penalty.setReason(request.getReason());
         penalty.setStartDate(now);
         penalty.setCreatedAt(now);
+        penalty.setIsActive(true);
 
         if (request.getType() == UserPenalty.PenaltyType.LOCK_POST) {
             penalty.setEndDate(now.plusDays(request.getDurationDays()));
@@ -350,8 +367,10 @@ public class ModerationServiceImpl implements ModerationService {
             return;
         }
 
+        // Mark penalties as inactive instead of deleting
         if (!activePenalties.isEmpty()) {
-            userPenaltyRepository.deleteAll(activePenalties);
+            activePenalties.forEach(p -> p.setIsActive(false));
+            userPenaltyRepository.saveAll(activePenalties);
         }
 
         if (wasBanned) {
@@ -391,6 +410,24 @@ public class ModerationServiceImpl implements ModerationService {
                 .build();
     }
 
+    private AdminUserResponse mapUserResponseWithPenalties(User user) {
+        List<UserPenalty> allPenalties = userPenaltyRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        return AdminUserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
+                .role(user.getRole() != null ? user.getRole().getName() : null)
+                .avatar(user.getAvatar())
+                .createdAt(user.getCreatedAt())
+                .activePenalties(allPenalties.stream()
+                        .map(this::mapActivePenalty)
+                        .toList())
+                .build();
+    }
+
     private AdminUserResponse.ActivePenaltyResponse mapActivePenalty(UserPenalty penalty) {
         return AdminUserResponse.ActivePenaltyResponse.builder()
                 .id(penalty.getId())
@@ -398,6 +435,7 @@ public class ModerationServiceImpl implements ModerationService {
                 .reason(penalty.getReason())
                 .startDate(penalty.getStartDate())
                 .endDate(penalty.getEndDate())
+                .isActive(penalty.getIsActive())
                 .createdAt(penalty.getCreatedAt())
                 .build();
     }

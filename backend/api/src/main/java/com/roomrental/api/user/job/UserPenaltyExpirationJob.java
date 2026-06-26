@@ -21,6 +21,8 @@ public class UserPenaltyExpirationJob {
         LocalDateTime now = LocalDateTime.now();
 
         userPenaltyRepository.findByTypeAndEndDateBefore(UserPenalty.PenaltyType.BAN_ACCOUNT, now)
+                .stream()
+                .filter(p -> p.getIsActive() == null || p.getIsActive())
                 .forEach((penalty) -> {
                     User user = penalty.getUser();
                     if (user == null || user.getStatus() != User.UserStatus.BANNED) {

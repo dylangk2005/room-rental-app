@@ -11,6 +11,7 @@ const moderationApi = {
     approvePost: (id) => axiosClient.put(`/moderation/posts/${id}/approve`),
     rejectPost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/reject`, { reason }),
     getUsers: (params = {}) => axiosClient.get('/moderation/users', { params: cleanParams(params) }),
+    getUserDetail: (id) => axiosClient.get(`/moderation/users/${id}`),
     banUser: (id, payload) => axiosClient.put(`/moderation/users/${id}/ban`, payload),
     clearUserPenalties: (id) => axiosClient.put(`/moderation/users/${id}/penalties/clear`),
     getMyLogs: (params = {}) => axiosClient.get('/moderation-logs/my-history', { params: cleanParams(params) }),

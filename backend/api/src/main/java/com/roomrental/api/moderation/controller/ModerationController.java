@@ -95,4 +95,12 @@ public class ModerationController {
                 moderationService.getNormalUsers(status, keyword, page, size)
         ));
     }
+
+    @GetMapping("/users/{id}")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<AdminUserPageResponse>> getUserDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                moderationService.getUserDetail(id)
+        ));
+    }
 }

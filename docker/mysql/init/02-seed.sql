@@ -56,10 +56,10 @@ VALUES
 (9, 'Hoang Van Duc', 'duc.hoang@gmail.com', @seed_password, '0909999999', NULL, 'ACTIVE', 1200000, 4500000, '2024-03-20 07:00:00', 4, 3, FALSE),
 (10, 'Bui Thi Thuy', 'thuy.bui@gmail.com', @seed_password, '0910000000', 'https://picsum.photos/seed/thuy/240/240', 'ACTIVE', 650000, 600000, '2024-04-10 10:30:00', 4, 2, FALSE);
 
-INSERT INTO user_penalties (id, type, reason, start_date, end_date, created_at, user_id) VALUES
-(1, 'WARNING', 'Đăng tin với thông tin giá thuê không chính xác', '2024-05-01 09:00:00', NULL, '2024-05-01 09:00:00', 7),
-(2, 'LOCK_POST', 'Đăng tin trùng lặp nhiều lần trong ngày', '2024-05-10 10:00:00', '2024-05-17 10:00:00', '2024-05-10 10:00:00', 9),
-(3, 'BAN_ACCOUNT', 'Lừa đảo người thuê, nhận tiền cọc rồi bỏ trốn', '2024-06-01 08:00:00', NULL, '2024-06-01 08:00:00', 8);
+INSERT INTO user_penalties (id, type, reason, start_date, end_date, is_active, created_at, user_id) VALUES
+(1, 'WARNING', 'Đăng tin với thông tin giá thuê không chính xác', '2024-05-01 09:00:00', NULL, TRUE, '2024-05-01 09:00:00', 7),
+(2, 'LOCK_POST', 'Đăng tin trùng lặp nhiều lần trong ngày', '2024-05-10 10:00:00', '2024-05-17 10:00:00', TRUE, '2024-05-10 10:00:00', 9),
+(3, 'BAN_ACCOUNT', 'Lừa đảo người thuê, nhận tiền cọc rồi bỏ trốn', '2024-06-01 08:00:00', NULL, TRUE, '2024-06-01 08:00:00', 8);
 
 INSERT INTO deposits
 (id, amount, tax, net_amount, method, status, transaction_ref, gateway_transaction_no, opening_balance, closing_balance, note, created_at, user_id)

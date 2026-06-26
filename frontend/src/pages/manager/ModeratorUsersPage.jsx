@@ -39,74 +39,55 @@ const getActivePenalties = (user) => user?.activePenalties || []
 
 const formatPenaltyLabel = (penalty) => {
     const label = penaltyLabel[penalty.type] || penalty.type || 'Hình phạt'
-    return penalty.endDate ? `${label} — ${formatDateTime(penalty.endDate)}` : label
+    return penalty.startDate ? `${label} — ${formatDateTime(penalty.startDate)}` : label
 }
 
 const SearchIcon = () => (
-    <svg className="h-4 w-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="h-4 w-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
     </svg>
 )
 
-const UserCard = ({ user, onPenaltyClick }) => {
+const UserCard = ({ user, onPenaltyClick, onDetailClick }) => {
     const activePenalties = getActivePenalties(user)
     const statusVariant = user.status === 'ACTIVE' ? 'success' : user.status === 'BANNED' ? 'danger' : 'neutral'
 
     return (
-        <div className="group rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-600/5">
-            <div className="flex items-start gap-4">
+        <div className="group rounded-2xl border border-slate-200 bg-white transition-all duration-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-600/5">
+            {/* Main info row */}
+            <div className="flex items-center gap-4 p-4">
                 {/* Avatar */}
                 <SafeImage
-                    className="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm"
+                    className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm"
                     src={user.avatar}
-                    fallbackSrc={getAvatarUrl(user.fullName, 96)}
+                    fallbackSrc={getAvatarUrl(user.fullName, 80)}
                     alt={user.fullName}
                 />
 
-                {/* Info */}
+                {/* Info columns */}
                 <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                        <div>
-                            <p className="text-base font-black text-slate-950">{user.fullName}</p>
-                            <p className="mt-0.5 text-xs font-semibold text-slate-500">{user.email}</p>
-                            <p className="text-xs font-semibold text-slate-400">{user.phoneNumber}</p>
-                        </div>
-                        <StatusBadge label={formatStatusLabel(user.status)} variant={statusVariant} />
-                    </div>
+                    <p className="text-sm font-black text-slate-950 truncate">{user.fullName}</p>
+                    <p className="text-xs font-semibold text-slate-500 truncate">{user.email}</p>
+                    <p className="text-xs font-semibold text-slate-400">{user.phoneNumber || '—'}</p>
+                </div>
 
-                    {/* Penalties */}
-                    {activePenalties.length > 0 ? (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                            {activePenalties.map((item) => (
-                                <span
-                                    key={item.id}
-                                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-black ${
-                                        item.type === 'WARNING' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
-                                        item.type === 'LOCK_POST' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
-                                        'bg-red-50 text-red-700 ring-1 ring-red-200'
-                                    }`}
-                                    title={item.reason || ''}
-                                >
-                                    {penaltyLabel[item.type] || item.type}
-                                    {item.endDate && <span className="opacity-70"> — {formatRelativeTime(item.endDate)}</span>}
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="mt-2 text-xs font-semibold text-emerald-600">Không có hình phạt</p>
-                    )}
+                {/* Status */}
+                <StatusBadge label={formatStatusLabel(user.status)} variant={statusVariant} />
 
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                        <p className="text-[11px] font-semibold text-slate-400">
-                            Tham gia: {formatRelativeTime(user.createdAt)}
-                        </p>
-                        <ActionButton
-                            label="Xử phạt"
-                            variant="secondary"
-                            onClick={() => onPenaltyClick(user)}
-                            className="h-8 px-3 text-xs opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-                        />
-                    </div>
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                    <ActionButton
+                        label="Chi tiết"
+                        variant="secondary"
+                        onClick={() => onDetailClick(user)}
+                        className="h-8 px-3 text-xs shrink-0"
+                    />
+                    <ActionButton
+                        label="Xử phạt"
+                        variant="secondary"
+                        onClick={() => onPenaltyClick(user)}
+                        className="h-8 px-3 text-xs shrink-0"
+                    />
                 </div>
             </div>
         </div>
@@ -116,6 +97,8 @@ const UserCard = ({ user, onPenaltyClick }) => {
 const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty }) => {
     const isClearing = penalty.action === 'NONE'
     const activePenalties = getActivePenalties(penalty.user)
+    const historyPenalties = penalty.historyPenalties || []
+    const isPermanentBan = penalty.isPermanentBan
 
     return (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-3 py-6">
@@ -147,13 +130,14 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
                 </div>
 
                 <div className="space-y-4 p-5">
-                    {/* Current penalties */}
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                        <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Hình phạt hiện tại</h3>
-                        {activePenalties.length > 0 ? (
-                            <div className="mt-3 space-y-2">
-                                {activePenalties.map((item) => (
-                                    <div key={item.id} className="flex items-center justify-between rounded-lg bg-white p-3 ring-1 ring-slate-200">
+                    {/* Active penalty */}
+                    {activePenalties.length > 0 && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Hình phạt hiện tại</h3>
+                            {(() => {
+                                const item = activePenalties[0]
+                                return (
+                                    <div className="mt-3 flex items-center justify-between rounded-lg bg-white p-3 ring-1 ring-slate-200">
                                         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-black ${
                                             item.type === 'WARNING' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
                                             item.type === 'LOCK_POST' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
@@ -163,51 +147,84 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
                                         </span>
                                         <span className="text-xs font-semibold text-slate-500">{formatPenaltyLabel(item)}</span>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="mt-2 text-sm font-semibold text-slate-400">Không có hình phạt hiện tại</p>
-                        )}
-                    </div>
+                                )
+                            })()}
+                        </div>
+                    )}
+
+                    {/* Permanent ban warning */}
+                    {isPermanentBan && (
+                        <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+                            <p className="flex items-start gap-2 text-sm font-bold text-red-800">
+                                <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="12" cy="12" r="10" /><line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                                </svg>
+                                Tài khoản này đã bị ban vĩnh viễn. Không thể ghi đè hoặc thay đổi.
+                            </p>
+                        </div>
+                    )}
 
                     {/* Penalty type */}
-                    <div>
-                        <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Hình thức xử phạt</h3>
-                        <div className="space-y-2">
-                            {penaltyOptions.map((option) => (
-                                <label
-                                    key={option.value}
-                                    className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all hover:scale-[1.01] ${
-                                        penalty.action === option.value
-                                            ? option.variant === 'danger'
-                                                ? 'border-red-300 bg-red-50 ring-2 ring-red-200'
-                                                : option.variant === 'amber'
-                                                  ? 'border-orange-300 bg-orange-50 ring-2 ring-orange-200'
-                                                  : option.variant === 'warning'
-                                                    ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200'
-                                                    : 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200'
-                                            : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                                    }`}
-                                >
-                                    <input
-                                        type="radio"
-                                        name="penaltyAction"
-                                        value={option.value}
-                                        checked={penalty.action === option.value}
-                                        onChange={() => setPenalty((p) => ({ ...p, action: option.value, reason: option.value === 'NONE' ? '' : p.reason }))}
-                                        className="accent-emerald-600"
-                                    />
-                                    <div className="flex-1">
-                                        <p className="text-sm font-black text-slate-950">{option.label}</p>
-                                        <p className="text-xs font-semibold text-slate-500">{option.description}</p>
-                                    </div>
-                                </label>
-                            ))}
+                    {!isPermanentBan && (
+                        <div>
+                            <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Hình thức xử phạt</h3>
+                            <div className="space-y-2">
+                                {penaltyOptions.map((option) => (
+                                    <label
+                                        key={option.value}
+                                        className={`flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-all ${
+                                            penalty.action === option.value
+                                                ? option.variant === 'danger'
+                                                    ? 'border-red-300 bg-red-50 ring-2 ring-red-200'
+                                                    : option.variant === 'amber'
+                                                      ? 'border-orange-300 bg-orange-50 ring-2 ring-orange-200'
+                                                      : option.variant === 'warning'
+                                                        ? 'border-amber-300 bg-amber-50 ring-2 ring-amber-200'
+                                                        : 'border-emerald-300 bg-emerald-50 ring-2 ring-emerald-200'
+                                                : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                                        }`}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="penaltyAction"
+                                            value={option.value}
+                                            checked={penalty.action === option.value}
+                                            onChange={() => setPenalty((p) => ({ ...p, action: option.value, reason: option.value === 'NONE' ? '' : p.reason }))}
+                                            className="accent-emerald-600"
+                                        />
+                                        <div className="flex-1">
+                                            <p className="text-sm font-black text-slate-950">{option.label}</p>
+                                            <p className="text-xs font-semibold text-slate-500">{option.description}</p>
+                                        </div>
+                                    </label>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Only NONE option for permanent ban */}
+                    {isPermanentBan && (
+                        <div>
+                            <h3 className="mb-2 text-xs font-black uppercase tracking-wide text-slate-500">Hình thức xử phạt</h3>
+                            <label className={`flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-300 bg-emerald-50 p-4 ring-2 ring-emerald-200`}>
+                                <input
+                                    type="radio"
+                                    name="penaltyAction"
+                                    value="NONE"
+                                    checked={penalty.action === 'NONE'}
+                                    onChange={() => setPenalty((p) => ({ ...p, action: 'NONE' }))}
+                                    className="accent-emerald-600"
+                                />
+                                <div className="flex-1">
+                                    <p className="text-sm font-black text-slate-950">Không xử phạt</p>
+                                    <p className="text-xs font-semibold text-slate-500">Gỡ tất cả hình phạt hiện tại</p>
+                                </div>
+                            </label>
+                        </div>
+                    )}
 
                     {/* Clearing warning */}
-                    {isClearing && activePenalties.length > 0 && (
+                    {isClearing && activePenalties.length > 0 && !isPermanentBan && (
                         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
                             <p className="flex items-start gap-2 text-sm font-bold text-amber-800">
                                 <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -216,6 +233,30 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
                                 </svg>
                                 Thao tác này sẽ gỡ tất cả hình phạt hiện tại. Nếu tài khoản đang bị cấm, trạng thái sẽ được chuyển về Hoạt động.
                             </p>
+                        </div>
+                    )}
+
+                    {/* Penalty history */}
+                    {historyPenalties.length > 0 && (
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                            <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Lịch sử xử phạt</h3>
+                            <div className="mt-3 space-y-2">
+                                {historyPenalties.map((item) => (
+                                    <div key={item.id} className="flex items-center justify-between rounded-lg bg-white p-3 ring-1 ring-slate-200">
+                                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-black ${
+                                            item.type === 'WARNING' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                            item.type === 'LOCK_POST' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                            'bg-red-50 text-red-700 ring-1 ring-red-200'
+                                        }`}>
+                                            {penaltyLabel[item.type] || item.type}
+                                        </span>
+                                        <div className="text-right">
+                                            <span className="text-xs font-semibold text-slate-500">{formatPenaltyLabel(item)}</span>
+                                            {item.reason && <p className="text-[10px] text-slate-400 mt-0.5">{item.reason}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -274,10 +315,114 @@ const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty })
     )
 }
 
+const UserDetailModal = ({ user, onClose }) => {
+    const [detail, setDetail] = useState(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchDetail = async () => {
+            setLoading(true)
+            try {
+                const response = await moderationApi.getUserDetail(user.id)
+                setDetail(response.data.users[0])
+            } catch (error) {
+                console.error('Failed to load user detail:', error)
+            } finally {
+                setLoading(false)
+            }
+        }
+        fetchDetail()
+    }, [user.id])
+
+    const displayUser = detail || user
+    const penalties = displayUser.activePenalties || []
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-3 py-6">
+            <div className="w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 p-5">
+                    <h2 className="text-xl font-black text-slate-950">Chi tiết người dùng</h2>
+                    <button
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-xl font-black text-slate-400 transition-all hover:scale-105 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95"
+                        type="button"
+                        onClick={onClose}
+                    >×</button>
+                </div>
+
+                <div className="space-y-4 p-5">
+                    {loading ? (
+                        <div className="flex items-center justify-center py-8">
+                            <div className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-600 border-t-transparent"></div>
+                        </div>
+                    ) : (
+                        <>
+                            {/* User info */}
+                            <div className="flex items-center gap-4">
+                                <SafeImage
+                                    className="h-16 w-16 shrink-0 rounded-xl object-cover shadow-sm"
+                                    src={displayUser.avatar}
+                                    fallbackSrc={getAvatarUrl(displayUser.fullName, 128)}
+                                    alt={displayUser.fullName}
+                                />
+                                <div>
+                                    <p className="text-lg font-black text-slate-950">{displayUser.fullName}</p>
+                                    <p className="text-sm font-semibold text-slate-500">{displayUser.email}</p>
+                                    <p className="text-sm font-semibold text-slate-400">{displayUser.phoneNumber || '—'}</p>
+                                </div>
+                            </div>
+
+                            {/* Status */}
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-xs font-black uppercase tracking-wide text-slate-500">Trạng thái</span>
+                                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
+                                        displayUser.status === 'ACTIVE' ? 'bg-green-100 text-green-700' :
+                                        displayUser.status === 'BANNED' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'
+                                    }`}>
+                                        {formatStatusLabel(displayUser.status)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Penalty history */}
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                                <h3 className="text-xs font-black uppercase tracking-wide text-slate-500">Lịch sử xử phạt</h3>
+                                {penalties.length > 0 ? (
+                                    <div className="mt-3 space-y-2">
+                                        {penalties.map((item) => (
+                                            <div key={item.id} className="flex items-center justify-between rounded-lg bg-white p-3 ring-1 ring-slate-200">
+                                                <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-black ${
+                                                    item.type === 'WARNING' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                                    item.type === 'LOCK_POST' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                                    'bg-red-50 text-red-700 ring-1 ring-red-200'
+                                                }`}>
+                                                    {penaltyLabel[item.type] || item.type}
+                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-xs font-semibold text-slate-500">{formatPenaltyLabel(item)}</span>
+                                                    {item.reason && <p className="text-[10px] text-slate-400 mt-0.5">{item.reason}</p>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="mt-2 text-sm font-semibold text-slate-400">Không có lịch sử xử phạt</p>
+                                )}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 const ModeratorUsersPage = () => {
     const [filters, setFilters] = useState({ keyword: '', status: '', page: 0, size: 10 })
     const [pageData, setPageData] = useState({ users: [], currentPage: 0, totalPages: 0, totalElements: 0 })
     const [penalty, setPenalty] = useState(initialPenalty)
+    const [detailUser, setDetailUser] = useState(null)
     const [loading, setLoading] = useState(false)
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState(null)
@@ -339,24 +484,23 @@ const ModeratorUsersPage = () => {
         }
     }
 
-    const handlePenaltyActionChange = (user, action) => {
-        if (action === 'NONE') {
-            if (getActivePenalties(user).length > 0) {
-                setPenalty({ ...initialPenalty, user, action })
-                return
-            }
-            setPenalty(initialPenalty)
-            return
-        }
-        if (!action) { setPenalty(initialPenalty); return }
-        setPenalty({ ...initialPenalty, user, action })
+    const handlePenaltyActionChange = (user) => {
+        const activePenalties = getActivePenalties(user)
+        const hasPermanentBan = activePenalties.some(p => p.type === 'BAN_ACCOUNT' && !p.endDate)
+
+        setPenalty({
+            ...initialPenalty,
+            user,
+            action: 'NONE',
+            isPermanentBan: hasPermanentBan,
+            historyPenalties: user.penalties || []
+        })
     }
 
     const statusTabs = [
         { value: '', label: 'Tất cả' },
-        { value: 'ACTIVE', label: 'Hoạt động' },
-        { value: 'INACTIVE', label: 'Không hoạt động' },
-        { value: 'BANNED', label: 'Bị cấm' },
+        { value: 'ACTIVE', label: 'Đang hoạt động' },
+        { value: 'BANNED', label: 'Ban tài khoản' },
     ]
 
     return (
@@ -426,7 +570,8 @@ const ModeratorUsersPage = () => {
                         <UserCard
                             key={user.id}
                             user={user}
-                            onPenaltyClick={(u) => handlePenaltyActionChange(u, 'WARNING')}
+                            onPenaltyClick={(u) => handlePenaltyActionChange(u)}
+                            onDetailClick={(u) => setDetailUser(u)}
                         />
                     ))
                 )}
@@ -448,6 +593,13 @@ const ModeratorUsersPage = () => {
                     onSubmit={submitPenalty}
                     saving={saving}
                     initialPenalty={initialPenalty}
+                />
+            )}
+
+            {detailUser && (
+                <UserDetailModal
+                    user={detailUser}
+                    onClose={() => setDetailUser(null)}
                 />
             )}
         </BackOfficeLayout>

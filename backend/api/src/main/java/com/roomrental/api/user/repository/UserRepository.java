@@ -73,4 +73,24 @@ public interface UserRepository extends JpaRepository <User, Integer>{
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.role r
+    WHERE (:status IS NULL OR u.status = :status)
+      AND (:role IS NULL OR r.name = :role)
+      AND (:from IS NULL OR u.createdAt >= :from)
+      AND (:to IS NULL OR u.createdAt <= :to)
+      AND (:keyword IS NULL
+           OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR u.phoneNumber LIKE CONCAT('%', :keyword, '%'))
+""")
+    List<User> findForExport(
+            @Param("status") User.UserStatus status,
+            @Param("role") String role,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("keyword") String keyword
+    );
 }

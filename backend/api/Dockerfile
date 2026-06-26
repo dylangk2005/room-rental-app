@@ -11,6 +11,8 @@ RUN mvn -DskipTests package
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 
+ENV JAVA_TOOL_OPTIONS="-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends default-mysql-client \
     && rm -rf /var/lib/apt/lists/*

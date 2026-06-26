@@ -1,8 +1,6 @@
 package com.roomrental.api.payment.repository;
 
 import com.roomrental.api.payment.entity.Payment;
-import com.roomrental.api.post.entity.Post;
-import com.roomrental.api.user.entity.User;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +32,21 @@ public interface PaymentRepository extends JpaRepository<Payment, Integer> {
 """)
     BigDecimal sumFinalFeeByTypesAndCreatedAtBetween(
             @Param("types") List<Payment.PaymentType> types,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to
+    );
+
+    @Query("""
+    SELECT p FROM Payment p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.post
+    WHERE (:paymentType IS NULL OR p.paymentType = :paymentType)
+      AND (:from IS NULL OR p.createdAt >= :from)
+      AND (:to IS NULL OR p.createdAt <= :to)
+    ORDER BY p.createdAt DESC
+""")
+    List<Payment> findForExport(
+            @Param("paymentType") Payment.PaymentType paymentType,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );

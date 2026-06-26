@@ -198,4 +198,28 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
     );
+
+    @Query("""
+    SELECT p FROM Post p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.postType
+    LEFT JOIN FETCH p.provinceRef
+    LEFT JOIN FETCH p.districtRef
+    WHERE (:status IS NULL OR p.status = :status)
+      AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
+      AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+      AND (:districtId IS NULL OR p.districtRef.id = :districtId)
+      AND (:from IS NULL OR p.createdAt >= :from)
+      AND (:to IS NULL OR p.createdAt <= :to)
+      AND (:keyword IS NULL OR CAST(p.id AS string) LIKE %:keyword% OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+""")
+    List<Post> findForExport(
+            @Param("status") Post.PostStatus status,
+            @Param("postTypeId") Integer postTypeId,
+            @Param("provinceId") Integer provinceId,
+            @Param("districtId") Integer districtId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("keyword") String keyword
+    );
 }

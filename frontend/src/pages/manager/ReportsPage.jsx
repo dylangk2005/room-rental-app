@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { flushSync } from 'react-dom'
 import reportApi from '../../api/reportApi'
+import managerApi from '../../api/managerApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
+import ExportModal from '../../components/ExportModal'
 import SafeImage from '../../components/common/SafeImage'
 import { EmptyState, LoadingRows, StatusBadge, ActionButton, Pagination, Toast } from '../../components/BackOfficeParts'
 import { formatDateTime, formatRelativeTime, getErrorMessage, getAvatarUrl, formatStatusLabel } from '../../utils/backOfficeFormatters'
@@ -333,6 +335,7 @@ const ReportsPage = () => {
     const [resolving, setResolving] = useState(false)
     const [resolveError, setResolveError] = useState('')
     const [toast, setToast] = useState(null)
+    const [showExportModal, setShowExportModal] = useState(false)
 
     const showToast = (type, message) => {
         setToast({ type, message })
@@ -387,25 +390,41 @@ const ReportsPage = () => {
 
     return (
         <BackOfficeLayout section="manager" title="Quản lý báo cáo" subtitle="Xem và xử lý các báo cáo từ người dùng về tin đăng vi phạm.">
-            {/* Status tabs */}
-            <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
-                {statusTabs.map((tab) => (
-                    <button
-                        key={tab.value}
-                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
-                            filters.status === tab.value
-                                ? tab.variant === 'warning' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25' :
-                                  tab.variant === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' :
-                                  tab.variant === 'danger' ? 'bg-red-600 text-white shadow-lg shadow-red-600/25' :
-                                  'bg-slate-900 text-white shadow-lg shadow-slate-900/25'
-                                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
-                        }`}
-                        type="button"
-                        onClick={() => setStatus(tab.value)}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
+            {/* Header with export button */}
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                {/* Status tabs */}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                    {statusTabs.map((tab) => (
+                        <button
+                            key={tab.value}
+                            className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
+                                filters.status === tab.value
+                                    ? tab.variant === 'warning' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25' :
+                                      tab.variant === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' :
+                                      tab.variant === 'danger' ? 'bg-red-600 text-white shadow-lg shadow-red-600/25' :
+                                      'bg-slate-900 text-white shadow-lg shadow-slate-900/25'
+                                    : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                            }`}
+                            type="button"
+                            onClick={() => setStatus(tab.value)}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+
+                <button
+                    className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700 transition-all hover:scale-[1.03] hover:bg-emerald-100 hover:shadow"
+                    type="button"
+                    onClick={() => setShowExportModal(true)}
+                >
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Xuất Excel
+                </button>
             </div>
 
             {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
@@ -436,6 +455,13 @@ const ReportsPage = () => {
                     onResolve={resolveReport}
                     resolving={resolving}
                     resolveError={resolveError}
+                />
+            )}
+
+            {showExportModal && (
+                <ExportModal
+                    onClose={() => setShowExportModal(false)}
+                    userRole="MODERATOR"
                 />
             )}
         </BackOfficeLayout>

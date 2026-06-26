@@ -1,127 +1,428 @@
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import reportApi from '../../api/reportApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
 import SafeImage from '../../components/common/SafeImage'
-import { EmptyState, LoadingRows, Message, Pagination } from '../../components/BackOfficeParts'
-import { formatDateTime, getErrorMessage } from '../../utils/backOfficeFormatters'
+import { EmptyState, LoadingRows, StatusBadge, ActionButton, Pagination, Toast } from '../../components/BackOfficeParts'
+import { formatDateTime, formatRelativeTime, getErrorMessage, getAvatarUrl, formatStatusLabel } from '../../utils/backOfficeFormatters'
 
-const statusClasses = {
-    PENDING: 'bg-amber-100 text-amber-800',
-    RESOLVED: 'bg-emerald-100 text-emerald-800',
-    REJECTED: 'bg-red-100 text-red-800',
+const FlagIcon = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" />
+    </svg>
+)
+const ImageIcon = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><circle cx="8.5" cy="8.5" r="1.5" /><polyline points="21 15 16 10 5 21" />
+    </svg>
+)
+const CheckCircleIcon = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />
+    </svg>
+)
+const XCircleIcon = ({ className }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+    </svg>
+)
+
+const statusTabs = [
+    { value: 'PENDING', label: 'Chờ xử lý', variant: 'warning' },
+    { value: '', label: 'Tất cả', variant: 'neutral' },
+]
+
+const ReportCard = ({ report, onClick }) => {
+    const badgeVariant = report.status === 'PENDING' ? 'warning' : report.status === 'RESOLVED' ? 'success' : 'danger'
+    return (
+        <button
+            className={`group w-full text-left rounded-2xl border bg-white p-4 transition-all duration-200 hover:scale-[1.01] hover:shadow-xl hover:shadow-emerald-600/5 active:scale-[0.995] ${
+                report.status === 'PENDING'
+                    ? 'border-amber-200 hover:border-amber-300'
+                    : 'border-slate-200 hover:border-emerald-200'
+            }`}
+            type="button"
+            onClick={onClick}
+        >
+            <div className="flex items-start gap-3">
+                {/* Flag icon */}
+                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                    report.status === 'PENDING' ? 'bg-amber-50 text-amber-600' :
+                    report.status === 'RESOLVED' ? 'bg-emerald-50 text-emerald-600' :
+                    'bg-red-50 text-red-600'
+                }`}>
+                    <FlagIcon className="h-5 w-5" />
+                </span>
+
+                <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                            <p className="line-clamp-1 text-sm font-black text-slate-950">{report.reason}</p>
+                            <p className="mt-0.5 line-clamp-1 text-xs font-semibold text-slate-500">{report.postTitle || 'Tin đăng không còn tồn tại'}</p>
+                        </div>
+                        <StatusBadge label={formatStatusLabel(report.status)} variant={badgeVariant} />
+                    </div>
+
+                    <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+                            <span className="flex items-center gap-1">
+                                <SafeImage
+                                    className="h-5 w-5 shrink-0 rounded-full object-cover"
+                                    src={report.reporterAvatar}
+                                    fallbackSrc={getAvatarUrl(report.reporterName, 40)}
+                                    alt={report.reporterName}
+                                />
+                                {report.reporterName}
+                            </span>
+                            <span>·</span>
+                            <span>{formatRelativeTime(report.createdAt)}</span>
+                        </div>
+                        {(report.imageCount > 0 || report.imageUrls?.length > 0) && (
+                            <span className="flex items-center gap-1 text-xs font-semibold text-slate-400">
+                                <ImageIcon className="h-3 w-3" />
+                                {(report.imageCount || report.imageUrls?.length || 0)} ảnh
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400 transition-all duration-200 group-hover:scale-110 group-hover:bg-emerald-50 group-hover:text-emerald-600">
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </span>
+            </div>
+        </button>
+    )
 }
 
-const Pill = ({ children }) => (
-    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${statusClasses[children] || 'bg-slate-100 text-slate-700'}`}>
-        {children}
-    </span>
-)
+const ReportDetailModal = ({ report, onClose, onResolve, resolving, resolveError }) => {
+    const [selectedImage, setSelectedImage] = useState(0)
+    const [postAction, setPostAction] = useState('')
+    const [resolutionNote, setResolutionNote] = useState('')
 
-const InfoBox = ({ label, value }) => (
-    <div className="rounded-lg bg-slate-50 p-3">
-        <p className="text-xs font-bold uppercase text-slate-500">{label}</p>
-        <p className="mt-1 break-words font-black text-slate-950">{value || '-'}</p>
-    </div>
-)
+    if (!report) return null
+
+    const images = report.imageUrls || []
+
+    const handleResolve = async (e) => {
+        e.preventDefault()
+        await onResolve({
+            decision: 'RESOLVED',
+            postAction: postAction || null,
+            resolutionNote,
+        })
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/60 px-3 py-4 sm:px-4 sm:py-8" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+            <style>{`
+                @keyframes modalIn { from { opacity:0; transform:scale(0.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+                .modal-animate { animation: modalIn 0.25s ease-out forwards; }
+            `}</style>
+            <div className="w-full max-w-5xl rounded-2xl bg-white shadow-2xl modal-animate" onClick={(e) => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <StatusBadge label={formatStatusLabel(report.status)} variant={
+                                report.status === 'PENDING' ? 'warning' : report.status === 'RESOLVED' ? 'success' : 'danger'
+                            } />
+                            <span className="text-sm font-bold text-slate-400">#{report.id}</span>
+                        </div>
+                        <h2 className="mt-2 text-xl font-black text-slate-950">Báo cáo: {report.reason}</h2>
+                        <p className="mt-1 text-sm font-semibold text-slate-500">{report.postTitle || 'Tin đăng không còn tồn tại'}</p>
+                    </div>
+                    <button
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-xl font-black text-slate-400 transition-all duration-150 hover:scale-105 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-600 active:scale-95"
+                        type="button"
+                        onClick={onClose}
+                    >
+                        ×
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="grid max-h-[calc(100vh-14rem)] gap-6 overflow-y-auto p-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+                    {/* Left */}
+                    <div className="space-y-5">
+                        {/* Report content */}
+                        <div className="rounded-2xl border border-red-100 bg-red-50/50 p-5">
+                            <h3 className="text-sm font-black uppercase tracking-wide text-red-700">Nội dung báo cáo</h3>
+                            <p className="mt-3 text-base font-black text-slate-950">{report.reason}</p>
+                            {report.description && (
+                                <p className="mt-3 whitespace-pre-line text-sm font-semibold leading-relaxed text-slate-600">
+                                    {report.description}
+                                </p>
+                            )}
+                            <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-400">
+                                <SafeImage
+                                    className="h-5 w-5 shrink-0 rounded-full object-cover"
+                                    src={report.reporterAvatar}
+                                    fallbackSrc={getAvatarUrl(report.reporterName, 40)}
+                                    alt={report.reporterName}
+                                />
+                                <span>Báo cáo bởi <strong className="text-slate-600">{report.reporterName}</strong></span>
+                                <span>·</span>
+                                <span>{formatDateTime(report.createdAt)}</span>
+                            </div>
+                        </div>
+
+                        {/* Evidence images */}
+                        {images.length > 0 && (
+                            <div>
+                                <h3 className="mb-3 text-sm font-black uppercase tracking-wide text-slate-500">Bằng chứng ({images.length})</h3>
+                                <div className="space-y-3">
+                                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-100">
+                                        <SafeImage
+                                            className="h-full w-full object-cover"
+                                            src={images[selectedImage]}
+                                            fallbackSrc="https://picsum.photos/seed/report-ev/800/500"
+                                            alt="Bằng chứng báo cáo"
+                                        />
+                                        {images.length > 1 && (
+                                            <>
+                                                <button
+                                                    className="absolute left-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-sm font-black text-slate-700 shadow transition-all hover:scale-110 hover:bg-white active:scale-95"
+                                                    type="button"
+                                                    onClick={() => setSelectedImage((s) => (s - 1 + images.length) % images.length)}
+                                                >‹</button>
+                                                <button
+                                                    className="absolute right-3 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-sm font-black text-slate-700 shadow transition-all hover:scale-110 hover:bg-white active:scale-95"
+                                                    type="button"
+                                                    onClick={() => setSelectedImage((s) => (s + 1) % images.length)}
+                                                >›</button>
+                                            </>
+                                        )}
+                                    </div>
+                                    {images.length > 1 && (
+                                        <div className="flex gap-2 overflow-x-auto pb-1">
+                                            {images.map((url, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border-2 transition-all duration-150 ${idx === selectedImage ? 'border-emerald-500 shadow-md' : 'border-transparent hover:border-slate-200'}`}
+                                                    type="button"
+                                                    onClick={() => setSelectedImage(idx)}
+                                                >
+                                                    <SafeImage className="h-full w-full object-cover" src={url} fallbackSrc="https://picsum.photos/seed/report-thumb/100/100" alt="" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Related post info */}
+                        {report.postId && (
+                            <div className="rounded-2xl border border-slate-200 p-4">
+                                <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Tin đăng liên quan</h3>
+                                <div className="mt-3 grid grid-cols-2 gap-3">
+                                    <div className="rounded-xl bg-slate-50 p-3">
+                                        <p className="text-xs font-bold text-slate-500">Mã tin</p>
+                                        <p className="mt-1 font-black text-slate-950">#{report.postId}</p>
+                                    </div>
+                                    <div className="rounded-xl bg-slate-50 p-3">
+                                        <p className="text-xs font-bold text-slate-500">Trạng thái tin</p>
+                                        <p className="mt-1 font-black text-slate-950">{formatStatusLabel(report.postStatus) || '-'}</p>
+                                    </div>
+                                    {report.postOwnerName && (
+                                        <div className="rounded-xl bg-slate-50 p-3">
+                                            <p className="text-xs font-bold text-slate-500">Chủ tin</p>
+                                            <p className="mt-1 font-black text-slate-950">{report.postOwnerName}</p>
+                                        </div>
+                                    )}
+                                    {report.resolutionNote && (
+                                        <div className="col-span-2 rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+                                            <p className="text-xs font-bold text-emerald-700">Kết quả xử lý</p>
+                                            <p className="mt-1 text-sm font-semibold text-emerald-800">{report.resolutionNote}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Right */}
+                    <div className="space-y-4">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Người báo cáo</h3>
+                            <div className="mt-3 space-y-2 rounded-xl bg-slate-50 p-3">
+                                <div className="flex items-center gap-2.5">
+                                    <SafeImage
+                                        className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                        src={report.reporterAvatar}
+                                        fallbackSrc={getAvatarUrl(report.reporterName, 72)}
+                                        alt={report.reporterName}
+                                    />
+                                    <div>
+                                        <p className="text-sm font-black text-slate-950">{report.reporterName || '-'}</p>
+                                        <p className="text-xs font-semibold text-slate-500">{report.reporterEmail || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Resolution form */}
+                        {report.status === 'PENDING' && (
+                            <form className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" onSubmit={handleResolve}>
+                                <h3 className="text-sm font-black uppercase tracking-wide text-slate-500">Hành động</h3>
+
+                                {resolveError && (
+                                    <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-bold text-red-700">{resolveError}</div>
+                                )}
+
+                                <div className="mt-4 space-y-2">
+                                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-3 transition-all has-[:checked]:border-emerald-400 has-[:checked]:ring-1 has-[:checked]:ring-emerald-300 has-[:checked]:bg-emerald-100">
+                                        <input type="radio" name="postAction" value="" checked={postAction === ''} onChange={(e) => setPostAction(e.target.value)} className="accent-emerald-600" />
+                                        <div className="flex items-center gap-2">
+                                            <CheckCircleIcon className="h-4 w-4 text-emerald-600" />
+                                            <span className="text-sm font-bold text-slate-700">Giữ nguyên tin</span>
+                                        </div>
+                                    </label>
+                                    <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-red-200 p-3 transition-all hover:bg-red-50 has-[:checked]:border-red-400 has-[:checked]:bg-red-50 has-[:checked]:ring-1 has-[:checked]:ring-red-300">
+                                        <input type="radio" name="postAction" value="DELETED" checked={postAction === 'DELETED'} onChange={(e) => setPostAction(e.target.value)} className="accent-red-600" />
+                                        <div className="flex items-center gap-2">
+                                            <XCircleIcon className="h-4 w-4 text-red-600" />
+                                            <span className="text-sm font-bold text-slate-700">Xóa tin (gửi thông báo)</span>
+                                        </div>
+                                    </label>
+                                </div>
+
+                                <div className="mt-3">
+                                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide">
+                                        Ghi chú xử lý
+                                    </label>
+                                    <textarea
+                                        className="mt-1.5 min-h-24 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold placeholder:text-slate-400 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors"
+                                        placeholder="Mô tả kết quả xử lý (tùy chọn)..."
+                                        value={resolutionNote}
+                                        onChange={(e) => setResolutionNote(e.target.value)}
+                                    />
+                                </div>
+
+                                <ActionButton
+                                    label="Lưu kết quả"
+                                    variant="primary"
+                                    type="submit"
+                                    loading={resolving}
+                                    className="mt-4 w-full"
+                                />
+                            </form>
+                        )}
+
+                        {report.status !== 'PENDING' && report.resolutionNote && (
+                            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                                <h3 className="text-sm font-black text-emerald-800">Đã xử lý</h3>
+                                <p className="mt-2 text-sm font-semibold text-emerald-700">{report.resolutionNote}</p>
+                                {report.moderatorName && (
+                                    <p className="mt-2 text-xs font-semibold text-emerald-600">Bởi: {report.moderatorName}</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
 
 const ReportsPage = () => {
     const [filters, setFilters] = useState({ status: 'PENDING', page: 0, size: 10 })
     const [pageData, setPageData] = useState({ reports: [], currentPage: 0, totalPages: 0, totalElements: 0 })
     const [selectedReport, setSelectedReport] = useState(null)
-    const [resolution, setResolution] = useState({ decision: 'RESOLVED', postAction: '', resolutionNote: '' })
     const [loading, setLoading] = useState(false)
-    const [message, setMessage] = useState('')
-    const [error, setError] = useState('')
+    const [resolving, setResolving] = useState(false)
+    const [resolveError, setResolveError] = useState('')
+    const [toast, setToast] = useState(null)
+
+    const showToast = (type, message) => {
+        setToast({ type, message })
+        setTimeout(() => setToast(null), 4000)
+    }
 
     const loadReports = async (nextFilters = filters) => {
         setLoading(true)
-        setError('')
         try {
             const response = await reportApi.getReports(nextFilters)
             setPageData(response.data || { reports: [], currentPage: 0, totalPages: 0, totalElements: 0 })
         } catch (loadError) {
-            setError(getErrorMessage(loadError, 'Không tải được danh sách báo cáo.'))
+            showToast('error', getErrorMessage(loadError, 'Không tải được danh sách báo cáo.'))
         } finally {
             setLoading(false)
         }
     }
 
     useEffect(() => {
-        loadReports()
+        flushSync(() => { loadReports() })
     }, [])
 
     const openReport = async (id) => {
-        setError('')
+        setResolveError('')
         try {
             const response = await reportApi.getReportDetail(id)
             setSelectedReport(response.data)
-            setResolution({ decision: 'RESOLVED', postAction: '', resolutionNote: '' })
-        } catch (detailError) {
-            setError(getErrorMessage(detailError, 'Không tải được chi tiết báo cáo.'))
+        } catch {
+            showToast('error', 'Không tải được chi tiết báo cáo.')
         }
     }
 
-    const resolveReport = async (event) => {
-        event.preventDefault()
-        setMessage('')
-        setError('')
+    const resolveReport = async ({ postAction, resolutionNote }) => {
+        setResolving(true)
+        setResolveError('')
         try {
-            await reportApi.resolveReport(selectedReport.id, {
-                decision: resolution.decision,
-                postAction: resolution.postAction || null,
-                resolutionNote: resolution.resolutionNote,
-            })
+            await reportApi.resolveReport(selectedReport.id, { decision: 'RESOLVED', postAction, resolutionNote })
             setSelectedReport(null)
-            setMessage('Xử lý báo cáo thành công.')
+            showToast('success', postAction === 'DELETED' ? 'Đã xóa tin và gửi thông báo.' : 'Đã xử lý báo cáo.')
             loadReports()
-        } catch (resolveError) {
-            setError(getErrorMessage(resolveError, 'Không xử lý được báo cáo.'))
+        } catch (err) {
+            setResolveError(getErrorMessage(err, 'Không xử lý được báo cáo.'))
+        } finally {
+            setResolving(false)
         }
+    }
+
+    const setStatus = (status) => {
+        setFilters({ ...filters, status, page: 0 })
+        loadReports({ ...filters, status, page: 0 })
     }
 
     return (
-        <BackOfficeLayout section="manager" title="Quản lý báo cáo" subtitle="Xem bằng chứng, người báo cáo và chủ tin trước khi lưu kết quả xử lý.">
-            <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-[240px_auto]" onSubmit={(event) => {
-                event.preventDefault()
-                const nextFilters = { ...filters, page: 0 }
-                setFilters(nextFilters)
-                loadReports(nextFilters)
-            }}>
-                <select className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold" value={filters.status} onChange={(event) => setFilters((current) => ({ ...current, status: event.target.value }))}>
-                    <option value="PENDING">Chờ xử lý</option>
-                    <option value="RESOLVED">Đã xử lý</option>
-                    <option value="REJECTED">Từ chối</option>
-                </select>
-                <button className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-black text-white md:w-fit" type="submit">Lọc</button>
-            </form>
-
-            <div className="mt-4 space-y-3">
-                {message && <Message type="success">{message}</Message>}
-                {error && <Message type="error">{error}</Message>}
+        <BackOfficeLayout section="manager" title="Quản lý báo cáo" subtitle="Xem và xử lý các báo cáo từ người dùng về tin đăng vi phạm.">
+            {/* Status tabs */}
+            <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
+                {statusTabs.map((tab) => (
+                    <button
+                        key={tab.value}
+                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
+                            filters.status === tab.value
+                                ? tab.variant === 'warning' ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/25' :
+                                  tab.variant === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' :
+                                  tab.variant === 'danger' ? 'bg-red-600 text-white shadow-lg shadow-red-600/25' :
+                                  'bg-slate-900 text-white shadow-lg shadow-slate-900/25'
+                                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                        type="button"
+                        onClick={() => setStatus(tab.value)}
+                    >
+                        {tab.label}
+                    </button>
+                ))}
             </div>
 
-            <section className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
+            {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
+
+            {/* Report list */}
+            <div className="space-y-3">
                 {loading ? (
-                    <div className="p-4"><LoadingRows /></div>
+                    <LoadingRows rows={4} />
                 ) : pageData.reports.length === 0 ? (
                     <EmptyState message="Không có báo cáo phù hợp." />
                 ) : (
-                    <div className="divide-y divide-slate-100">
-                        {pageData.reports.map((report) => (
-                            <button className="block w-full p-4 text-left hover:bg-slate-50" key={report.id} type="button" onClick={() => openReport(report.id)}>
-                                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                                    <div>
-                                        <p className="text-base font-black text-slate-950">Báo cáo #{report.id}: {report.reason}</p>
-                                        <p className="mt-1 text-sm font-semibold text-slate-500">{report.postTitle || 'Tin đăng không còn tồn tại'} | Trạng thái tin: {report.postStatus || '-'}</p>
-                                    </div>
-                                    <Pill>{report.status}</Pill>
-                                </div>
-                                <p className="mt-2 text-xs font-semibold text-slate-500">Người báo cáo: {report.reporterName || '-'} | {formatDateTime(report.createdAt)} | {report.imageCount || 0} ảnh</p>
-                            </button>
-                        ))}
-                    </div>
+                    pageData.reports.map((report) => (
+                        <ReportCard key={report.id} report={report} onClick={() => openReport(report.id)} />
+                    ))
                 )}
-            </section>
+            </div>
+
             <Pagination pageInfo={pageData} onPageChange={(page) => {
                 const nextFilters = { ...filters, page }
                 setFilters(nextFilters)
@@ -129,61 +430,13 @@ const ReportsPage = () => {
             }} />
 
             {selectedReport && (
-                <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-3 py-4 sm:px-4 sm:py-8">
-                    <div className="w-full max-w-5xl overflow-hidden rounded-lg bg-white shadow-xl">
-                        <div className="flex flex-col gap-4 border-b border-slate-200 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-5">
-                            <div>
-                                <Pill>{selectedReport.status}</Pill>
-                                <h2 className="mt-3 text-xl font-black text-slate-950 sm:text-2xl">Báo cáo #{selectedReport.id}</h2>
-                                <p className="mt-1 text-sm font-semibold text-slate-500">{selectedReport.postTitle}</p>
-                            </div>
-                            <button className="h-10 rounded-lg border border-slate-300 px-4 text-sm font-black text-slate-700" type="button" onClick={() => setSelectedReport(null)}>Đóng</button>
-                        </div>
-
-                        <div className="grid max-h-[calc(100vh-9rem)] gap-5 overflow-y-auto p-4 lg:grid-cols-[minmax(0,1fr)_360px] lg:p-5">
-                            <div className="space-y-5">
-                                <section className="rounded-lg border border-slate-200 bg-white p-4">
-                                    <h3 className="text-sm font-black uppercase text-slate-500">Nội dung báo cáo</h3>
-                                    <p className="mt-3 text-base font-black text-slate-950">{selectedReport.reason}</p>
-                                    <p className="mt-2 whitespace-pre-line text-sm font-semibold leading-7 text-slate-700">{selectedReport.description || '-'}</p>
-                                </section>
-                                {selectedReport.imageUrls?.length > 0 && (
-                                    <div className="grid gap-3 sm:grid-cols-2">
-                                        {selectedReport.imageUrls.map((url) => <SafeImage className="h-56 w-full rounded-lg object-cover" key={url} src={url} fallbackSrc="https://picsum.photos/seed/report-img/640/420" alt="Bằng chứng báo cáo" />)}
-                                    </div>
-                                )}
-                            </div>
-
-                            <aside className="space-y-4">
-                                <section className="rounded-lg border border-slate-200 bg-white p-4">
-                                    <h3 className="text-base font-black text-slate-950">Thông tin liên quan</h3>
-                                    <div className="mt-3 grid gap-3">
-                                        <InfoBox label="Người báo cáo" value={selectedReport.reporterName} />
-                                        <InfoBox label="Email báo cáo" value={selectedReport.reporterEmail} />
-                                        <InfoBox label="Chủ tin" value={selectedReport.postOwnerName} />
-                                        <InfoBox label="Trạng thái tin" value={selectedReport.postStatus} />
-                                    </div>
-                                </section>
-                                <form className="rounded-lg border border-slate-200 bg-slate-50 p-4" onSubmit={resolveReport}>
-                                    <h3 className="text-base font-black text-slate-950">Kết quả xử lý</h3>
-                                    <div className="mt-4 grid gap-3">
-                                        <select className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold" value={resolution.decision} onChange={(event) => setResolution((current) => ({ ...current, decision: event.target.value }))}>
-                                            <option value="RESOLVED">Chấp nhận báo cáo</option>
-                                            <option value="REJECTED">Từ chối báo cáo</option>
-                                        </select>
-                                        <select className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold" value={resolution.postAction} onChange={(event) => setResolution((current) => ({ ...current, postAction: event.target.value }))}>
-                                            <option value="">Không đổi trạng thái tin</option>
-                                            <option value="HIDDEN">Ẩn tin</option>
-                                            <option value="ACTIVE">Mở lại tin</option>
-                                        </select>
-                                    </div>
-                                    <textarea className="mt-3 min-h-32 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold" placeholder="Mô tả kết quả xử lý" value={resolution.resolutionNote} onChange={(event) => setResolution((current) => ({ ...current, resolutionNote: event.target.value }))} />
-                                    <button className="mt-3 h-11 w-full rounded-lg bg-emerald-600 px-4 text-sm font-black text-white" type="submit">Lưu kết quả</button>
-                                </form>
-                            </aside>
-                        </div>
-                    </div>
-                </div>
+                <ReportDetailModal
+                    report={selectedReport}
+                    onClose={() => setSelectedReport(null)}
+                    onResolve={resolveReport}
+                    resolving={resolving}
+                    resolveError={resolveError}
+                />
             )}
         </BackOfficeLayout>
     )

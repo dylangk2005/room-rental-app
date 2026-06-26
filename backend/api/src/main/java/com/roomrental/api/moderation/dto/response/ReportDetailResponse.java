@@ -21,6 +21,7 @@ public class ReportDetailResponse {
     private Integer reporterId;
     private String reporterName;
     private String reporterEmail;
+    private String reporterAvatar;
 
     private Integer postId;
     private String postTitle;

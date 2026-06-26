@@ -26,6 +26,7 @@ public class PostDetailResponse {
     private String ownerName;
     private String ownerEmail;
     private String ownerPhoneNumber;
+    private String ownerAvatar;
     private LocalDateTime createdAt;
     private LocalDateTime endAt;
 

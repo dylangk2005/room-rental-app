@@ -22,7 +22,9 @@ public class ModerationPostSummaryResponse {
     private Integer postTypePriority;
 
     private String ownerName;
+    private String ownerAvatar;
     private LocalDateTime createdAt;
+    private String status;
 
     private int imageCount;
 }

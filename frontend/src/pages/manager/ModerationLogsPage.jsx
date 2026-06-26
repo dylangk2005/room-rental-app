@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
+import { flushSync } from 'react-dom'
 import moderationApi from '../../api/moderationApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
-import { EmptyState, LoadingRows, Message, Pagination } from '../../components/BackOfficeParts'
-import { formatDateTime, getErrorMessage } from '../../utils/backOfficeFormatters'
+import { EmptyState, LoadingRows, FilterBar, StatusBadge, Pagination, Toast } from '../../components/BackOfficeParts'
+import { formatDateTime, formatRelativeTime, formatActionLabel, formatTargetType, getErrorMessage } from '../../utils/backOfficeFormatters'
 import ModerationTargetDetailModal from './ModerationTargetDetailModal'
 
 const initialFilters = { moderatorId: '', action: '', targetType: '', targetId: '', page: 0, size: 10 }
@@ -13,21 +14,107 @@ const normalizeFilters = (filters) => ({
     targetId: filters.targetId ? Number(filters.targetId) : '',
 })
 
+const actionFilters = [
+    { value: '', label: 'Tất cả' },
+    { value: 'ACCEPT_POST', label: 'Duyệt tin' },
+    { value: 'REJECT_POST', label: 'Từ chối tin' },
+    { value: 'HIDDEN_POST', label: 'Ẩn tin' },
+    { value: 'ACCEPT_REPORT', label: 'Chấp nhận báo cáo' },
+    { value: 'REJECT_REPORT', label: 'Từ chối báo cáo' },
+    { value: 'WARNING', label: 'Cảnh cáo' },
+    { value: 'LOCK_POST', label: 'Khóa đăng tin' },
+    { value: 'BAN_ACCOUNT', label: 'Ban tài khoản' },
+]
+
+const targetTypeFilters = [
+    { value: '', label: 'Tất cả' },
+    { value: 'POST', label: 'Tin đăng' },
+    { value: 'REPORT', label: 'Báo cáo' },
+    { value: 'USER', label: 'Người dùng' },
+]
+
+const actionBadgeVariant = {
+    ACCEPT_POST: 'success',
+    REJECT_POST: 'danger',
+    HIDDEN_POST: 'warning',
+    REMOVE_POST: 'danger',
+    ACCEPT_REPORT: 'info',
+    REJECT_REPORT: 'neutral',
+    WARNING: 'amber',
+    LOCK_POST: 'amber',
+    BAN_ACCOUNT: 'danger',
+}
+
+const LogEntry = ({ log, onDetailClick, isManager }) => (
+    <div className="group flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4 transition-all duration-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-600/5">
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+                <StatusBadge
+                    label={formatActionLabel(log.action)}
+                    variant={actionBadgeVariant[log.action] || 'neutral'}
+                />
+                <span className="text-xs font-semibold text-slate-400">·</span>
+                <span className="text-xs font-semibold text-slate-400">{formatRelativeTime(log.createdAt)}</span>
+            </div>
+
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold text-slate-500">Kiểm duyệt viên:</span>
+                    <span className="text-xs font-bold text-slate-700">{log.moderatorName || '-'}</span>
+                </div>
+                {isManager && (
+                    <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-semibold text-slate-500">Email:</span>
+                        <span className="text-xs font-semibold text-slate-600">{log.moderatorEmail || '-'}</span>
+                    </div>
+                )}
+            </div>
+
+            {log.reason && (
+                <p className="mt-1.5 line-clamp-1 text-xs font-semibold text-slate-500">{log.reason}</p>
+            )}
+        </div>
+
+        {/* Target */}
+        <div className="shrink-0">
+            {log.targetType && log.targetId ? (
+                <button
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-bold text-slate-600 transition-all duration-150 hover:scale-[1.03] hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 active:scale-[0.98]"
+                    type="button"
+                    onClick={() => onDetailClick(log)}
+                >
+                    <span className="text-[10px] font-black uppercase text-slate-400">{formatTargetType(log.targetType)}</span>
+                    <span className="font-black">#{log.targetId}</span>
+                    <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6" /></svg>
+                </button>
+            ) : (
+                <span className="text-xs font-semibold text-slate-400">-</span>
+            )}
+            <p className="mt-1 text-right text-[11px] font-semibold text-slate-400">{formatDateTime(log.createdAt)}</p>
+        </div>
+    </div>
+)
+
 const ModerationLogsPage = () => {
     const [filters, setFilters] = useState(initialFilters)
     const [pageData, setPageData] = useState({ logs: [], currentPage: 0, totalPages: 0, totalElements: 0 })
     const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
+    const [toast, setToast] = useState(null)
     const [detailState, setDetailState] = useState({ open: false, loading: false, error: '', detail: null })
+
+    const showToast = (type, message) => {
+        setToast({ type, message })
+        setTimeout(() => setToast(null), 4000)
+    }
 
     const loadLogs = async (nextFilters = filters) => {
         setLoading(true)
-        setError('')
         try {
             const response = await moderationApi.getLogs(normalizeFilters(nextFilters))
             setPageData(response.data || { logs: [], currentPage: 0, totalPages: 0, totalElements: 0 })
         } catch (loadError) {
-            setError(getErrorMessage(loadError, 'Không tải được nhật ký kiểm duyệt.'))
+            showToast('error', getErrorMessage(loadError, 'Không tải được nhật ký kiểm duyệt.'))
         } finally {
             setLoading(false)
         }
@@ -35,7 +122,6 @@ const ModerationLogsPage = () => {
 
     const openTargetDetail = async (log) => {
         if (!log.targetType || !log.targetId) return
-
         setDetailState({ open: true, loading: true, error: '', detail: { targetType: log.targetType, targetId: log.targetId } })
         try {
             const response = await moderationApi.getLogTargetDetail({ targetType: log.targetType, targetId: log.targetId })
@@ -50,116 +136,80 @@ const ModerationLogsPage = () => {
     }
 
     useEffect(() => {
-        loadLogs()
+        flushSync(() => { loadLogs() })
     }, [])
 
+    const handleFilter = (e) => {
+        e.preventDefault()
+        setFilters((f) => ({ ...f, page: 0 }))
+        loadLogs({ ...filters, page: 0 })
+    }
+
     return (
-        <BackOfficeLayout section="manager" title="Nhật ký kiểm duyệt" subtitle="Theo dõi lịch sử thao tác của đội ngũ kiểm duyệt.">
-            <form className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 md:grid-cols-5" onSubmit={(event) => {
-                event.preventDefault()
-                const nextFilters = { ...filters, page: 0 }
-                setFilters(nextFilters)
-                loadLogs(nextFilters)
-            }}>
-                <input
-                    className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold"
-                    placeholder="ID kiểm duyệt viên"
-                    type="number"
-                    min="1"
-                    value={filters.moderatorId}
-                    onChange={(event) => setFilters((current) => ({ ...current, moderatorId: event.target.value }))}
-                />
-                <select
-                    className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold"
-                    value={filters.action}
-                    onChange={(event) => setFilters((current) => ({ ...current, action: event.target.value }))}
-                >
-                    <option value="">Tất cả thao tác</option>
-                    <option value="ACCEPT_POST">ACCEPT_POST</option>
-                    <option value="REJECT_POST">REJECT_POST</option>
-                    <option value="HIDDEN_POST">HIDDEN_POST</option>
-                    <option value="REMOVE_POST">REMOVE_POST</option>
-                    <option value="ACCEPT_REPORT">ACCEPT_REPORT</option>
-                    <option value="REJECT_REPORT">REJECT_REPORT</option>
-                    <option value="WARNING">WARNING</option>
-                    <option value="LOCK_POST">LOCK_POST</option>
-                    <option value="BAN_ACCOUNT">BAN_ACCOUNT</option>
-                </select>
-                <select
-                    className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold"
-                    value={filters.targetType}
-                    onChange={(event) => setFilters((current) => ({ ...current, targetType: event.target.value }))}
-                >
-                    <option value="">Tất cả đối tượng</option>
-                    <option value="POST">POST</option>
-                    <option value="REPORT">REPORT</option>
-                    <option value="USER">USER</option>
-                </select>
-                <input
-                    className="h-11 rounded-lg border border-slate-300 px-3 text-sm font-semibold"
-                    placeholder="ID đối tượng"
-                    type="number"
-                    min="1"
-                    value={filters.targetId}
-                    onChange={(event) => setFilters((current) => ({ ...current, targetId: event.target.value }))}
-                />
-                <button className="h-11 rounded-lg bg-slate-900 px-5 text-sm font-black text-white" type="submit">
-                    Lọc
-                </button>
+        <BackOfficeLayout section="manager" title="Nhật ký kiểm duyệt" subtitle="Theo dõi toàn bộ lịch sử thao tác của đội ngũ kiểm duyệt.">
+            {/* Filter */}
+            <form onSubmit={handleFilter}>
+                <FilterBar className="mb-5 flex-nowrap overflow-x-auto">
+                    <input
+                        className="h-10 min-w-32 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors sm:max-w-40"
+                        placeholder="ID KDV"
+                        type="number"
+                        min="1"
+                        value={filters.moderatorId}
+                        onChange={(e) => setFilters((f) => ({ ...f, moderatorId: e.target.value }))}
+                    />
+                    <select
+                        className="h-10 min-w-36 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors"
+                        value={filters.action}
+                        onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))}
+                    >
+                        {actionFilters.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                    </select>
+                    <select
+                        className="h-10 min-w-36 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors"
+                        value={filters.targetType}
+                        onChange={(e) => setFilters((f) => ({ ...f, targetType: e.target.value }))}
+                    >
+                        {targetTypeFilters.map((f) => <option key={f.value} value={f.value}>{f.label}</option>)}
+                    </select>
+                    <input
+                        className="h-10 min-w-28 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors sm:max-w-36"
+                        placeholder="ID đối tượng"
+                        type="number"
+                        min="1"
+                        value={filters.targetId}
+                        onChange={(e) => setFilters((f) => ({ ...f, targetId: e.target.value }))}
+                    />
+                    <button
+                        className="h-10 shrink-0 rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white transition-all duration-200 hover:scale-[1.03] hover:bg-emerald-700 hover:shadow-lg active:scale-[0.98]"
+                        type="submit"
+                    >
+                        Lọc
+                    </button>
+                </FilterBar>
             </form>
 
-            <div className="mt-4">{error && <Message type="error">{error}</Message>}</div>
+            {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
-            <section className="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
+            {/* Log list */}
+            <div className="space-y-3">
                 {loading ? (
-                    <div className="p-4"><LoadingRows /></div>
+                    <LoadingRows rows={5} />
                 ) : pageData.logs.length === 0 ? (
                     <EmptyState message="Chưa có nhật ký kiểm duyệt." />
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200 text-sm">
-                            <thead className="bg-slate-50 text-left text-xs font-black uppercase text-slate-500">
-                                <tr>
-                                    <th className="px-4 py-3">Thao tác</th>
-                                    <th className="px-4 py-3">Kiểm duyệt viên</th>
-                                    <th className="px-4 py-3">Đối tượng</th>
-                                    <th className="px-4 py-3">Lý do</th>
-                                    <th className="px-4 py-3">Thời gian</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {pageData.logs.map((log) => (
-                                    <tr key={log.id}>
-                                        <td className="px-4 py-3 font-black">{log.action}</td>
-                                        <td className="px-4 py-3">
-                                            {log.moderatorName || '-'}
-                                            <p className="text-xs text-slate-500">{log.moderatorEmail || ''}</p>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            {log.targetType && log.targetId ? (
-                                                <button
-                                                    className="font-black text-emerald-700 underline-offset-4 hover:underline"
-                                                    type="button"
-                                                    onClick={() => openTargetDetail(log)}
-                                                >
-                                                    {log.targetType} #{log.targetId}
-                                                </button>
-                                            ) : '-'}
-                                        </td>
-                                        <td className="px-4 py-3 max-w-md text-slate-600">{log.reason || '-'}</td>
-                                        <td className="px-4 py-3 text-slate-600">{formatDateTime(log.createdAt)}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                    pageData.logs.map((log) => (
+                        <LogEntry key={log.id} log={log} onDetailClick={openTargetDetail} isManager />
+                    ))
                 )}
-            </section>
+            </div>
+
             <Pagination pageInfo={pageData} onPageChange={(page) => {
-                const nextFilters = { ...filters, page }
-                setFilters(nextFilters)
-                loadLogs(nextFilters)
+                const next = { ...filters, page }
+                setFilters(next)
+                loadLogs(next)
             }} />
+
             {detailState.open && (
                 <ModerationTargetDetailModal
                     detail={detailState.detail}

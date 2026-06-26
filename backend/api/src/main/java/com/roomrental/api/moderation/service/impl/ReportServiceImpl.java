@@ -113,9 +113,12 @@ public class ReportServiceImpl implements ReportService {
     public ReportPageResponse getReports(Report.ReportStatus status, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
 
-        Page<Report> result = status != null
-                ? reportRepository.findByStatus(status, pageable)
-                : reportRepository.findAll(pageable);
+        Page<Report> result;
+        if (status != null) {
+            result = reportRepository.findByStatus(status, pageable);
+        } else {
+            result = reportRepository.findByStatusNot(Report.ReportStatus.PENDING, pageable);
+        }
 
         return mapPage(result);
     }
@@ -153,14 +156,28 @@ public class ReportServiceImpl implements ReportService {
 
         Post post = report.getPost();
 
-        if (request.getDecision() == Report.ReportStatus.RESOLVED && request.getPostAction() != null) {
-            if (request.getPostAction() == Post.PostStatus.DELETED) {
-                throw AppException.badRequest("Không xử lý xóa cứng tin đăng từ báo cáo");
-            }
-
+        if (request.getPostAction() != null) {
             post.setStatus(request.getPostAction());
             post.setUpdatedAt(LocalDateTime.now());
             postRepository.save(post);
+        }
+
+        notificationService.notifyUser(
+                report.getUser().getId(),
+                Notification.NotificationType.REPORT_INFORMATION,
+                "Báo cáo vi phạm của bạn về tin \"" + post.getTitle() + "\" đã được xử lý."
+        );
+
+        if (request.getPostAction() == Post.PostStatus.DELETED && post.getUser() != null) {
+            String reason = request.getResolutionNote();
+            if (reason == null || reason.isBlank()) {
+                reason = "Không có thông tin cụ thể";
+            }
+            notificationService.notifyUser(
+                    post.getUser().getId(),
+                    Notification.NotificationType.POST_INFORMATION,
+                    "Tin đăng \"" + post.getTitle() + "\" đã bị xóa do vi phạm chính sách. Lý do: " + reason
+            );
         }
 
         Report saved = reportRepository.save(report);
@@ -186,26 +203,8 @@ public class ReportServiceImpl implements ReportService {
                 request.getResolutionNote()
         );
 
-        notificationService.notifyUser(
-                report.getUser().getId(),
-                Notification.NotificationType.REPORT_INFORMATION,
-                "Báo cáo của bạn đã được xử lý: " + saved.getStatus().name()
-        );
-
-        if (request.getDecision() == Report.ReportStatus.RESOLVED
-                && request.getPostAction() != null
-                && post.getUser() != null) {
-            notificationService.notifyUser(
-                    post.getUser().getId(),
-                    Notification.NotificationType.POST_INFORMATION,
-                    "Tin đăng của bạn đã được xử lý do có báo cáo vi phạm: " + post.getTitle()
-            );
-        }
-
         return mapDetailResponse(saved);
     }
-
-    @Override
     @Transactional(readOnly = true)
     public ReportPageResponse getMyReports(Integer userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));
@@ -239,6 +238,7 @@ public class ReportServiceImpl implements ReportService {
                 .createdAt(report.getCreatedAt())
                 .reporterId(reporter != null ? reporter.getId() : null)
                 .reporterName(reporter != null ? reporter.getFullName() : null)
+                .reporterAvatar(reporter != null ? reporter.getAvatar() : null)
                 .postId(post != null ? post.getId() : null)
                 .postTitle(post != null ? post.getTitle() : null)
                 .postStatus(post != null && post.getStatus() != null ? post.getStatus().name() : null)
@@ -269,6 +269,7 @@ public class ReportServiceImpl implements ReportService {
                 .reporterId(reporter != null ? reporter.getId() : null)
                 .reporterName(reporter != null ? reporter.getFullName() : null)
                 .reporterEmail(reporter != null ? reporter.getEmail() : null)
+                .reporterAvatar(reporter != null ? reporter.getAvatar() : null)
                 .postId(post != null ? post.getId() : null)
                 .postTitle(post != null ? post.getTitle() : null)
                 .postStatus(post != null && post.getStatus() != null ? post.getStatus().name() : null)

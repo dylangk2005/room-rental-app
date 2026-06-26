@@ -26,5 +26,8 @@ public interface ReportRepository extends JpaRepository<Report, Integer> {
     @EntityGraph(attributePaths = {"user", "post", "post.user", "post.postType", "moderator"})
     Optional<Report> findDetailById(Integer id);
 
+    @EntityGraph(attributePaths = {"user", "post", "post.user", "moderator"})
+    Page<Report> findByStatusNot(Report.ReportStatus status, Pageable pageable);
+
     boolean existsByUserIdAndPostId(Integer userId, Integer postId);
 }

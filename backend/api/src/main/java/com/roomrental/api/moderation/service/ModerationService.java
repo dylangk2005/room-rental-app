@@ -4,20 +4,20 @@ import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.moderation.dto.request.BanUserRequest;
 import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
+import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.user.entity.User;
 
-  
 public interface ModerationService {
 
-    ModerationPostPageResponse getPendingPosts(Integer postTypeId, int page, int size); // lấy danh sách tin đăng chờ duyệt
+    ModerationPostPageResponse getPendingPosts(Post.PostStatus status, Integer postTypeId, Integer keyword, int page, int size);
 
-    PostDetailResponse getPostDetail(Integer postId);  // Xem chi tiết tin đăng chờ duyệt
+    PostDetailResponse getPostDetail(Integer postId);
 
-    PostDetailResponse approvePost(Integer moderatorId, Integer postId); // Duyệt tin đăng
-    PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason);  // Từ chối tin đăng
+    PostDetailResponse approvePost(Integer moderatorId, Integer postId);
+    PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason);
 
     AdminUserPageResponse getNormalUsers(User.UserStatus status, String keyword, int page, int size);
 
-    void banUser(Integer moderatorId, Integer userId, BanUserRequest request); // Xử phạt người dùng
+    void banUser(Integer moderatorId, Integer userId, BanUserRequest request);
     void clearUserPenalties(Integer moderatorId, Integer userId);
 }

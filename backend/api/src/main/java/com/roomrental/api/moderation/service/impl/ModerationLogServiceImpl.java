@@ -234,6 +234,7 @@ public class ModerationLogServiceImpl implements ModerationLogService {
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .role(user.getRole() != null ? user.getRole().getName() : null)
                 .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
+                .avatar(user.getAvatar())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -85,7 +85,8 @@ public class FavoriteServiceImpl implements FavoriteService {
                 Sort.by(Sort.Order.desc("createdAt"))
         );
 
-        Page<Favorite> favoritePage = favoriteRepository.findByUser_Id(userId, pageable);
+        // Chỉ lấy các tin đang hoạt động (ACTIVE)
+        Page<Favorite> favoritePage = favoriteRepository.findByUser_IdAndActivePost(userId, pageable);
 
         List<Post> posts = favoritePage.getContent().stream()
                 .map(Favorite::getPost)

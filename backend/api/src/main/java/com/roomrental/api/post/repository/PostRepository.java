@@ -147,12 +147,15 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     SELECT p FROM Post p
     JOIN FETCH p.user
     LEFT JOIN FETCH p.postType
-    WHERE p.status = :status
+    WHERE (:status IS NULL OR p.status = :status)
       AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
+      AND (:keyword IS NULL OR p.id = :keyword)
+    AND (:keyword IS NULL OR p.id = :keyword)
 """)
     Page<Post> findModerationQueue(
             @Param("status") Post.PostStatus status,
             @Param("postTypeId") Integer postTypeId,
+            @Param("keyword") Integer keyword,
             Pageable pageable
     );
 

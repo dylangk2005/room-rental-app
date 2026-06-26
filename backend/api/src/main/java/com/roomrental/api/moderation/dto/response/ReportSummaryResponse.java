@@ -15,6 +15,7 @@ public class ReportSummaryResponse {
 
     private Integer reporterId;
     private String reporterName;
+    private String reporterAvatar;
 
     private Integer postId;
     private String postTitle;

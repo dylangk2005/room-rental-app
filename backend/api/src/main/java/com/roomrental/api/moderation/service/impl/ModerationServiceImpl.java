@@ -53,14 +53,15 @@ public class ModerationServiceImpl implements ModerationService {
 
     @Override
     @Transactional(readOnly = true)
-    public ModerationPostPageResponse getPendingPosts(Integer postTypeId, int page, int size) {
+    public ModerationPostPageResponse getPendingPosts(Post.PostStatus status, Integer postTypeId, Integer keyword, int page, int size) {
         Sort sort = postTypeId == null
                 ? Sort.by(Sort.Order.asc("postType.priority"), Sort.Order.asc("createdAt"))
                 : Sort.by(Sort.Order.asc("createdAt"));
 
         Page<Post> result = postRepository.findModerationQueue(
-                Post.PostStatus.PENDING,
+                status,
                 postTypeId,
+                keyword,
                 PageRequest.of(page, size, sort)
         );
 
@@ -204,7 +205,9 @@ public class ModerationServiceImpl implements ModerationService {
                 .postTypeTitleSize(postType != null ? postType.getTitleSize() : null)
                 .postTypePriority(postType != null ? postType.getPriority() : null)
                 .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .createdAt(post.getCreatedAt())
+                .status(post.getStatus() != null ? post.getStatus().name() : null)
                 .imageCount(postImageRepository.countByPostId(post.getId()))
                 .build();
     }
@@ -227,6 +230,7 @@ public class ModerationServiceImpl implements ModerationService {
                 .ownerName(owner != null ? owner.getFullName() : null)
                 .ownerEmail(owner != null ? owner.getEmail() : null)
                 .ownerPhoneNumber(owner != null ? owner.getPhoneNumber() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .createdAt(post.getCreatedAt())
                 .endAt(post.getEndAt())
                 .postTypeName(postType != null ? postType.getName() : null)
@@ -379,6 +383,7 @@ public class ModerationServiceImpl implements ModerationService {
                 .phoneNumber(user.getPhoneNumber())
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .role(user.getRole() != null ? user.getRole().getName() : null)
+                .avatar(user.getAvatar())
                 .createdAt(user.getCreatedAt())
                 .activePenalties(userPenaltyRepository.findActiveByUserId(user.getId(), LocalDateTime.now()).stream()
                         .map(this::mapActivePenalty)

@@ -5,6 +5,7 @@ import { Message, StatCard } from '../../components/BackOfficeParts'
 import { formatMoney, getErrorMessage } from '../../utils/backOfficeFormatters'
 
 const exportTypes = ['USERS', 'POSTS', 'REVENUE']
+const exportLabels = { USERS: 'Xuất Người dùng', POSTS: 'Xuất Bài đăng', REVENUE: 'Xuất Doanh thu' }
 
 const ManagerDashboardPage = () => {
     const [range, setRange] = useState({ from: '', to: '' })
@@ -72,7 +73,7 @@ const ManagerDashboardPage = () => {
                                 type="button"
                                 onClick={() => managerApi.exportStats({ type, ...range })}
                             >
-                                Export {type}
+                                exportLabels[type]
                             </button>
                         ))}
                     </div>

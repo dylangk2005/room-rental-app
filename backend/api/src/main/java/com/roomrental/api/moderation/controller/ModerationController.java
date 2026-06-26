@@ -8,6 +8,7 @@ import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
 import com.roomrental.api.moderation.dto.request.RejectPostRequest;
 import com.roomrental.api.moderation.service.ModerationService;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
+import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +27,14 @@ public class ModerationController {
     @GetMapping("/posts")
     @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ModerationPostPageResponse>> getPendingPosts(
+            @RequestParam(required = false) Post.PostStatus status,
             @RequestParam(required = false) Integer postTypeId,
+            @RequestParam(required = false) Integer keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(ApiResponse.success(
-                moderationService.getPendingPosts(postTypeId, page, size)
+                moderationService.getPendingPosts(status, postTypeId, keyword, page, size)
         ));
     }
 

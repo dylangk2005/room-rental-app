@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const DEFAULT_FALLBACK = 'https://picsum.photos/seed/taytro-fallback/900/600'
 
@@ -12,6 +12,11 @@ const SafeImage = ({
 }) => {
     const [imgSrc, setImgSrc] = useState(src || DEFAULT_FALLBACK)
     const [hasErrored, setHasErrored] = useState(false)
+
+    useEffect(() => {
+        setHasErrored(false)
+        setImgSrc(src || DEFAULT_FALLBACK)
+    }, [src])
 
     const handleError = () => {
         if (!hasErrored) {

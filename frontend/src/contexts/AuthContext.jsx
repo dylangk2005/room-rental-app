@@ -37,6 +37,14 @@ export const AuthProvider = ({ children }) => {
         setUser(userData)
     }, [])
 
+    const updateUser = useCallback((updates) => {
+        setUser((current) => {
+            const updated = { ...current, ...updates }
+            localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updated))
+            return updated
+        })
+    }, [])
+
     const logout = useCallback(async () => {
         try {
             await authApi.logout()
@@ -46,8 +54,17 @@ export const AuthProvider = ({ children }) => {
         }
     }, [])
 
+    const refreshUser = useCallback(async () => {
+        try {
+            const response = await authApi.refresh()
+            login(response.data)
+        } catch {
+            logout()
+        }
+    }, [login, logout])
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, isAuthReady }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, refreshUser, isAuthReady }}>
             {children}
         </AuthContext.Provider>
     )

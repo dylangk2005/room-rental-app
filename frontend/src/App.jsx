@@ -7,6 +7,7 @@ import ErrorBoundary from './components/common/ErrorBoundary'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage'
+import ChangePasswordPage from './pages/auth/ChangePasswordPage'
 import PostListPage from './pages/posts/PostListPage'
 import LandingPage from './pages/LandingPage'
 import PostDetailPage from './pages/posts/PostDetailPage'
@@ -23,6 +24,7 @@ import DraftsPage from './pages/user/DraftsPage'
 import BoostPostsPage from './pages/user/BoostPostsPage'
 import ExtendPostPage from './pages/user/ExtendPostPage'
 import UserMembershipPage from './pages/user/UserMembershipPage'
+import InternalProfilePage from './pages/user/InternalProfilePage'
 import DashboardPage from './pages/admin/DashboardPage'
 import AdminUsersPage from './pages/admin/AdminUsersPage'
 import InternalUsersPage from './pages/admin/InternalUsersPage'
@@ -37,10 +39,24 @@ import ModeratorUsersPage from './pages/moderator/ModeratorUsersPage'
 import PricingPage from './pages/manager/PricingPage'
 import MembershipPage from './pages/manager/MembershipPage'
 
+const INTERNAL_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
+
 const RoleRoute = ({ roles, children }) => {
     const { user } = useAuth()
     if (!user) return <Navigate to={ROUTES.LOGIN} replace />
     if (!roles.includes(user.role)) return <Navigate to={ROUTES.HOME} replace />
+    return children
+}
+
+const UserRoute = ({ children }) => {
+    const { user } = useAuth()
+    if (!user) return <Navigate to={ROUTES.LOGIN} replace />
+    if (INTERNAL_ROLES.has(user.role)) {
+        const redirectTo = user.role === 'MODERATOR' ? ROUTES.MODERATOR_HOME
+            : user.role === 'MANAGER' ? ROUTES.MANAGER_DASHBOARD
+            : ROUTES.ADMIN_DASHBOARD
+        return <Navigate to={redirectTo} replace />
+    }
     return children
 }
 
@@ -58,6 +74,13 @@ const AuthenticatedRoute = ({ children }) => {
     return children
 }
 
+const InternalProfileRoute = ({ children }) => {
+    const { user } = useAuth()
+    if (!user) return <Navigate to={ROUTES.LOGIN} replace />
+    if (!INTERNAL_ROLES.has(user.role)) return <Navigate to={ROUTES.HOME} replace />
+    return children
+}
+
 function App() {
     return (
         <ErrorBoundary>
@@ -70,23 +93,25 @@ function App() {
                     <Route path={ROUTES.LOGIN} element={<LoginPage />} />
                     <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
                     <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPasswordPage />} />
+                    <Route path={ROUTES.CHANGE_PASSWORD} element={<AuthenticatedRoute><ChangePasswordPage /></AuthenticatedRoute>} />
 
                     <Route path={ROUTES.POSTS} element={<PostListPage />} />
-                    <Route path={ROUTES.POST_PRICING} element={<PostPricingPage />} />
+                    <Route path={ROUTES.POST_PRICING} element={<UserRoute><PostPricingPage /></UserRoute>} />
                     <Route path={ROUTES.POST_DETAIL} element={<PostDetailPage />} />
-                    <Route path={ROUTES.CREATE_POST} element={<CreatePostPage />} />
+                    <Route path={ROUTES.CREATE_POST} element={<UserRoute><CreatePostPage /></UserRoute>} />
                     <Route path={ROUTES.EDIT_POST} element={<EditPostPage />} />
 
-                    <Route path={ROUTES.PROFILE} element={<ProfilePage />} />
-                    <Route path={ROUTES.USER_DEPOSIT} element={<DepositPage />} />
-                    <Route path={ROUTES.PAYMENT_RESULT} element={<PaymentResultPage />} />
-                    <Route path={ROUTES.WALLET} element={<WalletPage />} />
-                    <Route path={ROUTES.MY_POSTS} element={<MyPostsPage />} />
-                    <Route path={ROUTES.DRAFTS} element={<DraftsPage />} />
-                    <Route path={ROUTES.BOOST_POSTS} element={<BoostPostsPage />} />
-                    <Route path={ROUTES.EXTEND_POSTS} element={<ExtendPostPage />} />
-                    <Route path={ROUTES.FAVORITES} element={<FavoritesPage />} />
-                    <Route path={ROUTES.USER_MEMBERSHIP} element={<UserMembershipPage />} />
+                    <Route path={ROUTES.PROFILE} element={<UserRoute><ProfilePage /></UserRoute>} />
+                    <Route path={ROUTES.USER_DEPOSIT} element={<UserRoute><DepositPage /></UserRoute>} />
+                    <Route path={ROUTES.PAYMENT_RESULT} element={<UserRoute><PaymentResultPage /></UserRoute>} />
+                    <Route path={ROUTES.WALLET} element={<UserRoute><WalletPage /></UserRoute>} />
+                    <Route path={ROUTES.MY_POSTS} element={<UserRoute><MyPostsPage /></UserRoute>} />
+                    <Route path={ROUTES.DRAFTS} element={<UserRoute><DraftsPage /></UserRoute>} />
+                    <Route path={ROUTES.BOOST_POSTS} element={<UserRoute><BoostPostsPage /></UserRoute>} />
+                    <Route path={ROUTES.EXTEND_POSTS} element={<UserRoute><ExtendPostPage /></UserRoute>} />
+                    <Route path={ROUTES.FAVORITES} element={<UserRoute><FavoritesPage /></UserRoute>} />
+                    <Route path={ROUTES.USER_MEMBERSHIP} element={<UserRoute><UserMembershipPage /></UserRoute>} />
+                    <Route path={ROUTES.INTERNAL_PROFILE} element={<InternalProfileRoute><InternalProfilePage /></InternalProfileRoute>} />
 
                     <Route path={ROUTES.ADMIN} element={<Navigate to={ROUTES.ADMIN_DASHBOARD} replace />} />
                     <Route path={ROUTES.ADMIN_DASHBOARD} element={<RoleRoute roles={['ADMIN']}><DashboardPage /></RoleRoute>} />

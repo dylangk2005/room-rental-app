@@ -7,6 +7,8 @@ import PostListTabs from '../../components/posts/PostListTabs'
 import { useAuth } from '../../contexts/AuthContext'
 import ROUTES from '../../constants/routes'
 
+const INTERNAL_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
+
 const initialFilters = {
     provinceId: '',
     districtId: '',
@@ -698,7 +700,7 @@ const PostListPage = () => {
                     {!isLoading && !error && posts.length > 0 && (
                         <PostListTabs
                             posts={posts}
-                            isAuthenticated={Boolean(user)}
+                            isAuthenticated={Boolean(user) && !INTERNAL_ROLES.has(user?.role)}
                             favoritedIds={favoritedIds}
                             onToggleFavorite={handleToggleFavorite}
                             onRequireAuth={handleRequireAuth}

@@ -4,6 +4,7 @@ const ROUTES = {
     LOGIN: '/login',
     REGISTER: '/register',
     FORGOT_PASSWORD: '/forgot-password',
+    CHANGE_PASSWORD: '/change-password',
 
     // User
     POSTS: '/posts',
@@ -22,6 +23,7 @@ const ROUTES = {
     EXTEND_POSTS: '/user/extend-posts',
     FAVORITES: '/user/favorites',
     USER_MEMBERSHIP: '/user/membership',
+    INTERNAL_PROFILE: '/internal/profile',
 
     // Admin
     ADMIN: '/admin',

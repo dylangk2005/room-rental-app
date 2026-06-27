@@ -79,19 +79,19 @@ public class AuthServiceImpl implements AuthService {
         String email = normalizeEmail(request.getEmail());
         assertOtpSendAllowed("register", email);
 
-        // kiểm tra email đã tồn tại chưa
+        // kiểm tra email đã tồn tại chưa
         if (userRepository.existsByEmail(email)) {
             throw AppException.badRequest("Email đã tồn tại");
         }
 
-        // kiểm tra số điện thoại đã tồn tại chưa
+        // kiểm tra số điện thoại đã tồn tại chưa
         if (userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
             throw AppException.badRequest("Số điện thoại đã tồn tại");
         }
-        // Tạo OTP 6 số
+        // Tạo OTP 6 số
         String otp = String.format("%06d", new Random().nextInt(999999));
 
-        // Lưu thông tin đăng ký tạm vào Redis (5 phút)
+        // Lưu thông tin đăng ký tạm vào Redis (5 phút)
         String key = buildOtpKey("register", email);
         redisTemplate.opsForHash().put(key, "otp", otp);
         redisTemplate.opsForHash().put(key, "fullName", request.getFullName());
@@ -108,13 +108,13 @@ public class AuthServiceImpl implements AuthService {
         String email = normalizeEmail(request.getEmail());
         String key = buildOtpKey("register", email);
 
-        // Kiểm tra OTP còn tồn tại không
+        // Kiểm tra OTP còn tồn tại không
         String storedOtp = (String) redisTemplate.opsForHash().get(key, "otp");
         if (storedOtp == null) {
             throw AppException.badRequest("OTP đã hết hạn hoặc không tồn tại");
         }
 
-        // Kiểm tra OTP có đúng không
+        // Kiểm tra OTP có đúng không
         if (!storedOtp.equals(request.getOtp())) {
             recordInvalidOtp("register", email);
             throw AppException.badRequest("OTP không đúng");
@@ -126,13 +126,13 @@ public class AuthServiceImpl implements AuthService {
         String password = (String) redisTemplate.opsForHash().get(key, "password");
         String phoneNumber = (String) redisTemplate.opsForHash().get(key, "phoneNumber");
 
-        // Lấy quyền và cấp độ mặc định
+        // Lấy quyền và cấp độ mặc định
         Role role = roleRepository.findByName("USER")
                 .orElseThrow(() -> AppException.notFound("Role không tồn tại"));
         MembershipLevel membershipLevel = membershipLevelRepository.findFirstByOrderByMinSpentAsc()
-                .orElseThrow(() -> AppException.notFound("Hạng thành viên không tồn tại"));
+                .orElseThrow(() -> AppException.notFound("Hạng thành viên không tồn tại"));
 
-        // Tạo người dùng mới
+        // Tạo người dùng mới
         User user = new User();
         user.setFullName(fullName);
         user.setEmail(email);
@@ -156,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
                         + " xác thực OTP đăng ký thành công. Tài khoản được kích hoạt."
         );
 
-        // Xoá OTP khỏi Redis
+        // Xoá OTP khỏi Redis
         redisTemplate.delete(key);
         clearOtpAttempt("register", email);
     }
@@ -166,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
         String email = normalizeEmail(request.getEmail());
         assertLoginAllowed(email);
 
-        // Tìm user theo email
+        // Tìm user theo email
         User user = userRepository.findByEmail(email)
                 .orElse(null);
 
@@ -184,7 +184,7 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.unauthorized("Email hoặc mật khẩu không đúng");
         };
 
-        // Kiểm tra mật khẩu
+        // Kiểm tra mật khẩu
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             recordFailedLogin(email);
             auditLogService.log(
@@ -199,7 +199,7 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.unauthorized("Email hoặc mật khẩu không đúng");
         }
 
-        // Kiểm tra trạng thái tài khoản
+        // Kiểm tra trạng thái tài khoản
         if (user.getStatus() != User.UserStatus.ACTIVE) {
             auditLogService.log(
                     user.getId(),
@@ -220,10 +220,10 @@ public class AuthServiceImpl implements AuthService {
 
         String sessionId = createSessionId();
 
-        // Tạo access token
+        // Tạo access token
         String accessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), sessionId);
 
-        // Tạo refresh token
+        // Tạo refresh token
         String refreshToken = jwtUtil.generateRefreshToken(user.getEmail(), sessionId);
 
         storeRefreshToken(user.getEmail(), sessionId, refreshToken);
@@ -258,7 +258,7 @@ public class AuthServiceImpl implements AuthService {
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         clearRefreshTokenCookie(response);
 
-        // Xóa refresh token khỏi Redis
+        // Xóa refresh token khỏi Redis
         String email = getCurrentAuthenticatedEmail();
         String sessionId = getCurrentAuthenticatedSessionId();
         if (request.getCookies() != null){
@@ -326,7 +326,7 @@ public class AuthServiceImpl implements AuthService {
             throw AppException.unauthorized("Refresh token không hợp lệ");
         }
 
-        // Tìm user
+        // Tìm user
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.notFound("Người dùng không tồn tại"));
 
@@ -341,7 +341,7 @@ public class AuthServiceImpl implements AuthService {
 
         String newSessionId = createSessionId();
 
-        // Tạo access token mới
+        // Tạo access token mới
         String newAccessToken = jwtUtil.generateToken(user.getEmail(), user.getRole().getName(), newSessionId);
 
         String newRefreshToken = jwtUtil.generateRefreshToken(user.getEmail(), newSessionId);
@@ -547,19 +547,19 @@ public class AuthServiceImpl implements AuthService {
         String email = normalizeEmail(request.getEmail());
         assertOtpSendAllowed("reset", email);
 
-        // Kiểm tra email tồn tại
+        // Kiểm tra email tồn tại
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.badRequest("Email không tồn tại trong hệ thống"));
 
-        // Kiểm tra tài khoản có bị khóa không
+        // Kiểm tra tài khoản có bị khóa không
         if (user.getStatus() == User.UserStatus.BANNED) {
             throw new AppException(HttpStatus.FORBIDDEN, "Tài khoản của bạn đã bị khóa");
         }
 
-        // Tạo OTP 6 số
+        // Tạo OTP 6 số
         String otp = String.format("%06d", new Random().nextInt(999999));
 
-        // Lưu OTP vào Redis (5 phút)
+        // Lưu OTP vào Redis (5 phút)
         String key = buildOtpKey("reset", email);
         redisTemplate.opsForValue().set(key, otp, OTP_TTL.toMillis(), TimeUnit.MILLISECONDS);
 
@@ -572,26 +572,26 @@ public class AuthServiceImpl implements AuthService {
     public void resetPassword(ResetPasswordRequest request){
         String email = normalizeEmail(request.getEmail());
 
-        // Kiểm tra OTP còn tồn tại không
+        // Kiểm tra OTP còn tồn tại không
         String key = buildOtpKey("reset", email);
         String savedOtp = redisTemplate.opsForValue().get(key);
 
         if (savedOtp == null) {
-            throw AppException.badRequest("OTP đã hết hạn, vui lòng thử lại");
+            throw AppException.badRequest("OTP đã hết hạn, vui lòng thử lại");
         }
 
-        // Kiểm tra OTP có đúng không
+        // Kiểm tra OTP có đúng không
         if (!savedOtp.equals(request.getOtp())) {
             recordInvalidOtp("reset", email);
-            throw AppException.badRequest("OTP không chính xác");
+            throw AppException.badRequest("OTP không chính xác");
         }
         clearOtpAttempt("reset", email);
 
-        // Tìm user theo email
+        // Tìm user theo email
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> AppException.badRequest("Email không tồn tại"));
 
-        // Cập nhật mật khẩu mới
+        // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
@@ -604,11 +604,11 @@ public class AuthServiceImpl implements AuthService {
                         + " đặt lại mật khẩu thành công bằng OTP."
         );
 
-        // Xóa OTP khỏi Redis
+        // Xóa OTP khỏi Redis
         redisTemplate.delete(key);
         clearOtpAttempt("reset", email);
 
-        // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
+        // Xóa refresh token khỏi Redis (nếu có) để bắt buộc đăng nhập lại sau khi đổi mật khẩu
         revokeAllRefreshTokens(email);
     }
 
@@ -651,27 +651,15 @@ public class AuthServiceImpl implements AuthService {
         User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
-        // Kiểm tra mật khẩu mới không được trùng mật khẩu hiện tại
+        // Kiểm tra mật khẩu cũ
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
             throw AppException.badRequest("Mật khẩu hiện tại không đúng");
         }
 
+        // Kiểm tra mật khẩu mới không được trùng mật khẩu hiện tại
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
             throw AppException.badRequest("Mật khẩu mới không được trùng mật khẩu hiện tại");
         }
-
-        String otpKey = buildOtpKey("change-password", normalizedEmail);
-        String savedOtp = redisTemplate.opsForValue().get(otpKey);
-
-        if (savedOtp == null) {
-            throw AppException.badRequest("OTP đã hết hạn hoặc không tồn tại, vui lòng gửi lại mã");
-        }
-
-        if (!savedOtp.equals(request.getOtp())) {
-            recordInvalidOtp("change-password", normalizedEmail);
-            throw AppException.badRequest("OTP không chính xác");
-        }
-        clearOtpAttempt("change-password", normalizedEmail);
 
         // Cập nhật mật khẩu mới
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -687,15 +675,7 @@ public class AuthServiceImpl implements AuthService {
                         + " đổi mật khẩu thành công khi đang đăng nhập."
         );
 
-        redisTemplate.delete(otpKey);
-        clearOtpAttempt("change-password", normalizedEmail);
-
-        // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
+        // Xóa refreshToken khỏi Redis để bắt buộc đăng nhập lại sau khi đổi mật khẩu
         revokeAllRefreshTokens(normalizedEmail);
     }
 }
-
-
-
-
-

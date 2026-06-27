@@ -9,6 +9,14 @@ import ROUTES from '../constants/routes'
 
 const QUICK_NOTIFICATION_LIMIT = 4
 const ALL_NOTIFICATION_PAGE_SIZE = 10
+const INTERNAL_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
+
+const LockIcon = () => (
+    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+)
 
 const getInitial = (name) => {
     const safeName = name ?? ''
@@ -25,20 +33,13 @@ const accountLinks = [
     { label: 'Tin yêu thích', to: ROUTES.FAVORITES },
 ]
 
-const getBackOfficeLinks = (role) => {
-    if (role === 'ADMIN') {
-        return [{ label: 'Đi tới dashboard', to: ROUTES.ADMIN_DASHBOARD, highlight: true }]
+const getDashboardLink = (role) => {
+    switch (role) {
+        case 'ADMIN': return { label: 'Đi tới dashboard', to: ROUTES.ADMIN_DASHBOARD, highlight: true }
+        case 'MANAGER': return { label: 'Đi tới dashboard', to: ROUTES.MANAGER_DASHBOARD, highlight: true }
+        case 'MODERATOR': return { label: 'Đi tới dashboard', to: ROUTES.MODERATOR_HOME, highlight: true }
+        default: return null
     }
-
-    if (role === 'MANAGER') {
-        return [{ label: 'Đi tới dashboard', to: ROUTES.MANAGER_DASHBOARD, highlight: true }]
-    }
-
-    if (role === 'MODERATOR') {
-        return [{ label: 'Đi tới dashboard', to: ROUTES.MODERATOR_HOME, highlight: true }]
-    }
-
-    return []
 }
 
 const notificationTypeConfig = {
@@ -467,13 +468,15 @@ const AppHeader = () => {
                 <div className="flex items-center gap-3">
                     {user ? (
                         <>
-                            <Link
-                                className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
-                                to={ROUTES.CREATE_POST}
-                            >
-                                <PlusIcon />
-                                <span>Đăng tin</span>
-                            </Link>
+                            {!INTERNAL_ROLES.has(user.role) && (
+                                <Link
+                                    className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
+                                    to={ROUTES.CREATE_POST}
+                                >
+                                    <PlusIcon />
+                                    <span>Đăng tin</span>
+                                </Link>
+                            )}
 
                             <button
                                 className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 ring-offset-2 transition-all duration-200 hover:scale-105 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
@@ -523,11 +526,27 @@ const AppHeader = () => {
                                             </p>
                                         </div>
                                         <div className="max-h-96 overflow-y-auto p-2">
-                                            {[...getBackOfficeLinks(user.role), ...accountLinks].map((item) => (
+                                            {getDashboardLink(user.role) && (
                                                 <Link
-                                                    className={item.highlight
-                                                        ? 'mb-1 flex min-h-10 items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-100'
-                                                        : 'flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700'}
+                                                    className="mb-1 flex min-h-10 items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-black text-emerald-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-100"
+                                                    to={getDashboardLink(user.role).to}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    {getDashboardLink(user.role).label}
+                                                </Link>
+                                            )}
+                                            {INTERNAL_ROLES.has(user.role) && (
+                                                <Link
+                                                    className="flex min-h-10 items-center gap-2 rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700"
+                                                    to={ROUTES.INTERNAL_PROFILE}
+                                                    onClick={() => setIsMenuOpen(false)}
+                                                >
+                                                    Hồ sơ cá nhân
+                                                </Link>
+                                            )}
+                                            {!INTERNAL_ROLES.has(user.role) && accountLinks.map((item) => (
+                                                <Link
+                                                    className="flex min-h-10 items-center rounded-lg px-3 py-2 text-sm font-bold text-slate-700 transition-all duration-150 hover:translate-x-1 hover:bg-emerald-50 hover:text-emerald-700"
                                                     key={item.to}
                                                     to={item.to}
                                                     onClick={() => setIsMenuOpen(false)}

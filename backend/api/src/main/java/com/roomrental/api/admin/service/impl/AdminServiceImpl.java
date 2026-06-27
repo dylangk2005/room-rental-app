@@ -29,6 +29,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Xử lý các nghiệp vụ quản trị hệ thống.
+ * Bao gồm quản lý user, internal users, và dashboard stats.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -46,6 +50,9 @@ public class AdminServiceImpl implements AdminService {
     @PersistenceContext
     private EntityManager entityManager;
 
+    /**
+     * Lấy thống kê dashboard cho trang quản trị.
+     */
     @Override
     @Transactional(readOnly = true)
     public DashboardStatsResponse getDashboardStats() {
@@ -59,8 +66,11 @@ public class AdminServiceImpl implements AdminService {
                 .build();
     }
 
-    // Tạo tài khoản nội bộ (manager, moderator)
+    /**
+     * Tạo tài khoản nội bộ (manager, moderator).
+     */
     @Override
+    // Tạo tài khoản nội bộ (manager, moderator)
     @Transactional
     public AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request) {
         String roleName = request.getRole().trim().toUpperCase();

@@ -30,6 +30,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Xử lý các nghiệp vụ thanh toán cho bài đăng.
+ * Bao gồm thanh toán đăng tin, gia hạn, và boost bài đăng.
+ * Tích hợp với VnPay và xử lý VAT.
+ */
 @Service
 @RequiredArgsConstructor
 public class PaymentServiceImpl implements PaymentService {
@@ -44,6 +49,11 @@ public class PaymentServiceImpl implements PaymentService {
     private final AuditLogService auditLogService;
     private final MembershipService membershipService;
 
+    /**
+     * Thanh toán đăng tin từ trạng thái DRAFT.
+     * Trừ tiền từ tài khoản người dùng và chuyển tin sang trạng thái PENDING.
+     * Áp dụng VAT và giảm giá theo membership level.
+     */
     @Override
     @Transactional
     public PaymentResponse payPost(Integer userId, PayPostRequest request) {
@@ -122,6 +132,10 @@ public class PaymentServiceImpl implements PaymentService {
         return mapResponse(payment, post);
     }
 
+    /**
+     * Gia hạn bài đăng đang hoạt động hoặc đã hết hạn.
+     * Tính thời hạn mới từ ngày hết hạn hiện tại hoặc ngày hiện tại.
+     */
     @Override
     @Transactional
     public PaymentResponse renewPost(Integer userId, RenewPaymentRequest request) {
@@ -205,6 +219,10 @@ public class PaymentServiceImpl implements PaymentService {
         return mapResponse(payment, post);
     }
 
+    /**
+     * Đẩy bài đăng lên đầu danh sách (boost).
+     * Reset pushTime để tin hiển thị ở vị trí ưu tiên.
+     */
     @Override
     @Transactional
     public PaymentResponse boostPost(Integer userId, BoostPaymentRequest request) {

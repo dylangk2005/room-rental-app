@@ -17,6 +17,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * REST Controller xử lý các API liên quan đến xác thực người dùng.
+ * Bao gồm đăng ký, đăng nhập, đăng xuất, làm mới token, và quản lý mật khẩu.
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor

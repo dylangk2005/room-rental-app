@@ -31,6 +31,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * REST Controller xử lý các API liên quan đến bài đăng phòng trọ.
+ * Bao gồm tạo, cập nhật, xóa, tìm kiếm và thanh toán bài đăng.
+ */
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor

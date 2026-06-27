@@ -43,6 +43,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Xử lý các nghiệp vụ liên quan đến bài đăng phòng trọ.
+ * Bao gồm tạo, cập nhật, xóa, tìm kiếm và quản lý hình ảnh bài đăng.
+ */
 @Service
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
@@ -173,7 +177,10 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
-    // Lấy danh sách bài đăng đang hoạt động, có thể phân trang
+    /**
+     * Lấy danh sách bài đăng đang hoạt động, có phân trang.
+     * Sắp xếp theo priority ASC, pushTime DESC.
+     */
     @Override
     public PostPageResponse getActivePosts(int page, int size) {
         Page<Post> result = postRepository.findPublicActivePosts(
@@ -181,7 +188,10 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
-    // Tìm kiếm bài đăng theo tiêu chí, có thể phân trang
+    /**
+     * Tìm kiếm bài đăng theo tiêu chí (tỉnh, quận, giá, diện tích), có phân trang.
+     * Chỉ tìm kiếm bài đăng public còn hiệu lực.
+     */
     @Override
     public PostPageResponse searchPosts(Integer provinceId, Integer districtId,
                                         BigDecimal minPrice, BigDecimal maxPrice,
@@ -195,6 +205,10 @@ public class PostServiceImpl implements PostService {
         return mapToPageResponse(result);
     }
 
+    /**
+     * Lấy danh sách tỉnh/quận có bài đăng đang hoạt động.
+     * Dùng cho bộ lọc tìm kiếm.
+     */
     @Override
     @Transactional(readOnly = true)
     public List<PostLocationResponse> getActiveLocations() {
@@ -221,7 +235,11 @@ public class PostServiceImpl implements PostService {
                 .toList();
     }
 
-    // Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
+    /**
+     * Xem thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ.
+     * Nếu bài đăng không ở trạng thái ACTIVE, chỉ cho phép xem nếu
+     * người dùng là chủ bài đăng, đã yêu thích bài đăng này hoặc có quyền quản trị.
+     */
     @Override
     public PostDetailResponse getPostDetail(Integer postId) {
         // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
@@ -250,7 +268,10 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(post, imageUrls, isFavorited);
     }
 
-    // Xem thông tin liên hệ của phòng trọ
+    /**
+     * Xem thông tin liên hệ của phòng trọ.
+     * Nếu bài đăng không còn hiệu lực thì chỉ chủ tin hoặc nhân viên được xem liên hệ.
+     */
     @Override
     public PostContactResponse getPostContact(Integer postId) {
         // Lấy thông tin chi tiết của bài đăng, bao gồm thông tin người dùng và loại bài đăng
@@ -279,6 +300,10 @@ public class PostServiceImpl implements PostService {
                 .build();
     }
 
+    /**
+     * Tạo bài đăng mới với trạng thái DRAFT.
+     * Upload hình ảnh lên Cloudinary và lưu vào database.
+     */
     @Override
     @Transactional
     public PostDetailResponse createPost(Integer userId, CreatePostRequest request,
@@ -350,7 +375,10 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls, false);
     }
 
-    // Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới)
+    /**
+     * Cập nhật bài đăng, có thể thay thế ảnh (xóa ảnh cũ và upload ảnh mới).
+     * Chỉ chủ bài đăng mới được phép cập nhật.
+     */
     @Override
     @Transactional
     public PostDetailResponse updatePost(Integer userId, Integer postId,
@@ -393,7 +421,8 @@ public class PostServiceImpl implements PostService {
                         .orElseThrow(() -> AppException.notFound("Không tìm thấy ảnh: " + url));
                 try {
                     cloudinaryService.deleteImage(url);
-                } catch (Exception ignored) { /* ảnh đã bị xóa khỏi Cloudinary thì vẫn xóa DB */ }
+                    // Nếu ảnh đã bị xóa khỏi Cloudinary trước đó, vẫn tiếp tục xóa DB record
+                } catch (Exception ignored) { }
                 postImageRepository.delete(image);
             }
         }
@@ -435,7 +464,10 @@ public class PostServiceImpl implements PostService {
         return mapToDetail(saved, imageUrls, favoriteRepository.existsByUser_IdAndPost_Id(userId, postId));
     }
 
-    // Xóa bài đăng, chỉ người dùng tạo bài đăng mới được xóa
+    /**
+     * Xóa bài đăng (soft delete - chỉ cập nhật trạng thái thành DELETED).
+     * Chỉ chủ bài đăng mới được phép xóa.
+     */
     @Override
     @Transactional
     public void deletePost(Integer userId, Integer postId) {
@@ -469,6 +501,10 @@ public class PostServiceImpl implements PostService {
 
     }
 
+    /**
+     * Bật/tắt hiển thị bài đăng (ACTIVE <-> HIDDEN).
+     * Chỉ chủ bài đăng mới được phép thực hiện.
+     */
     @Override
     @Transactional
     public void toggleVisibility(Integer userId, Integer postId) {
@@ -500,7 +536,9 @@ public class PostServiceImpl implements PostService {
         auditLogService.log(userId, action, AuditLog.TargetType.POST, saved.getId(), msg + ". Trạng thái mới: " + next + ".");
     }
 
-    // Lấy danh sách bài đăng của người dùng, có phân trang
+    /**
+     * Lấy danh sách bài đăng của người dùng, có phân trang.
+     */
     @Override
     public PostPageResponse getMyPosts(Integer userId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("createdAt")));

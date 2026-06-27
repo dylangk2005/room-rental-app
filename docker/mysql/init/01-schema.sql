@@ -1,8 +1,17 @@
+-- =============================================================================
+-- ROOM RENTAL APP - DATABASE SCHEMA
+-- Database: phongtro_db (utf8mb4, utf8mb4_unicode_ci)
+-- =============================================================================
+
 CREATE DATABASE IF NOT EXISTS phongtro_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE phongtro_db;
+
+-- =============================================================================
+-- LOCATION TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS provinces (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -18,6 +27,10 @@ CREATE TABLE IF NOT EXISTS districts (
     CONSTRAINT fk_districts_province FOREIGN KEY (province_id) REFERENCES provinces(id),
     INDEX idx_districts_province_id (province_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- USER MANAGEMENT TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS roles (
     role_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -65,24 +78,9 @@ CREATE TABLE IF NOT EXISTS user_penalties (
     INDEX idx_user_penalties_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS deposits (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    amount DECIMAL(12,2),
-    tax DECIMAL(12,2),
-    net_amount DECIMAL(12,2),
-    method ENUM('BANK_TRANSFER', 'VNPAY'),
-    status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED') DEFAULT 'PENDING',
-    transaction_ref VARCHAR(100) UNIQUE,
-    gateway_transaction_no VARCHAR(100),
-    opening_balance DECIMAL(12,2),
-    closing_balance DECIMAL(12,2),
-    note TEXT,
-    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    user_id INT,
-    CONSTRAINT fk_deposits_user FOREIGN KEY (user_id) REFERENCES users(id),
-    INDEX idx_deposits_user_id (user_id),
-    INDEX idx_deposits_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- =============================================================================
+-- POST TABLES (must be before transactions for FK dependencies)
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS post_types (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -144,6 +142,38 @@ CREATE TABLE IF NOT EXISTS post_images (
     INDEX idx_post_images_post_id (post_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id INT,
+    post_id INT,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_favorites_post FOREIGN KEY (post_id) REFERENCES posts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- TRANSACTION TABLES
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS deposits (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    amount DECIMAL(12,2),
+    tax DECIMAL(12,2),
+    net_amount DECIMAL(12,2),
+    method ENUM('BANK_TRANSFER', 'VNPAY'),
+    status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED') DEFAULT 'PENDING',
+    transaction_ref VARCHAR(100) UNIQUE,
+    gateway_transaction_no VARCHAR(100),
+    opening_balance DECIMAL(12,2),
+    closing_balance DECIMAL(12,2),
+    note TEXT,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    user_id INT,
+    CONSTRAINT fk_deposits_user FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_deposits_user_id (user_id),
+    INDEX idx_deposits_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS payments (
     id INT PRIMARY KEY AUTO_INCREMENT,
     payment_type ENUM('POST_PAYMENT', 'EXTEND', 'REFUND', 'PUSH'),
@@ -166,14 +196,9 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_payments_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS favorites (
-    user_id INT,
-    post_id INT,
-    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, post_id),
-    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_favorites_post FOREIGN KEY (post_id) REFERENCES posts(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- =============================================================================
+-- MODERATION TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -227,6 +252,10 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
     INDEX idx_moderation_logs_target_id (target_id),
     INDEX idx_moderation_logs_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- SYSTEM TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,

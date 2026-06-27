@@ -2,8 +2,6 @@ package com.roomrental.api.post.repository;
 
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.post.entity.Post;
-import com.roomrental.api.pricing.entity.PostType;
-import com.roomrental.api.user.entity.User;
 import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,7 +24,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
     // Lấy danh sách bài đăng public còn hiệu lực
-    @EntityGraph(attributePaths = {"postType", "user"})
+    @EntityGraph(attributePaths = {"postType", "user", "provinceRef", "districtRef"})
     @Query(
             value = """
         SELECT p FROM Post p

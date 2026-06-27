@@ -44,6 +44,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
+/**
+ * Xử lý các nghiệp vụ liên quan đến xác thực người dùng.
+ * Bao gồm đăng ký, đăng nhập, đăng xuất, làm mới token, và quản lý mật khẩu.
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -69,11 +73,15 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AuditLogService auditLogService;
     private final MembershipService membershipService;
-    private Boolean mustChangePassword;
 
     @Value("${app.cookie.secure:false}")
     private boolean secureCookies;
 
+    /**
+     * Gửi OTP để xác thực đăng ký tài khoản mới.
+     * OTP được gửi qua email và có hiệu lực trong 5 phút.
+     * Có giới hạn số lần gửi OTP theo email và IP.
+     */
     @Override
     public void register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
@@ -99,10 +107,13 @@ public class AuthServiceImpl implements AuthService {
         redisTemplate.opsForHash().put(key, "phoneNumber", request.getPhoneNumber());
         redisTemplate.expire(key, OTP_TTL.toMillis(), TimeUnit.MILLISECONDS);
 
-        // TODO: Gửi OTP qua email
         emailService.sendOtp(email, otp);
     }
 
+    /**
+     * Xác thực OTP và hoàn tất đăng ký tài khoản.
+     * Tạo user mới với role USER và membership level mặc định.
+     */
     @Override
     public void verifyOtp(VerifyOtpRequest request) {
         String email = normalizeEmail(request.getEmail());
@@ -161,6 +172,11 @@ public class AuthServiceImpl implements AuthService {
         clearOtpAttempt("register", email);
     }
 
+    /**
+     * Xác thực thông tin đăng nhập và tạo JWT tokens.
+     * Bao gồm rate limiting để chống brute force attack.
+     * Sau khi đăng nhập thành công, refresh membership level dựa trên tổng chi tiêu.
+     */
     @Override
     public AuthResponse login(LoginRequest request, HttpServletResponse response) {
         String email = normalizeEmail(request.getEmail());
@@ -254,6 +270,10 @@ public class AuthServiceImpl implements AuthService {
                 .build();
     }
 
+    /**
+     * Đăng xuất người dùng.
+     * Xóa refresh token từ Redis và cookie.
+     */
     @Override
     public void logout(HttpServletRequest request, HttpServletResponse response) {
         clearRefreshTokenCookie(response);
@@ -290,6 +310,10 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    /**
+     * Làm mới access token sử dụng refresh token từ cookie.
+     * Tạo cặp tokens mới và revoke token cũ.
+     */
     @Override
     public AuthResponse refresh(HttpServletRequest request, HttpServletResponse response) {
         // Lấy refresh token từ cookie
@@ -542,6 +566,10 @@ public class AuthServiceImpl implements AuthService {
         return request.getRemoteAddr() != null ? request.getRemoteAddr() : "unknown";
     }
 
+    /**
+     * Gửi yêu cầu quên mật khẩu.
+     * Tạo OTP và gửi qua email để xác thực.
+     */
     @Override
     public void forgotPassword(ForgotPasswordRequest request){
         String email = normalizeEmail(request.getEmail());
@@ -568,6 +596,10 @@ public class AuthServiceImpl implements AuthService {
 
     }
 
+    /**
+     * Đặt lại mật khẩu sau khi xác thực OTP thành công.
+     * Xóa tất cả refresh tokens để bắt buộc đăng nhập lại.
+     */
     @Override
     public void resetPassword(ResetPasswordRequest request){
         String email = normalizeEmail(request.getEmail());
@@ -612,6 +644,9 @@ public class AuthServiceImpl implements AuthService {
         revokeAllRefreshTokens(email);
     }
 
+    /**
+     * Yêu cầu OTP để đổi mật khẩu khi đã đăng nhập.
+     */
     @Override
     public void requestChangePasswordOtp(String email) {
         String normalizedEmail = normalizeEmail(email);
@@ -638,6 +673,10 @@ public class AuthServiceImpl implements AuthService {
         );
     }
 
+    /**
+     * Đổi mật khẩu sau khi xác thực OTP hoặc nhập mật khẩu cũ.
+     * Đặt lại tất cả refresh tokens sau khi đổi mật khẩu thành công.
+     */
     @Override
     public void changePassword(String email, ChangePasswordRequest request) {
         String normalizedEmail = normalizeEmail(email);

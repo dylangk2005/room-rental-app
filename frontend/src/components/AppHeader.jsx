@@ -1,3 +1,6 @@
+/**
+ * AppHeader - Header component với navigation, notifications và user menu
+ */
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
@@ -7,9 +10,13 @@ import notificationApi from '../api/notificationApi'
 import SafeImage from './common/SafeImage'
 import ROUTES from '../constants/routes'
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
 const QUICK_NOTIFICATION_LIMIT = 4
 const ALL_NOTIFICATION_PAGE_SIZE = 10
 const INTERNAL_ROLES = new Set(['ADMIN', 'MANAGER', 'MODERATOR'])
+
+// ─── Icons ─────────────────────────────────────────────────────────────────────
 
 const LockIcon = () => (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -23,6 +30,8 @@ const getInitial = (name) => {
     const trimmedName = safeName.trim()
     return trimmedName ? trimmedName.charAt(0).toUpperCase() : 'T'
 }
+
+// ─── Navigation Config ────────────────────────────────────────────────────────
 
 const accountLinks = [
     { label: 'Hồ sơ cá nhân', to: ROUTES.PROFILE },
@@ -41,6 +50,8 @@ const getDashboardLink = (role) => {
         default: return null
     }
 }
+
+// ─── Notification Config ───────────────────────────────────────────────────────
 
 const notificationTypeConfig = {
     POST_INFORMATION: {
@@ -142,6 +153,8 @@ const getNotificationTypeConfig = (type) =>
         ),
     }
 
+// ─── Formatters ───────────────────────────────────────────────────────────────
+
 const formatNotificationTime = (value) => {
     if (!value) return ''
     return new Intl.DateTimeFormat('vi-VN', {
@@ -171,6 +184,8 @@ const formatRelativeTime = (value) => {
     return formatNotificationTime(value)
 }
 
+// ─── Icons (reusable) ─────────────────────────────────────────────────────────
+
 const CheckIcon = () => (
     <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none">
         <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -193,28 +208,19 @@ const BellOffIcon = () => (
 
 const BellIcon = () => (
     <svg aria-hidden="true" className="h-5 w-5" fill="none" viewBox="0 0 24 24">
-        <path
-            d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        />
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
 )
 
 const PlusIcon = () => (
     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
-        <path
-            d="M12 5v14m-7-7h14"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2.2"
-        />
+        <path d="M12 5v14m-7-7h14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" />
     </svg>
 )
 
+// ─── Sub-Components ───────────────────────────────────────────────────────────
+
+/** Một item notification trong danh sách */
 const NotificationItem = ({ notification, onClick, compact = false }) => {
     const config = getNotificationTypeConfig(notification.type)
     const { Icon } = config
@@ -231,17 +237,13 @@ const NotificationItem = ({ notification, onClick, compact = false }) => {
             type="button"
             onClick={() => onClick(notification)}
         >
-            <span
-                className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bgColor} ${config.textColor} ${config.borderColor} border transition-transform duration-200 group-hover:scale-110`}
-            >
+            <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${config.bgColor} ${config.textColor} ${config.borderColor} border transition-transform duration-200 group-hover:scale-110`}>
                 <Icon />
             </span>
 
             <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
-                    <span className={`text-xs font-black ${config.textColor}`}>
-                        {config.label}
-                    </span>
+                    <span className={`text-xs font-black ${config.textColor}`}>{config.label}</span>
                     <span className="shrink-0 text-[11px] font-semibold text-slate-400">
                         {formatRelativeTime(notification.createdAt)}
                     </span>
@@ -266,10 +268,14 @@ const NotificationItem = ({ notification, onClick, compact = false }) => {
     )
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 const AppHeader = () => {
     const { user, logout, isAuthReady } = useAuth()
     const navigate = useNavigate()
     const menuRef = useRef(null)
+
+    // ── State ────────────────────────────────────────────────────────────
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
     const [notifications, setNotifications] = useState([])
@@ -287,6 +293,9 @@ const AppHeader = () => {
     const [isAllNotificationsLoading, setIsAllNotificationsLoading] = useState(false)
     const portalRoot = typeof document !== 'undefined' ? document.body : null
 
+    // ── Effects ─────────────────────────────────────────────────────────
+
+    // Close menu when clicking outside
     useEffect(() => {
         if (!isMenuOpen) return undefined
 
@@ -297,12 +306,10 @@ const AppHeader = () => {
         }
 
         document.addEventListener('pointerdown', handlePointerDown)
-
-        return () => {
-            document.removeEventListener('pointerdown', handlePointerDown)
-        }
+        return () => document.removeEventListener('pointerdown', handlePointerDown)
     }, [isMenuOpen])
 
+    // Handle Escape key to close panels
     useEffect(() => {
         const hasOpenPanel = isNotificationOpen || isAllNotificationsOpen || !!selectedNotification
         if (!hasOpenPanel) return undefined
@@ -319,6 +326,7 @@ const AppHeader = () => {
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [isNotificationOpen, isAllNotificationsOpen, selectedNotification])
 
+    // Load initial notifications
     useEffect(() => {
         if (!user) return undefined
 
@@ -347,6 +355,8 @@ const AppHeader = () => {
             ignore = true
         }
     }, [user, isAuthReady])
+
+    // ── API Functions ───────────────────────────────────────────────────
 
     const loadQuickNotifications = async () => {
         setIsNotificationLoading(true)
@@ -392,6 +402,8 @@ const AppHeader = () => {
             setIsAllNotificationsLoading(false)
         }
     }
+
+    // ── Handlers ────────────────────────────────────────────────────────
 
     const openQuickNotifications = () => {
         setIsMenuOpen(false)
@@ -455,9 +467,13 @@ const AppHeader = () => {
 
     const hasMoreNotifications = allPageInfo.currentPage + 1 < allPageInfo.totalPages
 
+    // ── Render ──────────────────────────────────────────────────────────
+
     return (
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+            {/* Main header bar */}
             <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+                {/* Logo */}
                 <Link to={ROUTES.HOME} className="flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 font-black text-white">
                         T
@@ -465,9 +481,11 @@ const AppHeader = () => {
                     <span className="text-xl font-black text-slate-950">TAYTRO</span>
                 </Link>
 
+                {/* Right side actions */}
                 <div className="flex items-center gap-3">
                     {user ? (
                         <>
+                            {/* Post button (hidden for internal roles) */}
                             {!INTERNAL_ROLES.has(user.role) && (
                                 <Link
                                     className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
@@ -478,6 +496,7 @@ const AppHeader = () => {
                                 </Link>
                             )}
 
+                            {/* Notification bell */}
                             <button
                                 className="relative flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 ring-offset-2 transition-all duration-200 hover:scale-105 hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
                                 type="button"
@@ -492,6 +511,7 @@ const AppHeader = () => {
                                 )}
                             </button>
 
+                            {/* User menu */}
                             <div className="relative" ref={menuRef}>
                                 <button
                                     className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 text-sm font-black text-slate-700 ring-offset-2 transition-all duration-200 hover:scale-105 hover:border-emerald-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-emerald-500 active:scale-95"
@@ -515,8 +535,10 @@ const AppHeader = () => {
                                     )}
                                 </button>
 
+                                {/* Dropdown menu */}
                                 {isMenuOpen && (
                                     <div className="absolute right-0 mt-3 w-80 origin-top-right animate-in overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl fade-in slide-in-from-top-2 duration-200">
+                                        {/* User info header */}
                                         <div className="border-b border-slate-200 bg-gradient-to-br from-emerald-50 to-white p-4">
                                             <p className="truncate text-sm font-black text-slate-950">
                                                 {user.fullName || 'Người dùng'}
@@ -525,6 +547,8 @@ const AppHeader = () => {
                                                 {user.email || 'Tài khoản TAYTRO'}
                                             </p>
                                         </div>
+
+                                        {/* Menu items */}
                                         <div className="max-h-96 overflow-y-auto p-2">
                                             {getDashboardLink(user.role) && (
                                                 <Link
@@ -555,6 +579,8 @@ const AppHeader = () => {
                                                 </Link>
                                             ))}
                                         </div>
+
+                                        {/* Logout button */}
                                         <div className="border-t border-slate-200 p-2">
                                             <button
                                                 className="flex h-10 w-full items-center rounded-lg px-3 text-left text-sm font-black text-red-600 transition-colors duration-150 hover:bg-red-50"
@@ -570,6 +596,7 @@ const AppHeader = () => {
                         </>
                     ) : (
                         <>
+                            {/* Guest: Post button */}
                             <Link
                                 className="group hidden h-10 items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 text-sm font-black text-emerald-700 transition-all duration-200 hover:scale-[1.04] hover:border-emerald-300 hover:bg-emerald-100 hover:shadow-md active:scale-95 sm:inline-flex"
                                 to={ROUTES.CREATE_POST}
@@ -577,6 +604,8 @@ const AppHeader = () => {
                                 <PlusIcon />
                                 <span>Đăng tin</span>
                             </Link>
+
+                            {/* Guest: Login button */}
                             <Link
                                 className="inline-flex h-10 items-center justify-center rounded-lg bg-slate-900 px-4 text-sm font-black text-white transition-all duration-200 hover:scale-[1.04] hover:bg-slate-800 hover:shadow-md active:scale-95"
                                 to={ROUTES.LOGIN}
@@ -588,338 +617,65 @@ const AppHeader = () => {
                 </div>
             </div>
 
+            {/* Quick notifications panel */}
             {isNotificationOpen && portalRoot && createPortal(
                 <>
-                    <div
-                        className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200"
-                        aria-hidden="true"
-                        onClick={() => setIsNotificationOpen(false)}
-                    />
+                    <div className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200" aria-hidden="true" onClick={() => setIsNotificationOpen(false)} />
                     <div className="fixed left-1/2 top-16 z-50 w-full max-w-md -translate-x-1/2 px-4 pt-3">
-                        <div
-                            className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200"
-                            style={{ animation: 'slideDown 200ms ease-out' }}
-                        >
-                            <style>{`
-                                @keyframes slideDown {
-                                    from { opacity: 0; transform: translateY(-8px) scale(0.98); }
-                                    to   { opacity: 1; transform: translateY(0) scale(1); }
-                                }
-                                @keyframes shimmer {
-                                    0%   { background-position: -200% 0; }
-                                    100% { background-position: 200% 0; }
-                                }
-                                .skeleton {
-                                    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
-                                    background-size: 200% 100%;
-                                    animation: shimmer 1.5s infinite;
-                                }
-                            `}</style>
-
-                            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-                                        <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <h2 className="text-base font-black text-slate-900">Thông báo</h2>
-                                        <p className="text-xs font-semibold text-slate-500">
-                                            {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Bạn đã đọc hết thông báo'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-slate-100 hover:text-slate-600 active:scale-95"
-                                    type="button"
-                                    onClick={() => setIsNotificationOpen(false)}
-                                    aria-label="Đóng thông báo"
-                                >
-                                    ×
-                                </button>
-                            </div>
-
-                            {notificationError && (
-                                <div className="mx-5 mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-                                    {notificationError}
-                                </div>
-                            )}
-
-                            <div className="max-h-96 overflow-y-auto p-3">
-                                {isNotificationLoading && (
-                                    <div className="space-y-2">
-                                        {[0, 1, 2].map((i) => (
-                                            <div key={i} className="flex gap-3 rounded-xl p-3.5">
-                                                <div className="h-9 w-9 shrink-0 rounded-full skeleton" />
-                                                <div className="flex-1 space-y-2 pt-1">
-                                                    <div className="h-3 w-20 rounded-full skeleton" />
-                                                    <div className="h-4 w-full rounded-full skeleton" />
-                                                    <div className="h-4 w-3/4 rounded-full skeleton" />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {!isNotificationLoading && notifications.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-12">
-                                        <BellOffIcon />
-                                        <p className="mt-4 text-sm font-semibold text-slate-500">Chưa có thông báo nào</p>
-                                        <p className="mt-1 text-xs text-slate-400">Thông báo từ hệ thống sẽ xuất hiện ở đây</p>
-                                    </div>
-                                )}
-
-                                {!isNotificationLoading && notifications.length > 0 && (
-                                    <div className="space-y-1.5">
-                                        {notifications.map((notification) => (
-                                            <NotificationItem
-                                                key={notification.id}
-                                                notification={notification}
-                                                onClick={handleNotificationClick}
-                                                compact
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
-                                {unreadCount > 0 ? (
-                                    <button
-                                        className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-                                        type="button"
-                                        onClick={handleMarkAllAsRead}
-                                    >
-                                        <CheckIcon />
-                                        Đánh dấu đã đọc
-                                    </button>
-                                ) : (
-                                    <div />
-                                )}
-                                <button
-                                    className="flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition-all duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-95"
-                                    type="button"
-                                    onClick={openAllNotifications}
-                                >
-                                    Xem tất cả
-                                    <ArrowRightIcon />
-                                </button>
-                            </div>
+                        <div className="relative w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200" style={{ animation: 'slideDown 200ms ease-out' }}>
+                            <NotificationPanelContent
+                                title="Thông báo"
+                                unreadCount={unreadCount}
+                                notifications={notifications}
+                                isLoading={isNotificationLoading}
+                                notificationError={notificationError}
+                                onClose={() => setIsNotificationOpen(false)}
+                                onNotificationClick={handleNotificationClick}
+                                onMarkAllAsRead={handleMarkAllAsRead}
+                                onViewAll={openAllNotifications}
+                            />
                         </div>
                     </div>
                 </>,
                 portalRoot
             )}
 
+            {/* Single notification detail modal */}
             {selectedNotification && portalRoot && createPortal(
                 <>
-                    <div
-                        className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200"
-                        aria-hidden="true"
-                        onClick={() => setSelectedNotification(null)}
-                    />
+                    <div className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200" aria-hidden="true" onClick={() => setSelectedNotification(null)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-                        <div
-                            className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200"
-                            style={{ animation: 'scaleIn 200ms ease-out' }}
-                        >
-                            <style>{`
-                                @keyframes scaleIn {
-                                    from { opacity: 0; transform: scale(0.95); }
-                                    to   { opacity: 1; transform: scale(1); }
-                                }
-                            `}</style>
-
-                            {(() => {
-                                const config = getNotificationTypeConfig(selectedNotification.type)
-                                const { Icon } = config
-                                return (
-                                    <div className={`flex items-center gap-4 border-b border-slate-100 px-6 py-5 ${config.bgColor}`}>
-                                        <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.bgColor} ${config.textColor} ${config.borderColor} border`}>
-                                            <Icon className="!h-7 !w-7" />
-                                        </span>
-                                        <div className="flex-1">
-                                            <p className={`text-xs font-black uppercase tracking-wide ${config.textColor}`}>
-                                                {config.label}
-                                            </p>
-                                            <p className="mt-0.5 text-sm font-semibold text-slate-400">
-                                                {formatNotificationTime(selectedNotification.createdAt)}
-                                            </p>
-                                        </div>
-                                        <button
-                                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xl font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-white/60 hover:text-slate-600 active:scale-95"
-                                            type="button"
-                                            onClick={() => setSelectedNotification(null)}
-                                            aria-label="Đóng thông báo"
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                )
-                            })()}
-
-                            <div className="min-h-0 flex-1 overflow-y-auto p-6">
-                                {(() => {
-                                    const lines = formatMessage(selectedNotification.message)
-                                    return lines.length > 1 ? (
-                                        <ul className="space-y-2 text-[15px] font-semibold leading-7 text-slate-700 marker:text-slate-400">
-                                            {lines.map((line, i) => (
-                                                <li key={i}>{line}</li>
-                                            ))}
-                                        </ul>
-                                    ) : (
-                                        <p className="whitespace-pre-wrap break-words text-[15px] font-semibold leading-7 text-slate-700">
-                                            {selectedNotification.message}
-                                        </p>
-                                    )
-                                })()}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
-                                <button
-                                    className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-                                    type="button"
-                                    onClick={() => setSelectedNotification(null)}
-                                >
-                                    Đóng
-                                </button>
-                                <button
-                                    className="flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition-all duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-95"
-                                    type="button"
-                                    onClick={openAllNotifications}
-                                >
-                                    Xem tất cả thông báo
-                                    <ArrowRightIcon />
-                                </button>
-                            </div>
+                        <div className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200" style={{ animation: 'scaleIn 200ms ease-out' }}>
+                            <NotificationDetailContent
+                                notification={selectedNotification}
+                                onClose={() => setSelectedNotification(null)}
+                                onViewAll={openAllNotifications}
+                            />
                         </div>
                     </div>
                 </>,
                 portalRoot
             )}
 
+            {/* All notifications modal */}
             {isAllNotificationsOpen && portalRoot && createPortal(
                 <>
-                    <div
-                        className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200"
-                        aria-hidden="true"
-                        onClick={() => setIsAllNotificationsOpen(false)}
-                    />
+                    <div className="fixed inset-0 z-40 bg-slate-950/45 transition-opacity duration-200" aria-hidden="true" onClick={() => setIsAllNotificationsOpen(false)} />
                     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
-                        <div
-                            className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200"
-                            style={{ animation: 'scaleIn 200ms ease-out' }}
-                        >
-                            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-                                        <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
-                                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
-                                    </span>
-                                    <div>
-                                        <h2 className="text-base font-black text-slate-900">Tất cả thông báo</h2>
-                                        <p className="text-xs font-semibold text-slate-500">
-                                            {allPageInfo.totalElements > 0
-                                                ? `${allPageInfo.totalElements} thông báo`
-                                                : 'Chưa có thông báo nào'}
-                                        </p>
-                                    </div>
-                                </div>
-                                <button
-                                    className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-slate-100 hover:text-slate-600 active:scale-95"
-                                    type="button"
-                                    onClick={() => setIsAllNotificationsOpen(false)}
-                                    aria-label="Đóng thông báo"
-                                >
-                                    ×
-                                </button>
-                            </div>
-
-                            {notificationError && (
-                                <div className="mx-5 mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
-                                    {notificationError}
-                                </div>
-                            )}
-
-                            <div className="min-h-0 flex-1 overflow-y-auto p-3">
-                                {isAllNotificationsLoading && allNotifications.length === 0 && (
-                                    <div className="space-y-2">
-                                        {[0, 1, 2, 3].map((i) => (
-                                            <div key={i} className="flex gap-3 rounded-xl p-3.5">
-                                                <div className="h-9 w-9 shrink-0 rounded-full skeleton" />
-                                                <div className="flex-1 space-y-2 pt-1">
-                                                    <div className="h-3 w-20 rounded-full skeleton" />
-                                                    <div className="h-4 w-full rounded-full skeleton" />
-                                                    <div className="h-4 w-3/4 rounded-full skeleton" />
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {!isAllNotificationsLoading && allNotifications.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-12">
-                                        <BellOffIcon />
-                                        <p className="mt-4 text-sm font-semibold text-slate-500">Chưa có thông báo nào</p>
-                                        <p className="mt-1 text-xs text-slate-400">Thông báo từ hệ thống sẽ xuất hiện ở đây</p>
-                                    </div>
-                                )}
-
-                                {allNotifications.length > 0 && (
-                                    <div className="space-y-1.5">
-                                        {allNotifications.map((notification) => (
-                                            <NotificationItem
-                                                key={notification.id}
-                                                notification={notification}
-                                                onClick={handleNotificationClick}
-                                                compact
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
-                                {unreadCount > 0 && (
-                                    <button
-                                        className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95"
-                                        type="button"
-                                        onClick={handleMarkAllAsRead}
-                                    >
-                                        <CheckIcon />
-                                        Đánh dấu đã đọc
-                                    </button>
-                                )}
-                                <div className="flex-1" />
-                                {hasMoreNotifications ? (
-                                    <button
-                                        className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
-                                        type="button"
-                                        onClick={() => loadAllNotifications(allPageInfo.currentPage + 1, true)}
-                                        disabled={isAllNotificationsLoading}
-                                    >
-                                        {isAllNotificationsLoading ? (
-                                            <>
-                                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
-                                                Đang tải...
-                                            </>
-                                        ) : (
-                                            <>
-                                                Tải thêm
-                                                <ArrowRightIcon />
-                                            </>
-                                        )}
-                                    </button>
-                                ) : allNotifications.length > 0 ? (
-                                    <p className="flex h-10 items-center text-sm font-semibold text-slate-400">
-                                        Đã xem hết thông báo
-                                    </p>
-                                ) : (
-                                    <div />
-                                )}
-                            </div>
+                        <div className="relative flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl transition-all duration-200" style={{ animation: 'scaleIn 200ms ease-out' }}>
+                            <AllNotificationsContent
+                                notifications={allNotifications}
+                                pageInfo={allPageInfo}
+                                isLoading={isAllNotificationsLoading}
+                                notificationError={notificationError}
+                                unreadCount={unreadCount}
+                                hasMore={hasMoreNotifications}
+                                onClose={() => setIsAllNotificationsOpen(false)}
+                                onNotificationClick={handleNotificationClick}
+                                onMarkAllAsRead={handleMarkAllAsRead}
+                                onLoadMore={() => loadAllNotifications(allPageInfo.currentPage + 1, true)}
+                                onLoadAll={() => loadAllNotifications(0, false)}
+                            />
                         </div>
                     </div>
                 </>,
@@ -928,5 +684,246 @@ const AppHeader = () => {
         </header>
     )
 }
+
+// ─── Sub-Panel Components ───────────────────────────────────────────────────────
+
+/** Quick notification panel content */
+const NotificationPanelContent = ({ title, unreadCount, notifications, isLoading, notificationError, onClose, onNotificationClick, onMarkAllAsRead, onViewAll }) => (
+    <>
+        <style>{`
+            @keyframes slideDown { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+            @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+            .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+        `}</style>
+
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </span>
+                <div>
+                    <h2 className="text-base font-black text-slate-900">{title}</h2>
+                    <p className="text-xs font-semibold text-slate-500">
+                        {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Bạn đã đọc hết thông báo'}
+                    </p>
+                </div>
+            </div>
+            <button className="flex h-8 w-8 items-center justify-center rounded-full text-lg font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-slate-100 hover:text-slate-600 active:scale-95" type="button" onClick={onClose} aria-label="Đóng thông báo">
+                ×
+            </button>
+        </div>
+
+        {/* Error */}
+        {notificationError && (
+            <div className="mx-5 mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
+                {notificationError}
+            </div>
+        )}
+
+        {/* List */}
+        <div className="max-h-96 overflow-y-auto p-3">
+            {isLoading && (
+                <div className="space-y-2">
+                    {[0, 1, 2].map((i) => (
+                        <div key={i} className="flex gap-3 rounded-xl p-3.5">
+                            <div className="h-9 w-9 shrink-0 rounded-full skeleton" />
+                            <div className="flex-1 space-y-2 pt-1">
+                                <div className="h-3 w-20 rounded-full skeleton" />
+                                <div className="h-4 w-full rounded-full skeleton" />
+                                <div className="h-4 w-3/4 rounded-full skeleton" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {!isLoading && notifications.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12">
+                    <BellOffIcon />
+                    <p className="mt-4 text-sm font-semibold text-slate-500">Chưa có thông báo nào</p>
+                    <p className="mt-1 text-xs text-slate-400">Thông báo từ hệ thống sẽ xuất hiện ở đây</p>
+                </div>
+            )}
+
+            {!isLoading && notifications.length > 0 && (
+                <div className="space-y-1.5">
+                    {notifications.map((notification) => (
+                        <NotificationItem key={notification.id} notification={notification} onClick={onNotificationClick} compact />
+                    ))}
+                </div>
+            )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
+            {unreadCount > 0 ? (
+                <button className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95" type="button" onClick={onMarkAllAsRead}>
+                    <CheckIcon />
+                    Đánh dấu đã đọc
+                </button>
+            ) : (
+                <div />
+            )}
+            <button className="flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition-all duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-95" type="button" onClick={onViewAll}>
+                Xem tất cả
+                <ArrowRightIcon />
+            </button>
+        </div>
+    </>
+)
+
+/** Notification detail modal content */
+const NotificationDetailContent = ({ notification, onClose, onViewAll }) => {
+    const config = getNotificationTypeConfig(notification.type)
+    const { Icon } = config
+    const lines = formatMessage(notification.message)
+
+    return (
+        <>
+            <style>{`@keyframes scaleIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`}</style>
+
+            {/* Header */}
+            <div className={`flex items-center gap-4 border-b border-slate-100 px-6 py-5 ${config.bgColor}`}>
+                <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${config.bgColor} ${config.textColor} ${config.borderColor} border`}>
+                    <Icon className="!h-7 !w-7" />
+                </span>
+                <div className="flex-1">
+                    <p className={`text-xs font-black uppercase tracking-wide ${config.textColor}`}>{config.label}</p>
+                    <p className="mt-0.5 text-sm font-semibold text-slate-400">{formatNotificationTime(notification.createdAt)}</p>
+                </div>
+                <button className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xl font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-white/60 hover:text-slate-600 active:scale-95" type="button" onClick={onClose} aria-label="Đóng thông báo">
+                    ×
+                </button>
+            </div>
+
+            {/* Body */}
+            <div className="min-h-0 flex-1 overflow-y-auto p-6">
+                {lines.length > 1 ? (
+                    <ul className="space-y-2 text-[15px] font-semibold leading-7 text-slate-700 marker:text-slate-400">
+                        {lines.map((line, i) => (
+                            <li key={i}>{line}</li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p className="whitespace-pre-wrap break-words text-[15px] font-semibold leading-7 text-slate-700">
+                        {notification.message}
+                    </p>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-4">
+                <button className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95" type="button" onClick={onClose}>
+                    Đóng
+                </button>
+                <button className="flex h-10 items-center gap-2 rounded-xl bg-slate-900 px-4 text-sm font-black text-white transition-all duration-150 hover:scale-[1.02] hover:bg-slate-800 active:scale-95" type="button" onClick={onViewAll}>
+                    Xem tất cả thông báo
+                    <ArrowRightIcon />
+                </button>
+            </div>
+        </>
+    )
+}
+
+/** All notifications modal content */
+const AllNotificationsContent = ({ notifications, pageInfo, isLoading, notificationError, unreadCount, hasMore, onClose, onNotificationClick, onMarkAllAsRead, onLoadMore }) => (
+    <>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+            <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                    <svg className="h-5 w-5 text-blue-600" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                </span>
+                <div>
+                    <h2 className="text-base font-black text-slate-900">Tất cả thông báo</h2>
+                    <p className="text-xs font-semibold text-slate-500">
+                        {pageInfo.totalElements > 0 ? `${pageInfo.totalElements} thông báo` : 'Chưa có thông báo nào'}
+                    </p>
+                </div>
+            </div>
+            <button className="flex h-8 w-8 items-center justify-center rounded-full text-xl font-black text-slate-400 transition-all duration-150 hover:scale-110 hover:bg-slate-100 hover:text-slate-600 active:scale-95" type="button" onClick={onClose} aria-label="Đóng thông báo">
+                ×
+            </button>
+        </div>
+
+        {/* Error */}
+        {notificationError && (
+            <div className="mx-5 mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-700">
+                {notificationError}
+            </div>
+        )}
+
+        {/* List */}
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+            {isLoading && notifications.length === 0 && (
+                <div className="space-y-2">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="flex gap-3 rounded-xl p-3.5">
+                            <div className="h-9 w-9 shrink-0 rounded-full skeleton" />
+                            <div className="flex-1 space-y-2 pt-1">
+                                <div className="h-3 w-20 rounded-full skeleton" />
+                                <div className="h-4 w-full rounded-full skeleton" />
+                                <div className="h-4 w-3/4 rounded-full skeleton" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {!isLoading && notifications.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12">
+                    <BellOffIcon />
+                    <p className="mt-4 text-sm font-semibold text-slate-500">Chưa có thông báo nào</p>
+                    <p className="mt-1 text-xs text-slate-400">Thông báo từ hệ thống sẽ xuất hiện ở đây</p>
+                </div>
+            )}
+
+            {notifications.length > 0 && (
+                <div className="space-y-1.5">
+                    {notifications.map((notification) => (
+                        <NotificationItem key={notification.id} notification={notification} onClick={onNotificationClick} compact />
+                    ))}
+                </div>
+            )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
+            {unreadCount > 0 ? (
+                <button className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95" type="button" onClick={onMarkAllAsRead}>
+                    <CheckIcon />
+                    Đánh dấu đã đọc
+                </button>
+            ) : (
+                <div />
+            )}
+            <div className="flex-1" />
+            {hasMore ? (
+                <button className="flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-black text-slate-600 transition-all duration-150 hover:scale-[1.02] hover:border-slate-300 hover:bg-slate-50 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60" type="button" onClick={onLoadMore} disabled={isLoading}>
+                    {isLoading ? (
+                        <>
+                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-600" />
+                            Đang tải...
+                        </>
+                    ) : (
+                        <>
+                            Tải thêm
+                            <ArrowRightIcon />
+                        </>
+                    )}
+                </button>
+            ) : notifications.length > 0 ? (
+                <p className="flex h-10 items-center text-sm font-semibold text-slate-400">Đã xem hết thông báo</p>
+            ) : (
+                <div />
+            )}
+        </div>
+    </>
+)
 
 export default AppHeader

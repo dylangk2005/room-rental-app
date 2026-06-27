@@ -18,7 +18,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository <User, Integer>{
-    @EntityGraph(attributePaths = "membershipLevel")
+    @EntityGraph(attributePaths = {"membershipLevel", "role"})
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, Integer id);

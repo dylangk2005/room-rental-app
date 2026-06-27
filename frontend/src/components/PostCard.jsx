@@ -1,3 +1,6 @@
+/**
+ * PostCard - Component hiển thị bài đăng trong danh sách
+ */
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { formatCurrency, formatDate } from '../utils/postFormatters'
@@ -12,12 +15,7 @@ import {
     getRecommendTagGradient,
 } from '../utils/postTypeStyles'
 
-const normalizeText = (value = '') =>
-    value
-        .toString()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
+// ─── Status Metadata ───────────────────────────────────────────────────────────
 
 const postStatusMeta = {
     ACTIVE: {
@@ -56,6 +54,8 @@ const getPostStatusMeta = (status) =>
         className: 'bg-slate-100 text-slate-700 ring-slate-200',
     }
 
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
 const getDaysUntilExpiry = (endAt) => {
     if (!endAt) return null
     const target = new Date(endAt)
@@ -63,6 +63,8 @@ const getDaysUntilExpiry = (endAt) => {
     const diff = target.getTime() - Date.now()
     return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
+
+// ─── Icons ─────────────────────────────────────────────────────────────────────
 
 const PriceIcon = () => (
     <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -102,32 +104,14 @@ const CalendarIcon = () => (
 
 const MapPinIcon = () => (
     <svg aria-hidden="true" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24">
-        <path
-            d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-        />
-        <path
-            d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0 1 15 0Z"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="1.8"
-        />
+        <path d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+        <path d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 0 1 15 0Z" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
     </svg>
 )
 
 const ArrowRightIcon = () => (
     <svg aria-hidden="true" className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24">
-        <path
-            d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"
-            stroke="currentColor"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-        />
+        <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
     </svg>
 )
 
@@ -143,6 +127,9 @@ const HeartIcon = ({ filled }) => (
     </svg>
 )
 
+// ─── Sub-Components ─────────────────────────────────────────────────────────────
+
+/** Nút yêu thích với animation */
 const FavoriteButton = ({ isFavorited, onToggle }) => {
     const [isPopping, setIsPopping] = useState(false)
 
@@ -173,6 +160,7 @@ const FavoriteButton = ({ isFavorited, onToggle }) => {
     )
 }
 
+/** Badge hiển thị số ngày còn lại trước khi hết hạn */
 const ExpiryBadge = ({ endAt }) => {
     const days = getDaysUntilExpiry(endAt)
     if (days === null) return null
@@ -197,12 +185,14 @@ const ExpiryBadge = ({ endAt }) => {
     )
 }
 
+/** Icon ngôi sao cho tag đề xuất */
 const RecommendSparkleIcon = ({ className = 'h-3 w-3' }) => (
     <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24">
         <path d="M12 2 14 8.5 21 10.5 15.5 14 17 21 12 17 7 21 8.5 14 3 10.5 10 8.5 12 2Z" />
     </svg>
 )
 
+/** Tag "Đề xuất" hiển thị trên ảnh */
 const RecommendTag = ({ gradient = 'bg-gradient-to-r from-red-500 via-orange-500 to-pink-500' }) => (
     <div className={`pointer-events-none absolute left-2 top-2 z-20 flex items-center gap-1 rounded-full ${gradient} px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white shadow-md ring-1 ring-white/30 backdrop-blur-sm`}>
         <RecommendSparkleIcon />
@@ -210,6 +200,7 @@ const RecommendTag = ({ gradient = 'bg-gradient-to-r from-red-500 via-orange-500
     </div>
 )
 
+/** Gallery ảnh với các layout khác nhau tùy số lượng ảnh */
 const PostImageGallery = ({ post }) => {
     const limit = getPostTypeMaxImageLimit(post)
     const fallbackUrl = `https://picsum.photos/seed/taytro-${post.id}/900/650`
@@ -242,6 +233,7 @@ const PostImageGallery = ({ post }) => {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-16 bg-gradient-to-t from-slate-950/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
     )
 
+    // 1 ảnh - hiển thị full width
     if (previewImages.length === 1) {
         return (
             <Link to={`/posts/${post.id}`} className="relative block h-full min-h-56 overflow-hidden bg-slate-100">
@@ -251,12 +243,10 @@ const PostImageGallery = ({ post }) => {
         )
     }
 
+    // 2 ảnh - 2 cột
     if (previewImages.length === 2) {
         return (
-            <Link
-                to={`/posts/${post.id}`}
-                className="relative grid h-full min-h-64 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1"
-            >
+            <Link to={`/posts/${post.id}`} className="relative grid h-full min-h-64 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1">
                 {previewImages.map((imageUrl, index) => renderImage(imageUrl, index, 'min-h-64'))}
                 {imageCountBadge}
                 {gradientOverlay}
@@ -264,12 +254,10 @@ const PostImageGallery = ({ post }) => {
         )
     }
 
+    // 3 ảnh - 1 lớn bên trái, 2 nhỏ bên phải
     if (previewImages.length === 3) {
         return (
-            <Link
-                to={`/posts/${post.id}`}
-                className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1"
-            >
+            <Link to={`/posts/${post.id}`} className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1">
                 {renderImage(previewImages[0], 0, 'col-span-2 min-h-40 md:col-span-1 md:row-span-2 md:min-h-0')}
                 {previewImages.slice(1).map((imageUrl, index) => renderImage(imageUrl, index + 1, 'min-h-28'))}
                 {imageCountBadge}
@@ -278,12 +266,10 @@ const PostImageGallery = ({ post }) => {
         )
     }
 
+    // 4 ảnh - 2x2 grid
     if (previewImages.length === 4) {
         return (
-            <Link
-                to={`/posts/${post.id}`}
-                className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1"
-            >
+            <Link to={`/posts/${post.id}`} className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1">
                 {previewImages.map((imageUrl, index) => renderImage(imageUrl, index, 'min-h-36 md:min-h-0'))}
                 {imageCountBadge}
                 {gradientOverlay}
@@ -291,20 +277,18 @@ const PostImageGallery = ({ post }) => {
         )
     }
 
+    // 5+ ảnh - layout phức tạp với ảnh đầu lớn
     return (
-        <Link
-            to={`/posts/${post.id}`}
-            className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1 md:grid-cols-[2fr_1fr_1fr] md:grid-rows-2"
-        >
+        <Link to={`/posts/${post.id}`} className="relative grid h-full min-h-72 grid-cols-2 gap-1 overflow-hidden bg-slate-100 p-1 md:grid-cols-[2fr_1fr_1fr] md:grid-rows-2">
             {renderImage(previewImages[0], 0, 'col-span-2 min-h-44 md:col-span-1 md:row-span-2 md:min-h-0')}
-            {previewImages.slice(1).map((imageUrl, index) =>
-                renderImage(imageUrl, index + 1, 'min-h-24 md:min-h-0')
-            )}
+            {previewImages.slice(1).map((imageUrl, index) => renderImage(imageUrl, index + 1, 'min-h-24 md:min-h-0'))}
             {imageCountBadge}
             {gradientOverlay}
         </Link>
     )
 }
+
+// ─── Main Component ─────────────────────────────────────────────────────────────
 
 const PostCard = ({ post, index = 0, isFavorited = false, onToggleFavorite, onRequireAuth }) => {
     const statusMeta = getPostStatusMeta(post.status)
@@ -323,38 +307,36 @@ const PostCard = ({ post, index = 0, isFavorited = false, onToggleFavorite, onRe
             className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-300 ease-out hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl hover:shadow-emerald-100/60 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
             style={{ animationDelay: `${Math.min(index, 6) * 60}ms`, animationDuration: '400ms' }}
         >
+            {/* Top accent line */}
             <div className="absolute inset-x-0 top-0 z-10 h-1 origin-left scale-x-0 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-500 transition-transform duration-500 group-hover:scale-x-100" />
 
+            {/* Favorite button */}
             <div className="absolute right-3 top-3 z-30">
                 {onToggleFavorite ? (
-                    <FavoriteButton
-                        isFavorited={isFavorited}
-                        onToggle={handleFavoriteClick}
-                    />
+                    <FavoriteButton isFavorited={isFavorited} onToggle={handleFavoriteClick} />
                 ) : null}
             </div>
 
+            {/* Content grid: image + info */}
             <div className="grid grid-cols-1 md:grid-cols-[340px_minmax(0,1fr)] lg:grid-cols-[420px_minmax(0,1fr)]">
+                {/* Image section */}
                 <div className="relative overflow-hidden">
                     <PostImageGallery post={post} />
                     {shouldShowRecommendTag(post) ? <RecommendTag gradient={getRecommendTagGradient(post)} /> : null}
                 </div>
 
+                {/* Info section */}
                 <div className="flex min-w-0 flex-1 flex-col gap-3.5 p-4 sm:p-5">
+                    {/* Title + Status */}
                     <div className="flex flex-wrap items-start justify-between gap-2">
-                        <Link
-                            to={`/posts/${post.id}`}
-                            className="group/title relative min-w-0 flex-1"
-                        >
+                        <Link to={`/posts/${post.id}`} className="group/title relative min-w-0 flex-1">
                             <h3
                                 className={`line-clamp-2 font-black leading-7 transition-colors duration-200 ${
                                     shouldUppercaseTitle(post) ? 'uppercase tracking-wide' : ''
                                 }`}
                                 style={{
                                     color: titleColor,
-                                    fontSize: post.postTypeTitleSize
-                                        ? `${post.postTypeTitleSize}px`
-                                        : undefined,
+                                    fontSize: post.postTypeTitleSize ? `${post.postTypeTitleSize}px` : undefined,
                                 }}
                             >
                                 {post.title}
@@ -362,14 +344,13 @@ const PostCard = ({ post, index = 0, isFavorited = false, onToggleFavorite, onRe
                             </h3>
                         </Link>
                         <div className="flex shrink-0 flex-wrap justify-end gap-1.5">
-                            <span
-                                className={`rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusMeta.className}`}
-                            >
+                            <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ring-1 ${statusMeta.className}`}>
                                 {statusMeta.label}
                             </span>
                         </div>
                     </div>
 
+                    {/* Price, Area, Expiry */}
                     <div className="grid grid-cols-3 gap-2">
                         <div className="group/info relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 to-emerald-100/50 p-2.5 ring-1 ring-emerald-100 transition-all duration-200 hover:scale-[1.03] hover:shadow-sm">
                             <span className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
@@ -400,10 +381,12 @@ const PostCard = ({ post, index = 0, isFavorited = false, onToggleFavorite, onRe
                         </div>
                     </div>
 
+                    {/* Description */}
                     {post.description ? (
-                        <p className="line-clamp-2 text-sm leading-relaxed text-slate-600 font-medium">{post.description}</p>
+                        <p className="line-clamp-2 text-sm font-medium leading-relaxed text-slate-600">{post.description}</p>
                     ) : null}
 
+                    {/* Location + Actions */}
                     <div className="mt-auto flex flex-col gap-3 pt-1 sm:flex-row sm:items-center sm:justify-between">
                         <div className="flex min-w-0 items-start gap-1.5 text-xs text-slate-600">
                             <span className="mt-0.5 shrink-0 text-emerald-600">

@@ -37,6 +37,10 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Xử lý các nghiệp vụ kiểm duyệt bài đăng và người dùng.
+ * Bao gồm duyệt/từ chối bài đăng, ban user, và quản lý penalty.
+ */
 @Service
 @RequiredArgsConstructor
 public class ModerationServiceImpl implements ModerationService {
@@ -51,6 +55,9 @@ public class ModerationServiceImpl implements ModerationService {
     private final UserPenaltyRepository userPenaltyRepository;
     private final MembershipService membershipService;
 
+    /**
+     * Lấy danh sách bài đăng cần kiểm duyệt với bộ lọc.
+     */
     @Override
     @Transactional(readOnly = true)
     public ModerationPostPageResponse getPendingPosts(Post.PostStatus status, Integer postTypeId, Integer keyword, int page, int size) {
@@ -69,6 +76,9 @@ public class ModerationServiceImpl implements ModerationService {
                 .build();
     }
 
+    /**
+     * Lấy thông tin chi tiết bài đăng để kiểm duyệt.
+     */
     @Override
     @Transactional(readOnly = true)
     public PostDetailResponse getPostDetail(Integer postId) {
@@ -77,6 +87,10 @@ public class ModerationServiceImpl implements ModerationService {
         return mapDetail(post);
     }
 
+    /**
+     * Duyệt bài đăng.
+     * Chuyển trạng thái sang ACTIVE, tính ngày hết hạn, cập nhật totalSpent của chủ tin.
+     */
     @Override
     @Transactional
     public PostDetailResponse approvePost(Integer moderatorId, Integer postId) {
@@ -121,6 +135,9 @@ public class ModerationServiceImpl implements ModerationService {
         return mapDetail(saved);
     }
 
+    /**
+     * Từ chối bài đăng và hoàn tiền 100% cho người dùng.
+     */
     @Override
     @Transactional
     public PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason) {

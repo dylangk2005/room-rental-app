@@ -49,7 +49,7 @@ const initialForm = {
 }
 
 const CreatePostPage = () => {
-    const { user, login } = useAuth()
+    const { login } = useAuth()
     const navigate = useNavigate()
     const [form, setForm] = useState(initialForm)
     const [postTypes, setPostTypes] = useState([])

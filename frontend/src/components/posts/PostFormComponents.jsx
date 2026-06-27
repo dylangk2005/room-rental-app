@@ -1,4 +1,9 @@
+/**
+ * PostFormComponents - Shared UI components for post forms
+ */
 import { getPostTypeCategory, getPostTypeCategoryMeta } from '../../utils/postTypeStyles'
+
+// ─── Formatters ────────────────────────────────────────────────────────────────
 
 export const formatMoney = (value) => `${Number(value || 0).toLocaleString('vi-VN')} đ`
 
@@ -6,11 +11,15 @@ export const formatNumberInput = (value) => String(value || '').replace(/\B(?=(\
 
 export const onlyDigits = (value) => value.replace(/\D/g, '')
 
+// ─── Styles ────────────────────────────────────────────────────────────────────
+
 export const inputClassName =
     'h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400'
 
 export const textareaClassName =
     'min-h-44 w-full rounded-xl border border-slate-300 bg-white p-4 text-sm font-semibold leading-7 text-slate-900 outline-none transition-all duration-200 placeholder:font-semibold placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100 hover:border-slate-400'
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 
 const iconPaths = {
     home: 'M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5M9 21v-6h6v6',
@@ -51,6 +60,8 @@ export const SpinnerIcon = ({ className = 'h-5 w-5' }) => (
     </svg>
 )
 
+// ─── Layout Components ─────────────────────────────────────────────────────────
+
 export const SectionHeader = ({ icon, iconClassName, title, subtitle }) => (
     <div className="mb-5 flex items-start gap-3">
         <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm transition-transform duration-300 group-hover:scale-110 ${iconClassName}`}>
@@ -89,6 +100,8 @@ export const Field = ({ label, required, hint, children }) => (
     </label>
 )
 
+// ─── Post Type Components ─────────────────────────────────────────────────────
+
 export const PostTypeCard = ({ postType, isSelected, onSelect }) => {
     const accentColor = postType.titleColor || '#111827'
     const category = getPostTypeCategory(postType.name, postType.priority)
@@ -97,17 +110,18 @@ export const PostTypeCard = ({ postType, isSelected, onSelect }) => {
 
     return (
         <button
-            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
-                ? 'border-transparent shadow-sm ring-4'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-                }`}
+            className={`group/option relative flex w-full flex-col items-start gap-2 overflow-hidden rounded-xl border-2 p-4 text-left transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
+                isSelected
+                    ? 'border-transparent shadow-sm ring-4'
+                    : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
             style={
                 isSelected
                     ? {
-                        borderColor: accentColor,
-                        backgroundColor: accentColor + '0f',
-                        '--tw-ring-color': accentColor + '30',
-                    }
+                          borderColor: accentColor,
+                          backgroundColor: accentColor + '0f',
+                          '--tw-ring-color': accentColor + '30',
+                      }
                     : undefined
             }
             type="button"
@@ -134,10 +148,11 @@ export const DurationOption = ({ days, price, isSelected, isFirstFree, postTypeN
 
     return (
         <button
-            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${isSelected
-                ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
-                : 'border-slate-200 bg-white hover:border-emerald-300'
-                }`}
+            className={`group/dur flex w-full flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.98] ${
+                isSelected
+                    ? 'border-emerald-500 bg-emerald-50/60 shadow-sm ring-4 ring-emerald-100'
+                    : 'border-slate-200 bg-white hover:border-emerald-300'
+            }`}
             type="button"
             onClick={onSelect}
         >
@@ -154,6 +169,8 @@ export const DurationOption = ({ days, price, isSelected, isFirstFree, postTypeN
         </button>
     )
 }
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
 
 export const getErrorMessage = (error, fallback = 'Không xử lý được yêu cầu. Vui lòng thử lại.') => {
     const response = error.response?.data

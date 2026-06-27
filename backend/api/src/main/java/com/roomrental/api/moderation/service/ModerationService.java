@@ -15,6 +15,9 @@ public interface ModerationService {
 
     PostDetailResponse approvePost(Integer moderatorId, Integer postId);
     PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason);
+    PostDetailResponse hidePost(Integer moderatorId, Integer postId, String reason);
+    PostDetailResponse unhidePost(Integer moderatorId, Integer postId);
+    PostDetailResponse removePost(Integer moderatorId, Integer postId, String reason);
 
     AdminUserPageResponse getNormalUsers(User.UserStatus status, String keyword, int page, int size);
 

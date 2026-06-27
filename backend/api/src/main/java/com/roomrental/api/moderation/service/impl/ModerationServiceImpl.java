@@ -54,15 +54,11 @@ public class ModerationServiceImpl implements ModerationService {
     @Override
     @Transactional(readOnly = true)
     public ModerationPostPageResponse getPendingPosts(Post.PostStatus status, Integer postTypeId, Integer keyword, int page, int size) {
-        Sort sort = postTypeId == null
-                ? Sort.by(Sort.Order.asc("postType.priority"), Sort.Order.asc("createdAt"))
-                : Sort.by(Sort.Order.asc("createdAt"));
-
         Page<Post> result = postRepository.findModerationQueue(
                 status,
                 postTypeId,
                 keyword,
-                PageRequest.of(page, size, sort)
+                PageRequest.of(page, size)
         );
 
         return ModerationPostPageResponse.builder()
@@ -174,6 +170,97 @@ public class ModerationServiceImpl implements ModerationService {
         notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
                 "Tin \"" + saved.getTitle() + "\" bị từ chối. Lý do: "
                         + reason + ". Hệ thống đã hoàn " + formatMoney(refundAmount) + " vào ví của bạn.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse hidePost(Integer moderatorId, Integer postId, String reason) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.ACTIVE && post.getStatus() != Post.PostStatus.EXPIRED) {
+            throw AppException.badRequest("Chỉ có thể ẩn tin đang hiển thị hoặc hết hạn");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.HIDDEN);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.HIDDEN_POST,
+                ModerationLog.TargetType.POST, saved.getId(), reason);
+
+        auditLogService.log(moderatorId, "HIDE_POST", AuditLog.TargetType.POST,
+                saved.getId(), reason);
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã bị ẩn. Lý do: " + reason
+                        + ". Vui lòng liên hệ bộ phận kiểm duyệt nếu cần.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse unhidePost(Integer moderatorId, Integer postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.HIDDEN) {
+            throw AppException.badRequest("Chỉ có thể hiện tin đang bị ẩn");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.ACTIVE);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.UNHIDDEN_POST,
+                ModerationLog.TargetType.POST, saved.getId(), "Hiện lại tin đăng");
+
+        auditLogService.log(moderatorId, "UNHIDE_POST", AuditLog.TargetType.POST,
+                saved.getId(), "Tin được hiện lại sau khi ẩn");
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã được hiển thị trở lại.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse removePost(Integer moderatorId, Integer postId, String reason) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.ACTIVE
+                && post.getStatus() != Post.PostStatus.HIDDEN
+                && post.getStatus() != Post.PostStatus.EXPIRED) {
+            throw AppException.badRequest("Không thể xóa tin ở trạng thái này");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.DELETED);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.REMOVE_POST,
+                ModerationLog.TargetType.POST, saved.getId(), reason);
+
+        auditLogService.log(moderatorId, "REMOVE_POST", AuditLog.TargetType.POST,
+                saved.getId(), reason);
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã bị xóa. Lý do: " + reason
+                        + ". Vui lòng liên hệ bộ phận kiểm duyệt nếu cần.");
 
         return mapDetail(saved);
     }

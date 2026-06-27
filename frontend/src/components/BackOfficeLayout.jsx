@@ -56,7 +56,7 @@ const managerLinks = [
     { label: 'Nhật ký kiểm duyệt', to: ROUTES.MANAGER_MODERATION_LOGS, roles: ['MANAGER'], Icon: HistoryIcon },
     { label: 'Giá tin đăng', to: ROUTES.MANAGER_PRICING, roles: ['MANAGER'], Icon: TagIcon },
     { label: 'Hạng thành viên', to: ROUTES.MANAGER_MEMBERSHIP, roles: ['MANAGER'], Icon: StarIcon },
-    { label: 'Duyệt tin', to: ROUTES.MODERATOR_HOME, roles: ['MODERATOR'], Icon: FileCheckIcon },
+    { label: 'Quản lý tin đăng', to: ROUTES.MODERATOR_HOME, roles: ['MODERATOR'], Icon: FileCheckIcon },
     { label: 'Quản lý báo cáo', to: ROUTES.MODERATOR_REPORTS, roles: ['MODERATOR'], Icon: FlagIcon },
     { label: 'Quản lý người dùng', to: ROUTES.MODERATOR_USERS, roles: ['MODERATOR'], Icon: UsersIcon },
     { label: 'Nhật ký kiểm duyệt', to: ROUTES.MODERATOR_MY_LOGS, roles: ['MODERATOR'], Icon: HistoryIcon },

@@ -6,6 +6,9 @@ const cleanParams = (params = {}) =>
     )
 
 const moderationApi = {
+    hidePost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/hide`, { reason }),
+    unhidePost: (id) => axiosClient.put(`/moderation/posts/${id}/unhide`),
+    removePost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/remove`, { reason }),
     getPendingPosts: (params = {}) => axiosClient.get('/moderation/posts', { params: cleanParams(params) }),
     getPostDetail: (id) => axiosClient.get(`/moderation/posts/${id}`),
     approvePost: (id) => axiosClient.put(`/moderation/posts/${id}/approve`),

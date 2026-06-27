@@ -4,7 +4,7 @@ import moderationApi from '../../api/moderationApi'
 import BackOfficeLayout from '../../components/BackOfficeLayout'
 import SafeImage from '../../components/common/SafeImage'
 import { EmptyState, LoadingRows, FilterBar, StatusBadge, ActionButton, Pagination, Toast } from '../../components/BackOfficeParts'
-import { formatDateTime, formatRelativeTime, getErrorMessage, getAvatarUrl, formatStatusLabel } from '../../utils/backOfficeFormatters'
+import { formatDateTime, getErrorMessage, getAvatarUrl, formatStatusLabel } from '../../utils/backOfficeFormatters'
 
 const initialPenalty = { user: null, action: 'NONE', reason: '', lockDays: 7, hasTimedBan: false }
 
@@ -47,52 +47,6 @@ const SearchIcon = () => (
         <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
     </svg>
 )
-
-const UserCard = ({ user, onPenaltyClick, onDetailClick }) => {
-    const activePenalties = getActivePenalties(user)
-    const statusVariant = user.status === 'ACTIVE' ? 'success' : user.status === 'BANNED' ? 'danger' : 'neutral'
-
-    return (
-        <div className="group rounded-2xl border border-slate-200 bg-white transition-all duration-200 hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-600/5">
-            {/* Main info row */}
-            <div className="flex items-center gap-4 p-4">
-                {/* Avatar */}
-                <SafeImage
-                    className="h-10 w-10 shrink-0 rounded-xl object-cover shadow-sm"
-                    src={user.avatar}
-                    fallbackSrc={getAvatarUrl(user.fullName, 80)}
-                    alt={user.fullName}
-                />
-
-                {/* Info columns */}
-                <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-slate-950 truncate">{user.fullName}</p>
-                    <p className="text-xs font-semibold text-slate-500 truncate">{user.email}</p>
-                    <p className="text-xs font-semibold text-slate-400">{user.phoneNumber || '—'}</p>
-                </div>
-
-                {/* Status */}
-                <StatusBadge label={formatStatusLabel(user.status)} variant={statusVariant} />
-
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                    <ActionButton
-                        label="Chi tiết"
-                        variant="secondary"
-                        onClick={() => onDetailClick(user)}
-                        className="h-8 px-3 text-xs shrink-0"
-                    />
-                    <ActionButton
-                        label="Xử phạt"
-                        variant="secondary"
-                        onClick={() => onPenaltyClick(user)}
-                        className="h-8 px-3 text-xs shrink-0"
-                    />
-                </div>
-            </div>
-        </div>
-    )
-}
 
 const PenaltyModal = ({ penalty, setPenalty, onSubmit, saving, initialPenalty }) => {
     const isClearing = penalty.action === 'NONE'
@@ -418,6 +372,12 @@ const ModeratorUsersPage = () => {
     const [saving, setSaving] = useState(false)
     const [toast, setToast] = useState(null)
 
+    const statusTabs = [
+        { value: '', label: 'Tất cả' },
+        { value: 'ACTIVE', label: 'Đang hoạt động', variant: 'success' },
+        { value: 'BANNED', label: 'Bị ban', variant: 'danger' },
+    ]
+
     const showToast = (type, message) => {
         setToast({ type, message })
         setTimeout(() => setToast(null), 4000)
@@ -490,11 +450,29 @@ const ModeratorUsersPage = () => {
         })
     }
 
-    const statusTabs = [
-        { value: '', label: 'Tất cả' },
-        { value: 'ACTIVE', label: 'Đang hoạt động' },
-        { value: 'BANNED', label: 'Ban tài khoản' },
-    ]
+    const getStatusVariant = (status) => {
+        switch (status) {
+            case 'ACTIVE': return 'success'
+            case 'BANNED': return 'danger'
+            default: return 'neutral'
+        }
+    }
+
+    const getActivePenaltyLabel = (user) => {
+        const active = getActivePenalties(user)
+        if (active.length === 0) return null
+        const p = active[0]
+        return penaltyLabel[p.type] || p.type || 'Hình phạt'
+    }
+
+    const getActivePenaltyVariant = (type) => {
+        switch (type) {
+            case 'WARNING': return 'warning'
+            case 'LOCK_POST': return 'amber'
+            case 'BAN_ACCOUNT': return 'danger'
+            default: return 'neutral'
+        }
+    }
 
     return (
         <BackOfficeLayout section="moderator" title="Quản lý người dùng" subtitle="Theo dõi và xử lý người dùng thường — cảnh cáo, khóa đăng tin hoặc ban tài khoản.">
@@ -510,15 +488,6 @@ const ModeratorUsersPage = () => {
                             onChange={(e) => setFilters((f) => ({ ...f, keyword: e.target.value }))}
                         />
                     </div>
-                    <select
-                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors"
-                        value={filters.status}
-                        onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
-                    >
-                        {statusTabs.map((tab) => (
-                            <option key={tab.value} value={tab.value}>{tab.label}</option>
-                        ))}
-                    </select>
                     <button
                         className="h-10 rounded-xl bg-emerald-600 px-5 text-sm font-bold text-white transition-all duration-200 hover:scale-[1.03] hover:bg-emerald-700 hover:shadow-lg active:scale-[0.98]"
                         type="submit"
@@ -535,7 +504,9 @@ const ModeratorUsersPage = () => {
                         key={tab.value}
                         className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98] ${
                             filters.status === tab.value
-                                ? 'bg-slate-900 text-white shadow-lg'
+                                ? tab.variant === 'success' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/25' :
+                                  tab.variant === 'danger' ? 'bg-red-600 text-white shadow-lg shadow-red-600/25' :
+                                  'bg-slate-900 text-white shadow-lg shadow-slate-900/25'
                                 : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                         }`}
                         type="button"
@@ -552,23 +523,115 @@ const ModeratorUsersPage = () => {
 
             {toast && <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />}
 
-            {/* User list */}
-            <div className="space-y-3">
+            {/* Table */}
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
                 {loading ? (
-                    <LoadingRows rows={4} />
+                    <div className="p-4"><LoadingRows rows={5} /></div>
                 ) : pageData.users.length === 0 ? (
                     <EmptyState message="Không có người dùng phù hợp." />
                 ) : (
-                    pageData.users.map((user) => (
-                        <UserCard
-                            key={user.id}
-                            user={user}
-                            onPenaltyClick={(u) => handlePenaltyActionChange(u)}
-                            onDetailClick={(u) => setDetailUser(u)}
-                        />
-                    ))
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead className="bg-slate-50 text-left text-xs font-black uppercase text-slate-500">
+                                <tr>
+                                    <th className="px-4 py-3">Mã</th>
+                                    <th className="px-4 py-3">Người dùng</th>
+                                    <th className="px-4 py-3">SĐT</th>
+                                    <th className="px-4 py-3">Trạng thái</th>
+                                    <th className="px-4 py-3">Hình phạt</th>
+                                    <th className="px-4 py-3">Ngày tham gia</th>
+                                    <th className="px-4 py-3 text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {pageData.users.map((user) => {
+                                    const activePenaltyLabel = getActivePenaltyLabel(user)
+                                    const activePenaltyType = user.activePenalties?.[0]?.type
+                                    return (
+                                        <tr
+                                            key={user.id}
+                                            className="cursor-pointer transition-colors hover:bg-slate-50"
+                                            onClick={() => setDetailUser(user)}
+                                        >
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <span className="rounded-lg bg-slate-100 px-2 py-0.5 text-xs font-bold text-slate-600">
+                                                    #{user.id}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-3">
+                                                    <SafeImage
+                                                        className="h-9 w-9 shrink-0 rounded-xl object-cover"
+                                                        src={user.avatar}
+                                                        fallbackSrc={getAvatarUrl(user.fullName, 72)}
+                                                        alt={user.fullName}
+                                                    />
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-slate-950 truncate">{user.fullName}</p>
+                                                        <p className="text-xs text-slate-400 truncate">{user.email}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                                                {user.phoneNumber || '—'}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                <StatusBadge
+                                                    label={formatStatusLabel(user.status)}
+                                                    variant={getStatusVariant(user.status)}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                {activePenaltyLabel ? (
+                                                    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-black ${
+                                                        getActivePenaltyVariant(activePenaltyType) === 'warning' ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200' :
+                                                        getActivePenaltyVariant(activePenaltyType) === 'amber' ? 'bg-orange-50 text-orange-700 ring-1 ring-orange-200' :
+                                                        'bg-red-50 text-red-700 ring-1 ring-red-200'
+                                                    }`}>
+                                                        {activePenaltyLabel}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-slate-400">—</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                                                {formatDateTime(user.createdAt)}
+                                            </td>
+                                            <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                                                <div className="flex items-center justify-center gap-1">
+                                                    <ActionButton
+                                                        label=""
+                                                        variant="secondary"
+                                                        onClick={() => setDetailUser(user)}
+                                                        className="h-8 px-3 text-xs shrink-0 !rounded-lg"
+                                                        icon={
+                                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+                                                            </svg>
+                                                        }
+                                                    />
+                                                    <ActionButton
+                                                        label=""
+                                                        variant="secondary"
+                                                        onClick={() => handlePenaltyActionChange(user)}
+                                                        className="h-8 px-3 text-xs shrink-0 !rounded-lg"
+                                                        icon={
+                                                            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                                                <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                                                            </svg>
+                                                        }
+                                                    />
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-            </div>
+            </section>
 
             <Pagination
                 pageInfo={pageData}

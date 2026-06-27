@@ -175,6 +175,7 @@ export const ActionButton = ({ label, variant = 'primary', icon, onClick, loadin
         secondary: 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50 hover:scale-[1.03] active:scale-[0.98]',
         ghost: 'text-slate-600 hover:bg-slate-100 hover:text-slate-950 active:bg-slate-200',
         success: 'bg-emerald-600 text-white hover:bg-emerald-700 hover:scale-[1.03] hover:shadow-lg active:scale-[0.98]',
+        neutral: 'bg-slate-100 text-slate-600 border border-slate-200 hover:border-slate-400 hover:bg-slate-200 hover:scale-[1.03] active:scale-[0.98]',
     }
     return (
         <button

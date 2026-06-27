@@ -150,7 +150,7 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     WHERE (:status IS NULL OR p.status = :status)
       AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
       AND (:keyword IS NULL OR p.id = :keyword)
-    AND (:keyword IS NULL OR p.id = :keyword)
+ORDER BY p.createdAt DESC
 """)
     Page<Post> findModerationQueue(
             @Param("status") Post.PostStatus status,

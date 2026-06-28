@@ -19,7 +19,4 @@ public class ChangePasswordRequest {
 
     @NotBlank(message = "Xác nhận mật khẩu không được để trống")
     private String confirmPassword;
-
-    @NotBlank(message = "OTP không được để trống")
-    private String otp;
 }

@@ -2,6 +2,7 @@ package com.roomrental.api.admin.repository;
 
 import com.roomrental.api.admin.entity.AuditLog;
 import com.roomrental.api.user.entity.User;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -40,4 +41,6 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Integer> {
             @Param("targetId") Integer targetId,
             Pageable pageable
     );
+
+    long countByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
 }

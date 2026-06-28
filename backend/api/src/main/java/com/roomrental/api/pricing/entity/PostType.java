@@ -29,6 +29,15 @@ public class PostType {
     @Column(name = "push_price", precision = 12, scale = 2, columnDefinition = "DECIMAL(12,2)")
     private BigDecimal pushPrice;
 
+    @Column(name = "is_uppercase")
+    private Boolean isUppercase = false;
+
+    @Column(name = "has_recommend_tag")
+    private Boolean hasRecommendTag = false;
+
+    @Column(name = "max_image_limit")
+    private Integer maxImageLimit = 1;
+
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }

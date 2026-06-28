@@ -1,8 +1,36 @@
+-- =============================================================================
+-- ROOM RENTAL APP - DATABASE SCHEMA
+-- Database: phongtro_db (utf8mb4, utf8mb4_unicode_ci)
+-- =============================================================================
+
 CREATE DATABASE IF NOT EXISTS phongtro_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
 USE phongtro_db;
+
+-- =============================================================================
+-- LOCATION TABLES
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS provinces (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS districts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    province_id INT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    updated_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_districts_province FOREIGN KEY (province_id) REFERENCES provinces(id),
+    INDEX idx_districts_province_id (province_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- USER MANAGEMENT TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS roles (
     role_id INT PRIMARY KEY AUTO_INCREMENT,
@@ -42,10 +70,90 @@ CREATE TABLE IF NOT EXISTS user_penalties (
     reason TEXT,
     start_date TIMESTAMP NULL,
     end_date TIMESTAMP NULL,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
     user_id INT,
-    CONSTRAINT fk_user_penalties_user FOREIGN KEY (user_id) REFERENCES users(id)
+    CONSTRAINT fk_user_penalties_user FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_user_penalties_user_id (user_id),
+    INDEX idx_user_penalties_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- POST TABLES (must be before transactions for FK dependencies)
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS post_types (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100),
+    title_color VARCHAR(20),
+    title_size INT,
+    priority INT,
+    push_price DECIMAL(12,2),
+    is_uppercase BOOLEAN DEFAULT FALSE,
+    has_recommend_tag BOOLEAN DEFAULT FALSE,
+    max_image_limit INT DEFAULT 1,
+    updated_at TIMESTAMP NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS post_type_prices (
+    post_type_id INT,
+    day INT,
+    price DECIMAL(12,2),
+    PRIMARY KEY (post_type_id, day),
+    CONSTRAINT fk_post_type_prices_post_type FOREIGN KEY (post_type_id) REFERENCES post_types(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS posts (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    title VARCHAR(255),
+    description TEXT,
+    address TEXT,
+    province_id INT NOT NULL,
+    district_id INT NOT NULL,
+    area DECIMAL(6,2),
+    rental_price DECIMAL(12,2),
+    status ENUM('DRAFT', 'PENDING', 'ACTIVE', 'EXPIRED', 'REJECTED', 'HIDDEN', 'DELETED') DEFAULT 'PENDING',
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NULL,
+    push_time TIMESTAMP NULL,
+    end_at TIMESTAMP NULL,
+    user_id INT,
+    post_type_id INT,
+    duration_days INT,
+    CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_posts_post_type FOREIGN KEY (post_type_id) REFERENCES post_types(id),
+    CONSTRAINT fk_posts_province FOREIGN KEY (province_id) REFERENCES provinces(id),
+    CONSTRAINT fk_posts_district FOREIGN KEY (district_id) REFERENCES districts(id),
+    INDEX idx_posts_user_id (user_id),
+    INDEX idx_posts_post_type_id (post_type_id),
+    INDEX idx_posts_status (status),
+    INDEX idx_posts_end_at (end_at),
+    INDEX idx_posts_push_time (push_time),
+    INDEX idx_posts_province_id (province_id),
+    INDEX idx_posts_district_id (district_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS post_images (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    image_url TEXT,
+    updated_at TIMESTAMP NULL,
+    post_id INT,
+    CONSTRAINT fk_post_images_post FOREIGN KEY (post_id) REFERENCES posts(id),
+    INDEX idx_post_images_post_id (post_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS favorites (
+    user_id INT,
+    post_id INT,
+    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, post_id),
+    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_favorites_post FOREIGN KEY (post_id) REFERENCES posts(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- TRANSACTION TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS deposits (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -64,59 +172,6 @@ CREATE TABLE IF NOT EXISTS deposits (
     CONSTRAINT fk_deposits_user FOREIGN KEY (user_id) REFERENCES users(id),
     INDEX idx_deposits_user_id (user_id),
     INDEX idx_deposits_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS post_types (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(100),
-    title_color VARCHAR(20),
-    title_size INT,
-    priority INT,
-    push_price DECIMAL(12,2),
-    updated_at TIMESTAMP NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS post_type_prices (
-    post_type_id INT,
-    day INT,
-    price DECIMAL(12,2),
-    PRIMARY KEY (post_type_id, day),
-    CONSTRAINT fk_post_type_prices_post_type FOREIGN KEY (post_type_id) REFERENCES post_types(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS posts (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    title VARCHAR(255),
-    description TEXT,
-    address TEXT,
-    province VARCHAR(100),
-    district VARCHAR(100),
-    area DECIMAL(6,2),
-    rental_price DECIMAL(12,2),
-    status ENUM('DRAFT', 'PENDING', 'ACTIVE', 'EXPIRED', 'REJECTED', 'HIDDEN', 'DELETED') DEFAULT 'PENDING',
-    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NULL,
-    push_time TIMESTAMP NULL,
-    end_at TIMESTAMP NULL,
-    user_id INT,
-    post_type_id INT,
-    duration_days INT,
-    CONSTRAINT fk_posts_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_posts_post_type FOREIGN KEY (post_type_id) REFERENCES post_types(id),
-    INDEX idx_posts_user_id (user_id),
-    INDEX idx_posts_post_type_id (post_type_id),
-    INDEX idx_posts_status (status),
-    INDEX idx_posts_end_at (end_at),
-    INDEX idx_posts_push_time (push_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS post_images (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    image_url TEXT,
-    updated_at TIMESTAMP NULL,
-    post_id INT,
-    CONSTRAINT fk_post_images_post FOREIGN KEY (post_id) REFERENCES posts(id),
-    INDEX idx_post_images_post_id (post_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS payments (
@@ -141,14 +196,9 @@ CREATE TABLE IF NOT EXISTS payments (
     INDEX idx_payments_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS favorites (
-    user_id INT,
-    post_id INT,
-    created_at TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id, post_id),
-    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id),
-    CONSTRAINT fk_favorites_post FOREIGN KEY (post_id) REFERENCES posts(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- =============================================================================
+-- MODERATION TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS reports (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -202,6 +252,10 @@ CREATE TABLE IF NOT EXISTS moderation_logs (
     INDEX idx_moderation_logs_target_id (target_id),
     INDEX idx_moderation_logs_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- SYSTEM TABLES
+-- =============================================================================
 
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INT PRIMARY KEY AUTO_INCREMENT,

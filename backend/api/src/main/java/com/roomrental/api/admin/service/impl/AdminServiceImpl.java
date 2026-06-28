@@ -2,10 +2,12 @@ package com.roomrental.api.admin.service.impl;
 
 import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.admin.dto.response.AdminUserResponse;
+import com.roomrental.api.admin.dto.response.DashboardStatsResponse;
 import com.roomrental.api.admin.dto.request.CreateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateUserStatusRequest;
 import com.roomrental.api.admin.entity.AuditLog;
+import com.roomrental.api.admin.repository.AuditLogRepository;
 import com.roomrental.api.admin.service.AdminService;
 import com.roomrental.api.admin.service.AuditLogService;
 import com.roomrental.api.common.exception.AppException;
@@ -27,6 +29,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Xử lý các nghiệp vụ quản trị hệ thống.
+ * Bao gồm quản lý user, internal users, và dashboard stats.
+ */
 @Service
 @RequiredArgsConstructor
 public class AdminServiceImpl implements AdminService {
@@ -39,12 +45,32 @@ public class AdminServiceImpl implements AdminService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AuditLogService auditLogService;
+    private final AuditLogRepository auditLogRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    // Tạo tài khoản nội bộ (manager, moderator)
+    /**
+     * Lấy thống kê dashboard cho trang quản trị.
+     */
     @Override
+    @Transactional(readOnly = true)
+    public DashboardStatsResponse getDashboardStats() {
+        LocalDateTime startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay();
+
+        return DashboardStatsResponse.builder()
+                .totalUsers(userRepository.count())
+                .internalAccounts(userRepository.countInternalUsers(List.copyOf(INTERNAL_ROLES)))
+                .activeAccounts(userRepository.countByStatusAndRole(User.UserStatus.ACTIVE, null))
+                .todayLogs(auditLogRepository.countByCreatedAtBetween(startOfDay, LocalDateTime.now()))
+                .build();
+    }
+
+    /**
+     * Tạo tài khoản nội bộ (manager, moderator).
+     */
+    @Override
+    // Tạo tài khoản nội bộ (manager, moderator)
     @Transactional
     public AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request) {
         String roleName = request.getRole().trim().toUpperCase();

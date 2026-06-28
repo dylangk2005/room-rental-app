@@ -2,6 +2,7 @@ package com.roomrental.api.admin.service;
 
 import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.admin.dto.response.AdminUserResponse;
+import com.roomrental.api.admin.dto.response.DashboardStatsResponse;
 import com.roomrental.api.admin.dto.request.CreateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateUserStatusRequest;
@@ -9,6 +10,7 @@ import com.roomrental.api.user.entity.Role;
 import com.roomrental.api.user.entity.User;
 
 public interface AdminService {
+    DashboardStatsResponse getDashboardStats();
     // Tạo tài khoản nội bộ (manager, moderator)
     AdminUserResponse createInternalUser(Integer adminId, CreateInternalUserRequest request);
 

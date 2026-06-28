@@ -9,9 +9,11 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       TZ: Asia/Ho_Chi_Minh
+      LANG: vi_VN.UTF-8
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+      - --character-set-filesystem=utf8mb4
     ports:
       - "3307:3306"
     volumes:
@@ -48,6 +50,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       TZ: Asia/Ho_Chi_Minh
+      JAVA_TOOL_OPTIONS: "-Dfile.encoding=UTF-8 -Dsun.jnu.encoding=UTF-8"
       MYSQL_HOST: mysql
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}

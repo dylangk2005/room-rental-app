@@ -18,11 +18,11 @@ public class CreatePostRequest {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String address;
 
-    @NotBlank(message = "Tỉnh/thành không được để trống")
-    private String province;
+    @NotNull(message = "Tỉnh/thành không được để trống")
+    private Integer provinceId;
 
-    @NotBlank(message = "Quận/huyện không được để trống")
-    private String district;
+    @NotNull(message = "Quận/huyện không được để trống")
+    private Integer districtId;
 
     @NotNull(message = "Diện tích không được để trống")
     @DecimalMin(value = "1.0", message = "Diện tích tối thiểu 1 m²")

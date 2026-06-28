@@ -1,8 +1,14 @@
+/**
+ * Notification API - Thông báo người dùng
+ */
 import axiosClient from './axiosClient'
 
 const notificationApi = {
+    // ── List ─────────────────────────────────────────────────────────────
     getNotifications: (params = {}) => axiosClient.get('/notifications', { params }),
     getUnreadCount: () => axiosClient.get('/notifications/unread-count'),
+
+    // ── Actions ─────────────────────────────────────────────────────────
     markAsRead: (id) => axiosClient.put(`/notifications/${id}/read`),
     markAllAsRead: () => axiosClient.put('/notifications/read-all'),
 }

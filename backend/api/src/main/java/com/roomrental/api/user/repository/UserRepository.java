@@ -18,6 +18,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserRepository extends JpaRepository <User, Integer>{
+    @EntityGraph(attributePaths = {"membershipLevel", "role"})
     Optional<User> findByEmail(String email);
     boolean existsByEmail(String email);
     boolean existsByEmailAndIdNot(String email, Integer id);
@@ -27,6 +28,10 @@ public interface UserRepository extends JpaRepository <User, Integer>{
     @EntityGraph(attributePaths = "membershipLevel")
     @Query("SELECT u FROM User u WHERE u.id = :id")
     Optional<User> findByIdForPayment(@Param("id") Integer id);
+
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    @EntityGraph(attributePaths = "membershipLevel")
+    Optional<User> findByIdWithMembership(@Param("id") Integer id);
 
     List<User> findByRole_Name(String roleName);
 
@@ -68,4 +73,30 @@ public interface UserRepository extends JpaRepository <User, Integer>{
             @Param("keyword") String keyword,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT u FROM User u
+    LEFT JOIN FETCH u.role r
+    WHERE (:status IS NULL OR u.status = :status)
+      AND (:role IS NULL OR r.name = :role)
+      AND (:from IS NULL OR u.createdAt >= :from)
+      AND (:to IS NULL OR u.createdAt <= :to)
+      AND (:keyword IS NULL
+           OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR u.phoneNumber LIKE CONCAT('%', :keyword, '%'))
+""")
+    List<User> findForExport(
+            @Param("status") User.UserStatus status,
+            @Param("role") String role,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("keyword") String keyword
+    );
+
+    @Query("SELECT COUNT(u) FROM User u WHERE u.role.name IN :roleNames")
+    long countInternalUsers(@Param("roleNames") List<String> roleNames);
+
+    @Query("SELECT COUNT(u) FROM User u LEFT JOIN u.role r WHERE (:status IS NULL OR u.status = :status) AND (:role IS NULL OR r.name = :role)")
+    long countByStatusAndRole(@Param("status") User.UserStatus status, @Param("role") String role);
 }

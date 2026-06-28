@@ -1,18 +1,34 @@
+/**
+ * Moderation API - Kiểm duyệt bài đăng và người dùng
+ */
 import axiosClient from './axiosClient'
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const cleanParams = (params = {}) =>
     Object.fromEntries(
         Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined)
     )
 
+// ─── API Methods ──────────────────────────────────────────────────────────────
+
 const moderationApi = {
+    // ── Post Moderation ────────────────────────────────────────────────────
     getPendingPosts: (params = {}) => axiosClient.get('/moderation/posts', { params: cleanParams(params) }),
     getPostDetail: (id) => axiosClient.get(`/moderation/posts/${id}`),
     approvePost: (id) => axiosClient.put(`/moderation/posts/${id}/approve`),
     rejectPost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/reject`, { reason }),
+    hidePost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/hide`, { reason }),
+    unhidePost: (id) => axiosClient.put(`/moderation/posts/${id}/unhide`),
+    removePost: (id, reason) => axiosClient.put(`/moderation/posts/${id}/remove`, { reason }),
+
+    // ── User Moderation ───────────────────────────────────────────────────
     getUsers: (params = {}) => axiosClient.get('/moderation/users', { params: cleanParams(params) }),
+    getUserDetail: (id) => axiosClient.get(`/moderation/users/${id}`),
     banUser: (id, payload) => axiosClient.put(`/moderation/users/${id}/ban`, payload),
     clearUserPenalties: (id) => axiosClient.put(`/moderation/users/${id}/penalties/clear`),
+
+    // ── Moderation Logs ───────────────────────────────────────────────────
     getMyLogs: (params = {}) => axiosClient.get('/moderation-logs/my-history', { params: cleanParams(params) }),
     getLogs: (params = {}) => axiosClient.get('/moderation-logs', { params: cleanParams(params) }),
     getMyLogTargetDetail: (params = {}) => axiosClient.get('/moderation-logs/my-history/target-detail', { params: cleanParams(params) }),

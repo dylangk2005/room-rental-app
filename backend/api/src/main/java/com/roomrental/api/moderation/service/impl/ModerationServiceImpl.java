@@ -13,6 +13,7 @@ import com.roomrental.api.moderation.service.ModerationLogService;
 import com.roomrental.api.moderation.service.ModerationService;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
+import static com.roomrental.api.notification.service.impl.NotificationServiceImpl.formatMoney;
 import com.roomrental.api.payment.entity.Payment;
 import com.roomrental.api.payment.repository.PaymentRepository;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
@@ -36,6 +37,10 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Xử lý các nghiệp vụ kiểm duyệt bài đăng và người dùng.
+ * Bao gồm duyệt/từ chối bài đăng, ban user, và quản lý penalty.
+ */
 @Service
 @RequiredArgsConstructor
 public class ModerationServiceImpl implements ModerationService {
@@ -50,17 +55,17 @@ public class ModerationServiceImpl implements ModerationService {
     private final UserPenaltyRepository userPenaltyRepository;
     private final MembershipService membershipService;
 
+    /**
+     * Lấy danh sách bài đăng cần kiểm duyệt với bộ lọc.
+     */
     @Override
     @Transactional(readOnly = true)
-    public ModerationPostPageResponse getPendingPosts(Integer postTypeId, int page, int size) {
-        Sort sort = postTypeId == null
-                ? Sort.by(Sort.Order.asc("postType.priority"), Sort.Order.asc("createdAt"))
-                : Sort.by(Sort.Order.asc("createdAt"));
-
+    public ModerationPostPageResponse getPendingPosts(Post.PostStatus status, Integer postTypeId, Integer keyword, int page, int size) {
         Page<Post> result = postRepository.findModerationQueue(
-                Post.PostStatus.PENDING,
+                status,
                 postTypeId,
-                PageRequest.of(page, size, sort)
+                keyword,
+                PageRequest.of(page, size)
         );
 
         return ModerationPostPageResponse.builder()
@@ -71,6 +76,9 @@ public class ModerationServiceImpl implements ModerationService {
                 .build();
     }
 
+    /**
+     * Lấy thông tin chi tiết bài đăng để kiểm duyệt.
+     */
     @Override
     @Transactional(readOnly = true)
     public PostDetailResponse getPostDetail(Integer postId) {
@@ -79,6 +87,10 @@ public class ModerationServiceImpl implements ModerationService {
         return mapDetail(post);
     }
 
+    /**
+     * Duyệt bài đăng.
+     * Chuyển trạng thái sang ACTIVE, tính ngày hết hạn, cập nhật totalSpent của chủ tin.
+     */
     @Override
     @Transactional
     public PostDetailResponse approvePost(Integer moderatorId, Integer postId) {
@@ -123,6 +135,9 @@ public class ModerationServiceImpl implements ModerationService {
         return mapDetail(saved);
     }
 
+    /**
+     * Từ chối bài đăng và hoàn tiền 100% cho người dùng.
+     */
     @Override
     @Transactional
     public PostDetailResponse rejectPost(Integer moderatorId, Integer postId, String reason) {
@@ -171,7 +186,98 @@ public class ModerationServiceImpl implements ModerationService {
 
         notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
                 "Tin \"" + saved.getTitle() + "\" bị từ chối. Lý do: "
-                        + reason + ". Hệ thống đã hoàn " + refundAmount + "đ vào ví của bạn.");
+                        + reason + ". Hệ thống đã hoàn " + formatMoney(refundAmount) + " vào ví của bạn.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse hidePost(Integer moderatorId, Integer postId, String reason) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.ACTIVE && post.getStatus() != Post.PostStatus.EXPIRED) {
+            throw AppException.badRequest("Chỉ có thể ẩn tin đang hiển thị hoặc hết hạn");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.HIDDEN);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.HIDDEN_POST,
+                ModerationLog.TargetType.POST, saved.getId(), reason);
+
+        auditLogService.log(moderatorId, "HIDE_POST", AuditLog.TargetType.POST,
+                saved.getId(), reason);
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã bị ẩn. Lý do: " + reason
+                        + ". Vui lòng liên hệ bộ phận kiểm duyệt nếu cần.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse unhidePost(Integer moderatorId, Integer postId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.HIDDEN) {
+            throw AppException.badRequest("Chỉ có thể hiện tin đang bị ẩn");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.ACTIVE);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.UNHIDDEN_POST,
+                ModerationLog.TargetType.POST, saved.getId(), "Hiện lại tin đăng");
+
+        auditLogService.log(moderatorId, "UNHIDE_POST", AuditLog.TargetType.POST,
+                saved.getId(), "Tin được hiện lại sau khi ẩn");
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã được hiển thị trở lại.");
+
+        return mapDetail(saved);
+    }
+
+    @Override
+    @Transactional
+    public PostDetailResponse removePost(Integer moderatorId, Integer postId, String reason) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy tin đăng"));
+
+        if (post.getStatus() != Post.PostStatus.ACTIVE
+                && post.getStatus() != Post.PostStatus.HIDDEN
+                && post.getStatus() != Post.PostStatus.EXPIRED) {
+            throw AppException.badRequest("Không thể xóa tin ở trạng thái này");
+        }
+
+        User owner = post.getUser();
+        LocalDateTime now = LocalDateTime.now();
+        post.setStatus(Post.PostStatus.DELETED);
+        post.setUpdatedAt(now);
+
+        Post saved = postRepository.save(post);
+
+        moderationLogService.log(moderatorId, ModerationLog.ModerationAction.REMOVE_POST,
+                ModerationLog.TargetType.POST, saved.getId(), reason);
+
+        auditLogService.log(moderatorId, "REMOVE_POST", AuditLog.TargetType.POST,
+                saved.getId(), reason);
+
+        notificationService.notifyUser(owner.getId(), Notification.NotificationType.POST_INFORMATION,
+                "Tin \"" + saved.getTitle() + "\" đã bị xóa. Lý do: " + reason
+                        + ". Vui lòng liên hệ bộ phận kiểm duyệt nếu cần.");
 
         return mapDetail(saved);
     }
@@ -196,14 +302,16 @@ public class ModerationServiceImpl implements ModerationService {
                 .title(post.getTitle())
                 .rentalPrice(post.getRentalPrice())
                 .area(post.getArea())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(post.getProvinceRef() != null ? post.getProvinceRef().getName() : null)
+                .district(post.getDistrictRef() != null ? post.getDistrictRef().getName() : null)
                 .postTypeName(postType != null ? postType.getName() : null)
                 .postTypeTitleColor(postType != null ? postType.getTitleColor() : null)
                 .postTypeTitleSize(postType != null ? postType.getTitleSize() : null)
                 .postTypePriority(postType != null ? postType.getPriority() : null)
                 .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .createdAt(post.getCreatedAt())
+                .status(post.getStatus() != null ? post.getStatus().name() : null)
                 .imageCount(postImageRepository.countByPostId(post.getId()))
                 .build();
     }
@@ -217,8 +325,8 @@ public class ModerationServiceImpl implements ModerationService {
                 .title(post.getTitle())
                 .description(post.getDescription())
                 .address(post.getAddress())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(post.getProvinceRef() != null ? post.getProvinceRef().getName() : null)
+                .district(post.getDistrictRef() != null ? post.getDistrictRef().getName() : null)
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus())
@@ -226,6 +334,7 @@ public class ModerationServiceImpl implements ModerationService {
                 .ownerName(owner != null ? owner.getFullName() : null)
                 .ownerEmail(owner != null ? owner.getEmail() : null)
                 .ownerPhoneNumber(owner != null ? owner.getPhoneNumber() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .createdAt(post.getCreatedAt())
                 .endAt(post.getEndAt())
                 .postTypeName(postType != null ? postType.getName() : null)
@@ -265,6 +374,22 @@ public class ModerationServiceImpl implements ModerationService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public AdminUserPageResponse getUserDetail(Integer userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
+
+        AdminUserResponse response = mapUserResponseWithPenalties(user);
+
+        return AdminUserPageResponse.builder()
+                .users(List.of(response))
+                .currentPage(0)
+                .totalPages(1)
+                .totalElements(1)
+                .build();
+    }
+
+    @Override
     @Transactional
     public void banUser(Integer moderatorId, Integer userId, BanUserRequest request) {
         User user = userRepository.findById(userId)
@@ -291,6 +416,7 @@ public class ModerationServiceImpl implements ModerationService {
         penalty.setReason(request.getReason());
         penalty.setStartDate(now);
         penalty.setCreatedAt(now);
+        penalty.setIsActive(true);
 
         if (request.getType() == UserPenalty.PenaltyType.LOCK_POST) {
             penalty.setEndDate(now.plusDays(request.getDurationDays()));
@@ -345,8 +471,10 @@ public class ModerationServiceImpl implements ModerationService {
             return;
         }
 
+        // Mark penalties as inactive instead of deleting
         if (!activePenalties.isEmpty()) {
-            userPenaltyRepository.deleteAll(activePenalties);
+            activePenalties.forEach(p -> p.setIsActive(false));
+            userPenaltyRepository.saveAll(activePenalties);
         }
 
         if (wasBanned) {
@@ -378,8 +506,27 @@ public class ModerationServiceImpl implements ModerationService {
                 .phoneNumber(user.getPhoneNumber())
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .role(user.getRole() != null ? user.getRole().getName() : null)
+                .avatar(user.getAvatar())
                 .createdAt(user.getCreatedAt())
                 .activePenalties(userPenaltyRepository.findActiveByUserId(user.getId(), LocalDateTime.now()).stream()
+                        .map(this::mapActivePenalty)
+                        .toList())
+                .build();
+    }
+
+    private AdminUserResponse mapUserResponseWithPenalties(User user) {
+        List<UserPenalty> allPenalties = userPenaltyRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+
+        return AdminUserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .status(user.getStatus() != null ? user.getStatus().name() : null)
+                .role(user.getRole() != null ? user.getRole().getName() : null)
+                .avatar(user.getAvatar())
+                .createdAt(user.getCreatedAt())
+                .activePenalties(allPenalties.stream()
                         .map(this::mapActivePenalty)
                         .toList())
                 .build();
@@ -392,6 +539,7 @@ public class ModerationServiceImpl implements ModerationService {
                 .reason(penalty.getReason())
                 .startDate(penalty.getStartDate())
                 .endDate(penalty.getEndDate())
+                .isActive(penalty.getIsActive())
                 .createdAt(penalty.getCreatedAt())
                 .build();
     }

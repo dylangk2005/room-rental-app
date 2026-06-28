@@ -2,8 +2,6 @@ package com.roomrental.api.post.repository;
 
 import com.roomrental.api.post.entity.Post.PostStatus;
 import com.roomrental.api.post.entity.Post;
-import com.roomrental.api.pricing.entity.PostType;
-import com.roomrental.api.user.entity.User;
 import jakarta.persistence.LockModeType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -22,11 +20,33 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Integer> {
     //Tìm kiếm bài đăng theo trạng thái, có phân trang
-    @EntityGraph(attributePaths = "postType")
+    @EntityGraph(attributePaths = {"postType", "user"})
     Page<Post> findByStatus(PostStatus status, Pageable pageable);
 
+    // Lấy danh sách bài đăng public còn hiệu lực
+    @EntityGraph(attributePaths = {"postType", "user", "provinceRef", "districtRef"})
+    @Query(
+            value = """
+        SELECT p FROM Post p
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+    """,
+            countQuery = """
+        SELECT COUNT(p) FROM Post p
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+    """
+    )
+    Page<Post> findPublicActivePosts(
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now,
+            Pageable pageable
+    );
+
     // Tìm kiếm bài đăng của người dùng, có phân trang
-    @EntityGraph(attributePaths = "postType")
+    @EntityGraph(attributePaths = {"postType", "user"})
     Page<Post> findByUserId(Integer userId, Pageable pageable);
 
     // Lấy thông tin chi tiết của phòng trọ, chưa bao gồm thông tin liên hệ
@@ -38,14 +58,18 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
 """)
     Optional<Post> findDetailById(@Param("id") Integer id);
 
-    // Tìm kiếm bài đăng theo tiêu chí, có phân trang
+    // Tim kiem bai dang theo tieu chi, loc theo FK provinceId/districtId
     @Query(
             value = """
         SELECT p FROM Post p
         JOIN FETCH p.postType
-        WHERE p.status = 'ACTIVE'
-          AND (:province IS NULL OR p.province = :province)
-          AND (:district IS NULL OR p.district = :district)
+        JOIN FETCH p.provinceRef
+        JOIN FETCH p.districtRef
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+          AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+          AND (:districtId IS NULL OR p.districtRef.id = :districtId)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
           AND (:maxPrice IS NULL OR p.rentalPrice <= :maxPrice)
           AND (:minArea IS NULL OR p.area >= :minArea)
@@ -53,9 +77,11 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     """,
             countQuery = """
         SELECT COUNT(p) FROM Post p
-        WHERE p.status = 'ACTIVE'
-          AND (:province IS NULL OR p.province = :province)
-          AND (:district IS NULL OR p.district = :district)
+        WHERE p.status = :status
+          AND p.endAt IS NOT NULL
+          AND p.endAt > :now
+          AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+          AND (:districtId IS NULL OR p.districtRef.id = :districtId)
           AND (:minPrice IS NULL OR p.rentalPrice >= :minPrice)
           AND (:maxPrice IS NULL OR p.rentalPrice <= :maxPrice)
           AND (:minArea IS NULL OR p.area >= :minArea)
@@ -63,8 +89,10 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     """
     )
     Page<Post> searchPosts(
-            @Param("province") String province,
-            @Param("district") String district,
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now,
+            @Param("provinceId") Integer provinceId,
+            @Param("districtId") Integer districtId,
             @Param("minPrice") BigDecimal minPrice,
             @Param("maxPrice") BigDecimal maxPrice,
             @Param("minArea") BigDecimal minArea,
@@ -78,16 +106,19 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     }
 
     @Query("""
-    SELECT DISTINCT p.province AS province, p.district AS district
+    SELECT DISTINCT pr.name AS province, d.name AS district
     FROM Post p
-    WHERE p.status = 'ACTIVE'
-      AND p.province IS NOT NULL
-      AND p.province <> ''
-      AND p.district IS NOT NULL
-      AND p.district <> ''
-    ORDER BY p.province ASC, p.district ASC
+    JOIN p.provinceRef pr
+    JOIN p.districtRef d
+    WHERE p.status = :status
+      AND p.endAt IS NOT NULL
+      AND p.endAt > :now
+    ORDER BY pr.name ASC, d.name ASC
 """)
-    List<PostLocationView> findActiveLocations();
+    List<PostLocationView> findActiveLocations(
+            @Param("status") PostStatus status,
+            @Param("now") LocalDateTime now
+    );
 
     // Tìm bài đăng của ngời dùng để thanh toán, cần khóa bản ghi để tránh xung đột
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -114,12 +145,15 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     SELECT p FROM Post p
     JOIN FETCH p.user
     LEFT JOIN FETCH p.postType
-    WHERE p.status = :status
+    WHERE (:status IS NULL OR p.status = :status)
       AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
+      AND (:keyword IS NULL OR p.id = :keyword)
+ORDER BY p.createdAt DESC
 """)
     Page<Post> findModerationQueue(
             @Param("status") Post.PostStatus status,
             @Param("postTypeId") Integer postTypeId,
+            @Param("keyword") Integer keyword,
             Pageable pageable
     );
 
@@ -161,5 +195,29 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     List<PostTypeStatsView> countPostsByType(
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to
+    );
+
+    @Query("""
+    SELECT p FROM Post p
+    JOIN FETCH p.user
+    LEFT JOIN FETCH p.postType
+    LEFT JOIN FETCH p.provinceRef
+    LEFT JOIN FETCH p.districtRef
+    WHERE (:status IS NULL OR p.status = :status)
+      AND (:postTypeId IS NULL OR p.postType.id = :postTypeId)
+      AND (:provinceId IS NULL OR p.provinceRef.id = :provinceId)
+      AND (:districtId IS NULL OR p.districtRef.id = :districtId)
+      AND (:from IS NULL OR p.createdAt >= :from)
+      AND (:to IS NULL OR p.createdAt <= :to)
+      AND (:keyword IS NULL OR CAST(p.id AS string) LIKE %:keyword% OR LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+""")
+    List<Post> findForExport(
+            @Param("status") Post.PostStatus status,
+            @Param("postTypeId") Integer postTypeId,
+            @Param("provinceId") Integer provinceId,
+            @Param("districtId") Integer districtId,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("keyword") String keyword
     );
 }

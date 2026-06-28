@@ -7,5 +7,6 @@ import lombok.Data;
 @Builder
 public class PostTypeStatsResponse {
     private String postTypeName;
+    private int priority;
     private long totalPosts;
 }

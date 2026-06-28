@@ -66,6 +66,7 @@ public class ModerationTargetDetailResponse {
         private String status;
         private String role;
         private String membershipLevel;
+        private String avatar;
         private LocalDateTime createdAt;
     }
 

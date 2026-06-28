@@ -85,7 +85,8 @@ public class FavoriteServiceImpl implements FavoriteService {
                 Sort.by(Sort.Order.desc("createdAt"))
         );
 
-        Page<Favorite> favoritePage = favoriteRepository.findByUser_Id(userId, pageable);
+        // Chỉ lấy các tin đang hoạt động (ACTIVE)
+        Page<Favorite> favoritePage = favoriteRepository.findByUser_IdAndActivePost(userId, pageable);
 
         List<Post> posts = favoritePage.getContent().stream()
                 .map(Favorite::getPost)
@@ -119,13 +120,19 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     private PostSummaryResponse mapToSummary(Post post, List<String> imageUrls) {
         PostType postType = post.getPostType();
+        com.roomrental.api.user.entity.User owner = post.getUser();
         String thumbnailUrl = imageUrls.isEmpty() ? null : imageUrls.get(0);
+        com.roomrental.api.location.entity.Province provinceRef = post.getProvinceRef();
+        com.roomrental.api.location.entity.District districtRef = post.getDistrictRef();
 
         return PostSummaryResponse.builder()
                 .id(post.getId())
                 .title(post.getTitle())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .description(post.getDescription())
+                .province(provinceRef != null ? provinceRef.getName() : null)
+                .district(districtRef != null ? districtRef.getName() : null)
+                .provinceId(provinceRef != null ? provinceRef.getId() : null)
+                .districtId(districtRef != null ? districtRef.getId() : null)
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus() != null ? post.getStatus().name() : null)
@@ -138,6 +145,9 @@ public class FavoriteServiceImpl implements FavoriteService {
                 .postTypePushPrice(postType != null ? postType.getPushPrice() : null)
                 .thumbnailUrl(thumbnailUrl)
                 .imageUrls(imageUrls)
+                .ownerId(owner != null ? owner.getId() : null)
+                .ownerName(owner != null ? owner.getFullName() : null)
+                .ownerAvatar(owner != null ? owner.getAvatar() : null)
                 .build();
     }
 }

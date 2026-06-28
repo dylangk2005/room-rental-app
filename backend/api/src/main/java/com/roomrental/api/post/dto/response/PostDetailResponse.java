@@ -17,6 +17,8 @@ public class PostDetailResponse {
     private String address;
     private String province;
     private String district;
+    private Integer provinceId;
+    private Integer districtId;
     private BigDecimal area;
     private BigDecimal rentalPrice;
     private PostStatus status;
@@ -24,6 +26,7 @@ public class PostDetailResponse {
     private String ownerName;
     private String ownerEmail;
     private String ownerPhoneNumber;
+    private String ownerAvatar;
     private LocalDateTime createdAt;
     private LocalDateTime endAt;
 
@@ -31,6 +34,9 @@ public class PostDetailResponse {
     private String postTypeTitleColor;
     private Integer postTypeTitleSize;
     private Integer postTypePriority;
+    private Boolean postTypeIsUppercase;
+    private Boolean postTypeHasRecommendTag;
+    private Integer postTypeMaxImageLimit;
 
     private List<String> imageUrls;
     private Boolean isFavorited;

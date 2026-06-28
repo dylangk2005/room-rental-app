@@ -18,7 +18,7 @@ public class PostExpirationJob {
 
     private final PostRepository postRepository;
 
-    // Cron expression: * 55 1 * * * (chạy vào lúc 1 giờ 55 phút hàng ngày)
+    // Cron expression: 0 55 1 * * * (chạy vào lúc 1 giờ 55 phút hàng ngày)
     @Scheduled(cron = "${post.expiration.cron:0 0 0 * * *}")
     @Transactional
     public void expireActivePosts() {

@@ -16,6 +16,8 @@ public interface PostImageRepository extends JpaRepository<PostImage, Integer> {
 
     Optional<PostImage> findByImageUrl(String imageUrl);
 
+    Optional<PostImage> findByPostIdAndImageUrl(Integer postId, String imageUrl);
+
     // Tìm ảnh đại diện cho mỗi bài đăng trong danh sách bài đăng
     @Query("""
         SELECT pi FROM PostImage pi

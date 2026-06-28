@@ -6,7 +6,6 @@ import com.roomrental.api.post.dto.response.PostDetailResponse;
 import com.roomrental.api.post.dto.response.PostLocationResponse;
 import com.roomrental.api.post.dto.response.PostPageResponse;
 import com.roomrental.api.post.dto.request.UpdatePostRequest;
-import com.roomrental.api.post.entity.Post;
 import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.web.multipart.MultipartFile;
@@ -15,7 +14,7 @@ public interface PostService {
 
     PostPageResponse getActivePosts(int page, int size);
 
-    PostPageResponse searchPosts(String province, String district,
+    PostPageResponse searchPosts(Integer provinceId, Integer districtId,
                                  BigDecimal minPrice, BigDecimal maxPrice,
                                  BigDecimal minArea, BigDecimal maxArea,
                                  int page, int size);
@@ -32,6 +31,8 @@ public interface PostService {
                                   UpdatePostRequest request, List<MultipartFile> newImages);
 
     void deletePost(Integer userId, Integer postId);
+
+    void toggleVisibility(Integer userId, Integer postId);
 
     PostPageResponse getMyPosts(Integer userId, int page, int size);
 }

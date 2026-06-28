@@ -152,6 +152,21 @@ public class NotificationServiceImpl implements NotificationService {
         redisCacheService.delete(unreadCountCacheKey(userId));
     }
 
+    public static String formatMoney(Number amount) {
+        if (amount == null) return "0đ";
+        long val = amount.longValue();
+        String str = String.valueOf(Math.abs(val));
+        StringBuilder sb = new StringBuilder();
+        int len = str.length();
+        for (int i = 0; i < len; i++) {
+            if (i > 0 && (len - i) % 3 == 0) {
+                sb.append('.');
+            }
+            sb.append(str.charAt(i));
+        }
+        return (val < 0 ? "-" : "") + sb + "đ";
+    }
+
     private NotificationResponse mapResponse(Notification notification) {
         return NotificationResponse.builder()
                 .id(notification.getId())

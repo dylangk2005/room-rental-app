@@ -6,6 +6,7 @@ import com.roomrental.api.common.exception.AppException;
 import com.roomrental.api.integration.service.VnPayService;
 import com.roomrental.api.notification.entity.Notification;
 import com.roomrental.api.notification.service.NotificationService;
+import static com.roomrental.api.notification.service.impl.NotificationServiceImpl.formatMoney;
 import com.roomrental.api.payment.dto.response.DepositInitResponse;
 import com.roomrental.api.payment.dto.request.DepositRequest;
 import com.roomrental.api.payment.dto.response.WalletBalanceResponse;
@@ -260,12 +261,12 @@ public class WalletServiceImpl implements WalletService {
                 user.getId(),
                 Notification.NotificationType.SYSTEM_INFORMATION,
                 "Nạp tiền thành công qua VNPAY. Số tiền nạp: "
-                        + deposit.getNetAmount()
-                        + "đ. Số dư trước giao dịch: "
-                        + openingBalance
-                        + "đ. Số dư hiện tại: "
-                        + closingBalance
-                        + "đ. Mã giao dịch: "
+                        + formatMoney(deposit.getNetAmount())
+                        + ". Số dư trước giao dịch: "
+                        + formatMoney(openingBalance)
+                        + ". Số dư hiện tại: "
+                        + formatMoney(closingBalance)
+                        + ". Mã giao dịch: "
                         + deposit.getTransactionRef()
                         + "."
         );
@@ -321,7 +322,12 @@ public class WalletServiceImpl implements WalletService {
                 .id(deposit.getId())
                 .transactionType("DEPOSIT")
                 .status(expiredPending ? Deposit.DepositStatus.CANCELLED.name() : deposit.getStatus().name())
-                .amount(nullSafe(deposit.getNetAmount()))
+                .transactionRef(deposit.getTransactionRef())
+                .gatewayTransactionNo(deposit.getGatewayTransactionNo())
+                .amount(deposit.getAmount())
+                .tax(deposit.getTax())
+                .netAmount(deposit.getNetAmount())
+                .method(deposit.getMethod() != null ? deposit.getMethod().name() : null)
                 .openingBalance(deposit.getOpeningBalance())
                 .closingBalance(deposit.getClosingBalance())
                 .description(expiredPending ? "Giao dịch nạp tiền đã quá hạn thanh toán VNPAY" : deposit.getNote())
@@ -338,6 +344,12 @@ public class WalletServiceImpl implements WalletService {
                 .transactionType(payment.getPaymentType().name())
                 .status("SUCCESS")
                 .amount(isRefund ? nullSafe(payment.getFinalFee()) : nullSafe(payment.getFinalFee()).negate())
+                .baseFee(payment.getBaseFee())
+                .tax(payment.getTax())
+                .discountPercent(payment.getDiscountPercent())
+                .finalFee(payment.getFinalFee())
+                .days(payment.getDays())
+                .dayEnd(payment.getDayEnd())
                 .openingBalance(payment.getOpeningBalance())
                 .closingBalance(payment.getClosingBalance())
                 .description(buildPaymentDescription(payment))

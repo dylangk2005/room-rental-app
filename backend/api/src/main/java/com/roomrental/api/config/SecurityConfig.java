@@ -55,6 +55,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/posts/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/post-types/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/provinces/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/wallet/deposit/callback").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/wallet/deposit/callback").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/membership/levels").permitAll()
@@ -113,7 +114,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(frontendUrl));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true); // Bắt buộc để Cookie hoạt động
         config.setMaxAge(3600L);

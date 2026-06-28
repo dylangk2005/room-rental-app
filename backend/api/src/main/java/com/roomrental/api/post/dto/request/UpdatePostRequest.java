@@ -19,11 +19,11 @@ public class UpdatePostRequest {
         @NotBlank(message = "Địa chỉ không được để trống")
         private String address;
 
-        @NotBlank(message = "Tỉnh/thành không được để trống")
-        private String province;
+    @NotNull(message = "Tỉnh/thành không được để trống")
+    private Integer provinceId;
 
-        @NotBlank(message = "Quận/huyện không được để trống")
-        private String district;
+    @NotNull(message = "Quận/huyện không được để trống")
+    private Integer districtId;
 
         @NotNull(message = "Diện tích không được để trống")
         @DecimalMin("1.0")
@@ -32,6 +32,9 @@ public class UpdatePostRequest {
         @NotNull(message = "Giá thuê không được để trống")
         @DecimalMin("1000")
         private BigDecimal rentalPrice;
+
+        private Integer postTypeId;
+        private Integer durationDays;
 
         // Danh sách URL ảnh muốn xóa (có thể null)
         private List<String> deleteImageUrls;

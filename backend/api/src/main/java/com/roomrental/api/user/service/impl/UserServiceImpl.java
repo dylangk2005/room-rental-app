@@ -50,7 +50,9 @@ public class UserServiceImpl implements UserService {
 
         user.setFullName(request.getFullName());
         user.setPhoneNumber(request.getPhoneNumber());
-        user.setAvatar(request.getAvatar());
+        if (request.getAvatar() != null) {
+            user.setAvatar(request.getAvatar());
+        }
         redisCacheService.delete(userProfileCacheKey(userId));
 
         return mapProfile(user);

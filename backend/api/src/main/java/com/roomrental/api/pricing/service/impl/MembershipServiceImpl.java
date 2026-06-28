@@ -43,7 +43,7 @@ public class MembershipServiceImpl implements MembershipService {
 
     @Override
     public MyMembershipResponse getMyLevel(Integer userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdWithMembership(userId)
                 .orElseThrow(() -> AppException.notFound("Không tìm thấy người dùng"));
 
         BigDecimal totalSpent = nullSafe(user.getTotalSpent());
@@ -95,5 +95,11 @@ public class MembershipServiceImpl implements MembershipService {
 
     private BigDecimal nullSafe(BigDecimal value) {
         return value != null ? value : BigDecimal.ZERO;
+    }
+
+    @Override
+    public void refreshCache() {
+        redisCacheService.delete(MEMBERSHIP_LEVELS_CACHE_KEY);
+        getLevels();
     }
 }

@@ -3,6 +3,7 @@ package com.roomrental.api.admin.controller;
 import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.admin.dto.response.AdminUserResponse;
 import com.roomrental.api.admin.dto.response.BackupResponse;
+import com.roomrental.api.admin.dto.response.DashboardStatsResponse;
 import com.roomrental.api.admin.dto.request.CreateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateInternalUserRequest;
 import com.roomrental.api.admin.dto.request.UpdateUserStatusRequest;
@@ -25,6 +26,13 @@ public class AdminController {
     private final AdminService adminService;
     private final BackupService backupService;
     private final AuthHelper authHelper;
+
+    @GetMapping("/stats")
+    public ResponseEntity<ApiResponse<DashboardStatsResponse>> getDashboardStats() {
+        DashboardStatsResponse response = adminService.getDashboardStats();
+
+        return ResponseEntity.ok(ApiResponse.success("Lấy dữ liệu tổng quan thành công", response));
+    }
 
     @PostMapping("/internal-users")
     public ResponseEntity<ApiResponse<AdminUserResponse>> createInternalUser(

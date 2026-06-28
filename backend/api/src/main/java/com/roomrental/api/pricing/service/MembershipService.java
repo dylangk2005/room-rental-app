@@ -9,4 +9,5 @@ public interface MembershipService {
     List<MembershipLevelResponse> getLevels();
     MyMembershipResponse getMyLevel(Integer userId);
     void refreshUserMembership(User user);
+    void refreshCache();
 }

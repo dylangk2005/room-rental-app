@@ -210,8 +210,8 @@ public class ModerationLogServiceImpl implements ModerationLogService {
                 .title(post.getTitle())
                 .description(post.getDescription())
                 .address(post.getAddress())
-                .province(post.getProvince())
-                .district(post.getDistrict())
+                .province(post.getProvinceRef() != null ? post.getProvinceRef().getName() : null)
+                .district(post.getDistrictRef() != null ? post.getDistrictRef().getName() : null)
                 .area(post.getArea())
                 .rentalPrice(post.getRentalPrice())
                 .status(post.getStatus() != null ? post.getStatus().name() : null)
@@ -234,6 +234,7 @@ public class ModerationLogServiceImpl implements ModerationLogService {
                 .status(user.getStatus() != null ? user.getStatus().name() : null)
                 .role(user.getRole() != null ? user.getRole().getName() : null)
                 .membershipLevel(user.getMembershipLevel() != null ? user.getMembershipLevel().getName() : null)
+                .avatar(user.getAvatar())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

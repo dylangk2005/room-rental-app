@@ -4,10 +4,12 @@ import com.roomrental.api.admin.dto.response.AdminUserPageResponse;
 import com.roomrental.api.common.dto.ApiResponse;
 import com.roomrental.api.common.util.AuthHelper;
 import com.roomrental.api.moderation.dto.request.BanUserRequest;
-import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
+import com.roomrental.api.moderation.dto.request.HidePostRequest;
 import com.roomrental.api.moderation.dto.request.RejectPostRequest;
+import com.roomrental.api.moderation.dto.response.ModerationPostPageResponse;
 import com.roomrental.api.moderation.service.ModerationService;
 import com.roomrental.api.post.dto.response.PostDetailResponse;
+import com.roomrental.api.post.entity.Post;
 import com.roomrental.api.user.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,12 +28,14 @@ public class ModerationController {
     @GetMapping("/posts")
     @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<ModerationPostPageResponse>> getPendingPosts(
+            @RequestParam(required = false) Post.PostStatus status,
             @RequestParam(required = false) Integer postTypeId,
+            @RequestParam(required = false) Integer keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
         return ResponseEntity.ok(ApiResponse.success(
-                moderationService.getPendingPosts(postTypeId, page, size)
+                moderationService.getPendingPosts(status, postTypeId, keyword, page, size)
         ));
     }
 
@@ -64,6 +68,39 @@ public class ModerationController {
         ));
     }
 
+    @PutMapping("/posts/{id}/hide")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<PostDetailResponse>> hidePost(
+            @PathVariable Integer id,
+            @Valid @RequestBody HidePostRequest request) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Đã ẩn tin đăng",
+                moderationService.hidePost(authHelper.getCurrentUserId(), id, request.getReason())
+        ));
+    }
+
+    @PutMapping("/posts/{id}/unhide")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<PostDetailResponse>> unhidePost(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Đã hiện tin đăng",
+                moderationService.unhidePost(authHelper.getCurrentUserId(), id)
+        ));
+    }
+
+    @PutMapping("/posts/{id}/remove")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<PostDetailResponse>> removePost(
+            @PathVariable Integer id,
+            @Valid @RequestBody HidePostRequest request) {
+
+        return ResponseEntity.ok(ApiResponse.success(
+                "Đã xóa tin đăng",
+                moderationService.removePost(authHelper.getCurrentUserId(), id, request.getReason())
+        ));
+    }
+
     @PutMapping("/users/{id}/ban")
     @PreAuthorize("hasRole('MODERATOR')")
     public ResponseEntity<ApiResponse<Void>> banUser(
@@ -90,6 +127,14 @@ public class ModerationController {
 
         return ResponseEntity.ok(ApiResponse.success(
                 moderationService.getNormalUsers(status, keyword, page, size)
+        ));
+    }
+
+    @GetMapping("/users/{id}")
+    @PreAuthorize("hasRole('MODERATOR')")
+    public ResponseEntity<ApiResponse<AdminUserPageResponse>> getUserDetail(@PathVariable Integer id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                moderationService.getUserDetail(id)
         ));
     }
 }

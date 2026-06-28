@@ -15,6 +15,7 @@ public class AdminUserResponse {
     private String phoneNumber;
     private String status;
     private String role;
+    private String avatar;
     private LocalDateTime createdAt;
     private List<ActivePenaltyResponse> activePenalties;
 
@@ -26,6 +27,7 @@ public class AdminUserResponse {
         private String reason;
         private LocalDateTime startDate;
         private LocalDateTime endDate;
+        private Boolean isActive;
         private LocalDateTime createdAt;
     }
 }

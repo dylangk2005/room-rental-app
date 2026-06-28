@@ -93,19 +93,19 @@
 ![Landing Page](frontend/public/demo/01-landing-page.png)
 
 #### Tìm kiếm
-![Search](frontend/public/demo/02-search.png)
+![Search](frontend/public/demo/02-search-page.png)
 
 #### Chi tiết tin đăng
 ![Post Detail](frontend/public/demo/03-post-detail.png)
 
 #### Dashboard Manager
-![Manager Dashboard](frontend/public/demo/04-manager-dashboard.png)
+![Manager Dashboard](frontend/public/demo/04-dashboard-manager.png)
 
 #### Dashboard Moderator
-![Moderator Dashboard](frontend/public/demo/05-moderator-dashboard.png)
+![Moderator Dashboard](frontend/public/demo/05-dashboard-moderator.png)
 
 #### Mobile View
-![Mobile](frontend/public/demo/06-mobile.png)
+![Mobile](frontend/public/demo/06-mobile-view.png)
 
 
 ### 2.2 Thông tin truy cập
@@ -279,7 +279,6 @@ graph TB
 erDiagram
     users ||--o{ posts : "creates"
     users ||--o{ payments : "makes"
-    users ||--o{ deposits : "deposits"
     users ||--o{ deposits : "has"
     users ||--o{ reports : "files"
     users ||--o{ notifications : "receives"
@@ -300,7 +299,6 @@ erDiagram
     posts ||--o| payments : "paid_for"
 
     roles ||--o{ users : "assigned_to"
-
     provinces ||--o{ districts : "contains"
 
     users {
@@ -310,38 +308,38 @@ erDiagram
         string full_name
         string phone_number UK
         string avatar
-        enum status
-        decimal account_balance
-        decimal total_spent
+        string status
+        float account_balance
+        float total_spent
         int role_id FK
         int membership_level_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     posts {
         int id PK
         string title
-        text description
+        string description
         string address
         int province_id FK
         int district_id FK
-        decimal area
-        decimal rental_price
-        enum status
+        float area
+        float rental_price
+        string status
         int user_id FK
         int post_type_id FK
-        datetime push_time
-        datetime end_at
+        timestamp push_time
+        timestamp end_at
         int duration_days
-        datetime created_at
-        datetime updated_at
+        timestamp created_at
+        timestamp updated_at
     }
 
     post_images {
         int id PK
         string image_url
         int post_id FK
-        datetime updated_at
+        timestamp updated_at
     }
 
     post_types {
@@ -350,7 +348,7 @@ erDiagram
         string title_color
         int title_size
         int priority
-        decimal push_price
+        float push_price
     }
 
     provinces {
@@ -373,97 +371,97 @@ erDiagram
     membership_levels {
         int id PK
         string name
-        decimal min_spent
+        float min_spent
         int discount_percent
     }
 
     payments {
         int id PK
-        enum payment_type
+        string payment_type
         int days
-        date day_end
-        decimal base_fee
-        decimal tax
+        string day_end
+        float base_fee
+        float tax
         int discount_percent
-        decimal final_fee
-        decimal opening_balance
-        decimal closing_balance
+        float final_fee
+        float opening_balance
+        float closing_balance
         int user_id FK
         int post_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     deposits {
         int id PK
-        decimal amount
-        decimal tax
-        decimal net_amount
-        enum method
-        enum status
+        float amount
+        float tax
+        float net_amount
+        string method
+        string status
         string transaction_ref UK
         string gateway_transaction_no
-        decimal opening_balance
-        decimal closing_balance
+        float opening_balance
+        float closing_balance
         int user_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     reports {
         int id PK
-        text reason
-        text description
-        enum status
+        string reason
+        string description
+        string status
         int user_id FK
         int post_id FK
         int moderator_id FK
-        datetime created_at
-        datetime resolved_at
+        timestamp created_at
+        timestamp resolved_at
     }
 
     moderation_logs {
         int id PK
-        enum action
-        enum target_type
+        string action
+        string target_type
         int target_id
-        text reason
+        string reason
         int user_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     user_penalties {
         int id PK
-        enum type
-        text reason
-        boolean is_active
-        datetime start_date
-        datetime end_date
+        string type
+        string reason
+        bool is_active
+        timestamp start_date
+        timestamp end_date
         int user_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     notifications {
         int id PK
-        enum title
-        text message
-        boolean is_read
+        string title
+        string message
+        bool is_read
         int user_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     audit_logs {
         int id PK
         string action
-        enum target_type
+        string target_type
         int target_id
-        text reason
+        string reason
         int user_id FK
-        datetime created_at
+        timestamp created_at
     }
 
     favorites {
         int user_id PK FK
         int post_id PK FK
-        datetime created_at
+        timestamp created_at
     }
 ```
 

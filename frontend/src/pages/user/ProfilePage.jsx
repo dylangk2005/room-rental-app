@@ -759,7 +759,7 @@ const ProfilePage = () => {
                                     </div>
                                     <div className="pb-1">
                                         <h1 className="text-2xl font-black text-slate-900 leading-tight">
-                                            {profile.fullName || 'Người dùng TAYTRO'}
+                                            {profile.fullName || 'Người dùng TayTro'}
                                         </h1>
                                         <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold text-slate-500">
                                             <Icon name="email" size={14} />

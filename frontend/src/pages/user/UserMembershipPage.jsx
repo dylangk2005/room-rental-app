@@ -226,7 +226,7 @@ const UserMembershipPage = () => {
     })()
 
     return (
-        <AccountLayout activeKey="membership" title="Hạng thành viên" subtitle="Quyền lợi và cấp bậc của bạn tại TAYTRO.">
+        <AccountLayout activeKey="membership" title="Hạng thành viên" subtitle="Quyền lợi và cấp bậc của bạn tại TayTro.">
             {error && (
                 <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">
                     {error}
@@ -380,7 +380,7 @@ const UserMembershipPage = () => {
                     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                         <h2 className="text-base font-black text-slate-900">Làm sao để thăng hạng?</h2>
                         <p className="mt-1 text-sm font-semibold text-slate-500">
-                            Chi tiêu càng nhiều trên TAYTRO, hạng của bạn càng cao và được giảm giá đăng tin càng lớn.
+                            Chi tiêu càng nhiều trên TayTro, hạng của bạn càng cao và được giảm giá đăng tin càng lớn.
                         </p>
                         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">

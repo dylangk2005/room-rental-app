@@ -153,7 +153,7 @@ const DepositPage = () => {
         <AccountLayout
             activeKey="deposit"
             title="Nạp tiền"
-            subtitle="Nạp tiền vào ví để đăng tin, đẩy tin và sử dụng các dịch vụ trên TAYTRO."
+            subtitle="Nạp tiền vào ví để đăng tin, đẩy tin và sử dụng các dịch vụ trên TayTro."
         >
             <div className="mx-auto max-w-2xl space-y-6">
                 {/* ── Balance Hero Card ─────────────────────────────────── */}
@@ -167,7 +167,7 @@ const DepositPage = () => {
                             <Icon name="wallet" size={18} />
                         </div>
                         <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-slate-700">Ví TAYTRO</p>
+                            <p className="text-sm font-bold text-slate-700">Ví TayTro</p>
                             <p className="text-xs text-slate-400">Dùng cho đăng tin, đẩy tin, gia hạn</p>
                         </div>
                         <span className="shrink-0 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">

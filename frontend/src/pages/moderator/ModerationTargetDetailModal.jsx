@@ -1,4 +1,4 @@
-import { formatDateTime, formatMoney, formatStatusLabel, formatPenaltyType, formatRole, getAvatarUrl } from '../../utils/backOfficeFormatters'
+import { formatDateTime, formatMoney, formatStatusLabel, formatPenaltyType, formatRole, formatTargetType, getAvatarUrl } from '../../utils/backOfficeFormatters'
 import SafeImage from '../../components/common/SafeImage'
 import { StatusBadge } from '../../components/BackOfficeParts'
 
@@ -185,7 +185,7 @@ const ModerationTargetDetailModal = ({ detail, loading, error, onClose }) => (
                     <div>
                         <p className="text-xs font-black uppercase tracking-wider text-emerald-700">Chi tiết kiểm duyệt</p>
                         <h2 className="mt-0.5 text-xl font-black text-slate-950">
-                            {detail?.targetType || 'Đối tượng'} {detail?.targetId ? `#${detail.targetId}` : ''}
+                            {formatTargetType(detail?.targetType) || 'Đối tượng'} {detail?.targetId ? `#${detail.targetId}` : ''}
                         </h2>
                     </div>
                 </div>

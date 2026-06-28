@@ -979,7 +979,7 @@ const CreatePostPage = () => {
                                         onChange={handleChange}
                                     />
                                     <span>
-                                        Tôi cam kết thông tin, giá và hình ảnh đúng thực tế. Tin vi phạm có thể bị từ chối và xử lý theo quy định của TAYTRO.
+                                        Tôi cam kết thông tin, giá và hình ảnh đúng thực tế. Tin vi phạm có thể bị từ chối và xử lý theo quy định của TayTro.
                                     </span>
                                 </label>
 

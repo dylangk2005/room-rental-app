@@ -126,41 +126,106 @@ INSERT INTO post_type_prices (post_type_id, day, price) VALUES
 (4, 30, 900000);
 
 -- =============================================================================
--- POSTS (sample listings with various statuses)
+-- POSTS (20 bài đăng: 15 ACTIVE, 2 REJECTED, 2 EXPIRED, 1 HIDDEN)
 -- =============================================================================
 
+-- 15 bài ACTIVE (1-15: ACTIVE, 16-17: REJECTED, 18-19: EXPIRED, 20: HIDDEN)
 INSERT INTO posts
 (id, title, description, address, province_id, district_id, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
 VALUES
--- Active posts
 (1, 'Phòng trọ gần ĐH Công nghiệp, có gác lửng, WC riêng', 'Phòng thoáng mát, có cửa sổ lớn, gác lửng tiện để đồ. WC riêng, máy nước nóng. Gần siêu thị và trường học.', '15/3 Nguyễn Văn Bảo', 1, 13, 22.5, 2500000, 'ACTIVE', '2026-06-01 09:00:00', '2026-06-01 09:00:00', '2026-06-01 10:00:00', '2026-07-01 10:00:00', 4, 1, 30),
 (2, 'Phòng VIP full nội thất, ban công view đẹp, Bình Thạnh', 'Phòng cao cấp đầy đủ nội thất: giường, tủ, bàn làm việc, điều hòa, máy giặt riêng. An ninh 24/7, thang máy.', '45 Xô Viết Nghệ Tĩnh', 1, 12, 30.0, 5500000, 'ACTIVE', '2026-06-02 10:00:00', '2026-06-02 10:00:00', '2026-06-02 11:00:00', '2026-07-02 11:00:00', 4, 2, 30),
-(3, 'Nhà nguyên căn 3PN cho thuê, hẻm xe hơi, Quận 12', 'Nhà 1 trệt 1 lầu, 3 phòng ngủ, 2 WC, bếp rộng, sân để xe. Phù hợp gia đình hoặc nhóm 4-5 người.', '22 Đường số 8, KDC Tân Thới Nhất', 1, 10, 80.0, 9000000, 'ACTIVE', '2026-06-03 14:00:00', '2026-06-03 14:00:00', '2026-06-03 15:00:00', '2026-07-03 15:00:00', 6, 3, 30),
-(4, 'Phòng trọ bị từ chối vì ảnh không đúng thực tế', 'Nội dung mô tả không khớp thực tế và địa chỉ không xác minh được.', '99 Đường Giả', 1, 1, 18.0, 2000000, 'REJECTED', '2026-06-05 10:00:00', '2026-06-05 16:00:00', NULL, NULL, 8, 1, 30),
-(5, 'Phòng trọ cao cấp khu dân cư Lovera, Bình Chánh', 'Phòng mới xây, nội thất cao cấp, máy lạnh, nóng lạnh. Khu dân cư có bảo vệ, gần KCN Vĩnh Lộc.', '12 Lovera Vista', 1, 18, 25.0, 3800000, 'ACTIVE', '2026-06-04 11:00:00', '2026-06-04 11:00:00', '2026-06-04 12:00:00', '2026-07-04 12:00:00', 6, 2, 30),
-(6, 'Căn hộ mini full nội thất Q.7, sầm uất, dễ di chuyển', 'Căn hộ mini 1 phòng ngủ riêng biệt, full nội thất cao cấp. Khu vực sầm uất gần Phú Mỹ Hưng.', '30/4 Nguyễn Thị Thập', 1, 6, 28.0, 6000000, 'ACTIVE', '2026-06-06 10:00:00', '2026-06-06 10:00:00', '2026-06-06 11:00:00', '2026-07-06 11:00:00', 6, 3, 30),
+(3, 'Nhà nguyên căn 3PN cho thuê, hẻm xe hơi, Quận 12', 'Nhà 1 trệt 1 lầu, 3 phòng ngủ, 2 WC, bếp rộng, sân để xe. Phù hợp gia đình hoặc nhóm 4-5 người.', '22 Đường số 8, KDC Tân Thới Nhất', 1, 10, 80.0, 9000000, 'ACTIVE', '2026-06-03 14:00:00', '2026-06-03 14:00:00', '2026-06-03 15:00:00', '2026-07-03 15:00:00', 6, 4, 30),
+(4, 'Căn hộ mini full nội thất Q.7, sầm uất, dễ di chuyển', 'Căn hộ mini 1 phòng ngủ riêng biệt, full nội thất cao cấp. Khu vực sầm uất gần Phú Mỹ Hưng.', '30/4 Nguyễn Thị Thập', 1, 6, 28.0, 6000000, 'ACTIVE', '2026-06-04 10:00:00', '2026-06-04 10:00:00', '2026-06-04 11:00:00', '2026-07-04 11:00:00', 6, 3, 30),
+(5, 'Phòng trọ cao cấp khu dân cư Lovera, Bình Chánh', 'Phòng mới xây, nội thất cao cấp, máy lạnh, nóng lạnh. Khu dân cư có bảo vệ, gần KCN Vĩnh Lộc.', '12 Lovera Vista', 1, 18, 25.0, 3800000, 'ACTIVE', '2026-06-05 11:00:00', '2026-06-05 11:00:00', '2026-06-05 12:00:00', '2026-07-05 12:00:00', 6, 1, 30),
+(6, 'Chung cư cao cấp Celadon City, Tân Phú, 2PN', 'Chung cư 2 phòng ngủ, nội thất đầy đủ, hồ bơi, gym. Gần trường học quốc tế.', '88 Sơn Kỳ Tân Quý', 1, 16, 55.0, 8500000, 'ACTIVE', '2026-06-06 09:00:00', '2026-06-06 09:00:00', '2026-06-06 10:00:00', '2026-07-06 10:00:00', 9, 2, 30),
 (7, 'Phòng trọ bình dân, sạch sẽ, Hóc Môn', 'Phòng đơn giản, sạch, có quạt trần và cửa sổ. Chủ nhà thân thiện.', '5 Đường Bà Điểm 5', 1, 21, 14.0, 1200000, 'ACTIVE', '2026-06-07 07:00:00', '2026-06-07 07:00:00', '2026-06-07 08:00:00', '2026-07-07 08:00:00', 10, 1, 30),
--- Expired posts
-(8, 'Phòng sinh viên giá rẻ, gần HUTECH, có chỗ để xe', 'Phòng nhỏ gọn, phù hợp 1-2 sinh viên. Có wifi, chỗ để xe máy. Ra đường lớn 5 phút đi bộ.', '7/1 Đường Phan Văn Trị', 1, 12, 16.0, 1800000, 'EXPIRED', '2026-05-01 08:00:00', '2026-06-01 09:00:00', '2026-05-01 09:00:00', '2026-06-01 09:00:00', 5, 1, 30),
-(9, 'Phòng trọ hẻm yên tĩnh, gần chợ Thủ Đức', 'Phòng yên tĩnh, thoáng mát, hẻm sạch sẽ. Gần chợ, trường học, bệnh viện. Cho phép nấu ăn.', '88 Kha Vạn Cân', 1, 17, 20.0, 2200000, 'EXPIRED', '2026-04-25 09:00:00', '2026-05-25 10:00:00', '2026-04-25 10:00:00', '2026-05-25 10:00:00', 9, 1, 30);
+(8, 'Biệt thự song lập có hồ bơi riêng, Quận 2', 'Biệt thự 4 phòng ngủ, hồ bơi riêng, sân vườn rộng rãi. Khu compound an ninh cao.', '123 Đường Võ Chí Công', 1, 17, 200.0, 45000000, 'ACTIVE', '2026-06-08 10:00:00', '2026-06-08 10:00:00', '2026-06-08 11:00:00', '2026-07-08 11:00:00', 6, 4, 30),
+(9, 'Studio cao cấp District 4, view sông Sài Gòn', 'Studio 25m2, full nội thất, cửa sổ lớn view sông. Gần chợ Bến Thành.', '50 Đường Điện Biên Phủ', 1, 4, 25.0, 5000000, 'ACTIVE', '2026-06-09 08:00:00', '2026-06-09 08:00:00', '2026-06-09 09:00:00', '2026-07-09 09:00:00', 9, 3, 30),
+(10, 'Phòng trọ sinh viên giá rẻ, gần ĐH Bách Khoa', 'Phòng trọ cho sinh viên, giường tầng, wifi free, gần ĐH Bách Khoa và ĐH Kinh tế.', '77 Võ Văn Tần', 1, 3, 18.0, 1800000, 'ACTIVE', '2026-06-10 12:00:00', '2026-06-10 12:00:00', '2026-06-10 13:00:00', '2026-07-10 13:00:00', 5, 1, 30),
+(11, 'Căn hộ 2PN日出Sunny, Tân Bình, đầy đủ tiện ích', 'Căn hộ 2 phòng ngủ, nội thất cao cấp, ban công, gần sân bay Tân Sơn Nhất.', '201 Hoàng Văn Thụ', 1, 15, 60.0, 7500000, 'ACTIVE', '2026-06-11 09:00:00', '2026-06-11 09:00:00', '2026-06-11 10:00:00', '2026-07-11 10:00:00', 7, 2, 30),
+(12, 'Mặt bằng kinh doanh mặt tiền đường Nguyễn Trãi', 'Mặt bằng 50m2, mặt tiền 5m, kinh doanh đủ ngành. Điện nước công nghiệp, chỗ để xe rộng.', '450 Nguyễn Trãi', 1, 5, 50.0, 18000000, 'ACTIVE', '2026-06-12 10:00:00', '2026-06-12 10:00:00', '2026-06-12 11:00:00', '2026-07-12 11:00:00', 6, 4, 30),
+(13, 'Phòng trọ mới, có gác, khu vực yên tĩnh Gò Vấp', 'Phòng mới xây 100%, có gác lửng, WC riêng, camera an ninh. Khu vực yên tĉnh, gần công viên.', '88 Phan Văn Trị', 1, 13, 20.0, 2200000, 'ACTIVE', '2026-06-13 08:00:00', '2026-06-13 08:00:00', '2026-06-13 09:00:00', '2026-07-13 09:00:00', 5, 1, 30),
+(14, 'Penthouse 3 tầng view toàn cảnh Sài Gòn, Q.1', 'Penthouse 200m2, 4 phòng ngủ, jacuzzi, home theater. View 360 độ thành phố.', '1 Đường Hai Bà Trưng', 1, 1, 200.0, 85000000, 'ACTIVE', '2026-06-14 11:00:00', '2026-06-14 11:00:00', '2026-06-14 12:00:00', '2026-07-14 12:00:00', 6, 3, 30),
+(15, 'Nhà trọ cao cấp Phú Nhuận, gần công viên Gia Định', 'Phòng rộng 25m2, nội thất cơ bản, có gác, gần công viên Gia Định và bệnh viện 175.', '33 Phan Đăng Lưu', 1, 14, 25.0, 3500000, 'ACTIVE', '2026-06-15 10:00:00', '2026-06-15 10:00:00', '2026-06-15 11:00:00', '2026-07-15 11:00:00', 7, 2, 30);
+
+-- 2 bài REJECTED
+INSERT INTO posts
+(id, title, description, address, province_id, district_id, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
+VALUES
+(16, 'Phòng trọ bị từ chối vì ảnh không đúng thực tế', 'Nội dung mô tả không khớp thực tế và địa chỉ không xác minh được.', '99 Đường Giả', 1, 1, 18.0, 2000000, 'REJECTED', '2026-06-16 10:00:00', '2026-06-16 16:00:00', NULL, NULL, 8, 1, 30),
+(17, 'Bài đăng vi phạm quy định, nội dung nhạy cảm', 'Bài đăng chứa nội dung không phù hợp, vi phạm chính sách sử dụng.', '123 Đường Test', 1, 5, 15.0, 1500000, 'REJECTED', '2026-06-17 11:00:00', '2026-06-17 14:00:00', NULL, NULL, 10, 1, 30);
+
+-- 2 bài EXPIRED
+INSERT INTO posts
+(id, title, description, address, province_id, district_id, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
+VALUES
+(18, 'Phòng sinh viên giá rẻ, gần HUTECH, có chỗ để xe', 'Phòng nhỏ gọn, phù hợp 1-2 sinh viên. Có wifi, chỗ để xe máy. Ra đường lớn 5 phút đi bộ.', '7/1 Đường Phan Văn Trị', 1, 12, 16.0, 1800000, 'EXPIRED', '2026-05-01 08:00:00', '2026-06-01 09:00:00', '2026-05-01 09:00:00', '2026-06-01 09:00:00', 5, 1, 30),
+(19, 'Phòng trọ hẻm yên tĩnh, gần chợ Thủ Đức', 'Phòng yên tĩnh, thoáng mát, hẻm sạch sẽ. Gần chợ, trường học, bệnh viện. Cho phép nấu ăn.', '88 Kha Vạn Cân', 1, 17, 20.0, 2200000, 'EXPIRED', '2026-04-25 09:00:00', '2026-05-25 10:00:00', '2026-04-25 10:00:00', '2026-05-25 10:00:00', 9, 1, 30);
+
+-- 1 bài HIDDEN
+INSERT INTO posts
+(id, title, description, address, province_id, district_id, area, rental_price, status, created_at, updated_at, push_time, end_at, user_id, post_type_id, duration_days)
+VALUES
+(20, 'Phòng trọ tạm thời bị ẩn để chỉnh sửa nội dung', 'Chủ nhà tạm ẩn để cập nhật thông tin và hình ảnh mới.', '55 Đường Số 3, KDC', 1, 7, 22.0, 2800000, 'HIDDEN', '2026-06-18 09:00:00', '2026-06-18 10:00:00', '2026-06-18 10:00:00', '2026-07-18 10:00:00', 7, 1, 30);
 
 -- =============================================================================
--- POST IMAGES
+-- POST IMAGES (đủ ảnh theo max_image_limit của mỗi post_type)
 -- =============================================================================
 
 INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
-(1, 'https://picsum.photos/seed/post-1-main/900/600', NOW(), 1),
-(2, 'https://picsum.photos/seed/post-1-room/900/600', NOW(), 1),
-(3, 'https://picsum.photos/seed/post-2-main/900/600', NOW(), 2),
-(4, 'https://picsum.photos/seed/post-2-balcony/900/600', NOW(), 2),
-(5, 'https://picsum.photos/seed/post-3-front/900/600', NOW(), 3),
-(6, 'https://picsum.photos/seed/post-3-kitchen/900/600', NOW(), 3),
-(7, 'https://picsum.photos/seed/post-4-main/900/600', NOW(), 4),
-(8, 'https://picsum.photos/seed/post-5-main/900/600', NOW(), 5),
-(9, 'https://picsum.photos/seed/post-6-main/900/600', NOW(), 6),
-(10, 'https://picsum.photos/seed/post-7-main/900/600', NOW(), 7),
-(11, 'https://picsum.photos/seed/post-8-main/900/600', NOW(), 8),
-(12, 'https://picsum.photos/seed/post-9-main/900/600', NOW(), 9);
+-- Posts 1, 5, 7, 10, 13, 16, 17, 18, 19, 20: Tin thường (1 ảnh mỗi bài)
+(1, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900&h=600&fit=crop', NOW(), 1),
+(2, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 5),
+(3, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=900&h=600&fit=crop', NOW(), 7),
+(4, 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=900&h=600&fit=crop', NOW(), 10),
+(5, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&h=600&fit=crop', NOW(), 13),
+(6, 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=900&h=600&fit=crop', NOW(), 16),
+(7, 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&h=600&fit=crop', NOW(), 17),
+(8, 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=900&h=600&fit=crop', NOW(), 18),
+(9, 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=900&h=600&fit=crop', NOW(), 19),
+(10, 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=900&h=600&fit=crop', NOW(), 20);
+
+-- Posts 2, 6, 11, 15: VIP2 (2 ảnh mỗi bài)
+INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
+(11, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 2),
+(12, 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=600&fit=crop', NOW(), 2),
+(13, 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=900&h=600&fit=crop', NOW(), 6),
+(14, 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=900&h=600&fit=crop', NOW(), 6),
+(15, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&h=600&fit=crop', NOW(), 11),
+(16, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900&h=600&fit=crop', NOW(), 11),
+(17, 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=900&h=600&fit=crop', NOW(), 15),
+(18, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 15);
+
+-- Posts 4, 9, 14: VIP1 (3 ảnh mỗi bài)
+INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
+(19, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 4),
+(20, 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=900&h=600&fit=crop', NOW(), 4),
+(21, 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=600&fit=crop', NOW(), 4),
+(22, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&h=600&fit=crop', NOW(), 9),
+(23, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900&h=600&fit=crop', NOW(), 9),
+(24, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=900&h=600&fit=crop', NOW(), 9),
+(25, 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&h=600&fit=crop', NOW(), 14),
+(26, 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=900&h=600&fit=crop', NOW(), 14),
+(27, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 14);
+
+-- Posts 3, 8, 12: VIP Nổi bật (5 ảnh mỗi bài)
+INSERT INTO post_images (id, image_url, updated_at, post_id) VALUES
+(28, 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&h=600&fit=crop', NOW(), 3),
+(29, 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&h=600&fit=crop', NOW(), 3),
+(30, 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900&h=600&fit=crop', NOW(), 3),
+(31, 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&h=600&fit=crop', NOW(), 3),
+(32, 'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=900&h=600&fit=crop', NOW(), 3),
+(33, 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=900&h=600&fit=crop', NOW(), 8),
+(34, 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=900&h=600&fit=crop', NOW(), 8),
+(35, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&h=600&fit=crop', NOW(), 8),
+(36, 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=900&h=600&fit=crop', NOW(), 8),
+(37, 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=900&h=600&fit=crop', NOW(), 8),
+(38, 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=900&h=600&fit=crop', NOW(), 12),
+(39, 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=900&h=600&fit=crop', NOW(), 12),
+(40, 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=900&h=600&fit=crop', NOW(), 12),
+(41, 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&h=600&fit=crop', NOW(), 12),
+(42, 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=900&h=600&fit=crop', NOW(), 12);
 
 -- =============================================================================
 -- FAVORITES
@@ -227,9 +292,9 @@ VALUES
 (4, 'Nội dung lừa đảo', 'Bài đăng yêu cầu cọc trước và dùng địa chỉ không tồn tại.', 'RESOLVED', '2026-06-05 08:30:00', '2026-06-05 09:00:00', 'Đã xác minh và từ chối bài đăng.', 4, 4, 3);
 
 INSERT INTO report_images (id, image_url, updated_at, report_id) VALUES
-(1, 'https://picsum.photos/seed/report-1/900/600', NOW(), 1),
-(2, 'https://picsum.photos/seed/report-2/900/600', NOW(), 2),
-(3, 'https://picsum.photos/seed/report-4/900/600', NOW(), 4);
+(1, 'https://images.unsplash.com/photo-1560185007-cde436f6a4d0?w=900&h=600&fit=crop', NOW(), 1),
+(2, 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?w=900&h=600&fit=crop', NOW(), 2),
+(3, 'https://images.unsplash.com/photo-1554995207-c18c203602cb?w=900&h=600&fit=crop', NOW(), 4);
 
 -- =============================================================================
 -- MODERATION LOGS

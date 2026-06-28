@@ -478,7 +478,7 @@ const AppHeader = () => {
                     <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600 font-black text-white">
                         T
                     </span>
-                    <span className="text-xl font-black text-slate-950">TAYTRO</span>
+                    <span className="text-xl font-black text-slate-950">TayTro</span>
                 </Link>
 
                 {/* Right side actions */}
@@ -544,7 +544,7 @@ const AppHeader = () => {
                                                 {user.fullName || 'Người dùng'}
                                             </p>
                                             <p className="mt-1 truncate text-xs font-semibold text-slate-500">
-                                                {user.email || 'Tài khoản TAYTRO'}
+                                                {user.email || 'Tài khoản TayTro'}
                                             </p>
                                         </div>
 

@@ -226,7 +226,7 @@ const LandingPage = () => {
                 <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
                     <Link to="/" className="group flex items-center gap-2.5 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95">
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-600 font-black text-white text-sm transition-all duration-300 group-hover:bg-emerald-700 group-hover:shadow-lg group-hover:shadow-emerald-600/30">T</div>
-                        <span className="text-lg font-black text-slate-950 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">TAYTRO</span>
+                        <span className="text-lg font-black text-slate-950 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">TayTro</span>
                     </Link>
                     <div className="flex items-center gap-2">
                     {user ? (
@@ -483,7 +483,7 @@ const LandingPage = () => {
                         <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">hoàn hảo?</span>
                     </h2>
                     <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-300 sm:mt-5 sm:text-base md:text-lg">
-                        Tham gia cộng đồng 50,000+ người đang tìm kiếm và cho thuê phòng trọ trên TAYTRO.
+                        Tham gia cộng đồng 50,000+ người đang tìm kiếm và cho thuê phòng trọ trên TayTro.
                     </p>
                     <div className="mt-7 flex flex-col items-center gap-3 sm:mt-9 sm:flex-row sm:justify-center sm:gap-4">
                         <button
@@ -509,10 +509,10 @@ const LandingPage = () => {
                     <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
                         <Link to="/" className="group flex items-center gap-2.5 rounded-lg transition-all duration-300 hover:scale-105 active:scale-95">
                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 font-black text-white text-sm transition-all duration-300 group-hover:bg-emerald-700 group-hover:shadow-lg group-hover:shadow-emerald-600/30">T</div>
-                            <span className="text-base font-black text-slate-950 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">TAYTRO</span>
+                            <span className="text-base font-black text-slate-950 tracking-tight transition-colors duration-300 group-hover:text-emerald-600">TayTro</span>
                         </Link>
                         <p className="text-xs text-slate-400 sm:text-sm">
-                            © 2026 TAYTRO — Nền tảng kết nối người thuê &amp; chủ trọ hàng đầu Việt Nam.
+                            © 2026 TayTro — Nền tảng kết nối người thuê &amp; chủ trọ hàng đầu Việt Nam.
                         </p>
                     </div>
                 </div>

@@ -67,7 +67,7 @@ const PENALTY_LABELS = {
 export const formatPenaltyType = (type) => PENALTY_LABELS[type] || type || '-'
 
 const TARGET_TYPE_LABELS = {
-    POST: 'Bài đăng',
+    POST: 'Tin đăng',
     REPORT: 'Báo cáo',
     USER: 'Người dùng',
 }
@@ -158,6 +158,41 @@ const AUDIT_ACTION_LABELS = {
     // Membership
     CREATE_MEMBERSHIP: 'Tạo gói thành viên',
     UPDATE_MEMBERSHIP: 'Cập nhật gói thành viên',
+
+    // Post updates
+    POST_UPDATED: 'Cập nhật tin đăng',
+    PAYMENT_POST_SUCCESS: 'Thanh toán tin đăng thành công',
+    UPDATED_POST_SUCCESS: 'Cập nhật tin thành công',
+
+    // Moderation actions
+    APPROVE_POST: 'Duyệt tin đăng',
+    REJECT_POST_AND_REFUND: 'Từ chối tin và hoàn tiền',
+    HIDE_POST: 'Ẩn tin đăng',
+    UNHIDE_POST: 'Hiện lại tin đăng',
+    REMOVE_POST: 'Xóa tin đăng',
+    BAN_USER_WARNING: 'Cấm người dùng (Cảnh cáo)',
+    BAN_USER_LOCK: 'Cấm người dùng (Khóa đăng)',
+    BAN_USER_BAN: 'Cấm người dùng (Cấm vĩnh viễn)',
+
+    // Payment actions
+    PAYMENT_RENEW_SUCCESS: 'Gia hạn tin thành công',
+    PAYMENT_PUSH_SUCCESS: 'Đẩy tin thành công',
+    PAYMENT_POST_FAILED: 'Thanh toán tin thất bại',
+    LOGIN_RATE_LIMITED: 'Đăng nhập bị giới hạn',
+
+    // Report actions
+    CREATE_REPORT: 'Tạo báo cáo',
+
+    // Deposit actions
+    DEPOSIT_FAILED: 'Nạp tiền thất bại',
+    DEPOSIT_SUCCESS: 'Nạp tiền thành công',
+
+    // Internal user management
+    CREATE_INTERNAL_USER: 'Tạo tài khoản nội bộ',
+    UPDATE_INTERNAL_USER: 'Cập nhật tài khoản nội bộ',
+    DELETE_INTERNAL_USER: 'Xóa tài khoản nội bộ',
+    UPDATE_MEMBERSHIP_LEVEL: 'Cập nhật hạng thành viên',
+    UNBAN_USER: 'Bỏ cấm người dùng',
 }
 
 export const formatAuditAction = (action) => AUDIT_ACTION_LABELS[action] || action || '-'
@@ -222,6 +257,41 @@ const AUDIT_ACTION_VARIANTS = {
     // Membership
     CREATE_MEMBERSHIP: 'success',
     UPDATE_MEMBERSHIP: 'info',
+
+    // Post updates
+    POST_UPDATED: 'info',
+    PAYMENT_POST_SUCCESS: 'success',
+    UPDATED_POST_SUCCESS: 'success',
+
+    // Moderation actions
+    APPROVE_POST: 'success',
+    REJECT_POST_AND_REFUND: 'danger',
+    HIDE_POST: 'warning',
+    UNHIDE_POST: 'success',
+    REMOVE_POST: 'danger',
+    BAN_USER_WARNING: 'danger',
+    BAN_USER_LOCK: 'danger',
+    BAN_USER_BAN: 'danger',
+
+    // Payment actions
+    PAYMENT_RENEW_SUCCESS: 'success',
+    PAYMENT_PUSH_SUCCESS: 'success',
+    PAYMENT_POST_FAILED: 'danger',
+    LOGIN_RATE_LIMITED: 'warning',
+
+    // Report actions
+    CREATE_REPORT: 'info',
+
+    // Deposit actions
+    DEPOSIT_FAILED: 'danger',
+    DEPOSIT_SUCCESS: 'success',
+
+    // Internal user management
+    CREATE_INTERNAL_USER: 'success',
+    UPDATE_INTERNAL_USER: 'info',
+    DELETE_INTERNAL_USER: 'danger',
+    UPDATE_MEMBERSHIP_LEVEL: 'info',
+    UNBAN_USER: 'success',
 }
 
 export const getAuditActionVariant = (action) => AUDIT_ACTION_VARIANTS[action] || 'neutral'

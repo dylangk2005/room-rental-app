@@ -136,7 +136,7 @@ const LoginPage = () => {
                             T
                         </span>
                         <span>
-                            <span className="block text-xl font-black tracking-normal text-slate-950 transition-colors duration-300 group-hover:text-emerald-600">TAYTRO</span>
+                            <span className="block text-xl font-black tracking-normal text-slate-950 transition-colors duration-300 group-hover:text-emerald-600">TayTro</span>
                             <span className="block text-sm text-slate-500">Tìm phòng trọ dễ dàng hơn</span>
                         </span>
                     </Link>

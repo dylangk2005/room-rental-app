@@ -2,18 +2,18 @@
 
 **Nền tảng đăng tin & quản lý cho thuê phòng trọ tại Việt Nam.**
 
-[Java](https://adoptium.net/)
-[Spring Boot](https://spring.io/projects/spring-boot)
-[React](https://react.dev/)
-[TypeScript](https://www.typescriptlang.org/)
-[Vite](https://vitejs.dev/)
-[Tailwind CSS](https://tailwindcss.com/)
-[MySQL](https://www.mysql.com/)
-[Redis](https://redis.io/)
-[Docker](https://www.docker.com/)
-[JWT](https://jwt.io/)
-[License](LICENSE)
-[PRs Welcome](https://github.com/dylann/room-rental-app/pulls)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=json-web-tokens&logoColor=white)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?style=for-the-badge)](https://github.com/dylann/room-rental-app/pulls)
 
 ---
 
@@ -89,16 +89,23 @@
 
 ### 2.1 Screenshots
 
+#### Trang Landing
+![Landing Page](frontend/public/demo/01-landing-page.png)
 
-| Trang Landing | Tìm kiếm | Chi tiết tin đăng |
-| ------------- | -------- | ----------------- |
-| Landing Page  | Search   | Post Detail       |
+#### Tìm kiếm
+![Search](frontend/public/demo/02-search.png)
 
+#### Chi tiết tin đăng
+![Post Detail](frontend/public/demo/03-post-detail.png)
 
+#### Dashboard Manager
+![Manager Dashboard](frontend/public/demo/04-manager-dashboard.png)
 
-| Dashboard Manager | Dashboard Moderator | Mobile View |
-| ----------------- | ------------------- | ----------- |
-| Manager           | Moderator           | Mobile      |
+#### Dashboard Moderator
+![Moderator Dashboard](frontend/public/demo/05-moderator-dashboard.png)
+
+#### Mobile View
+![Mobile](frontend/public/demo/06-mobile.png)
 
 
 ### 2.2 Thông tin truy cập
@@ -288,8 +295,8 @@ erDiagram
     posts ||--o{ moderation_logs : "has"
     posts ||--o| post_images : "has"
     post_types ||--o{ posts : "applies_to"
-    posts }|--|| provinces : "located_in"
-    posts }|--|| districts : "located_in"
+    posts }o--|| provinces : "located_in"
+    posts }o--|| districts : "located_in"
     posts ||--o| payments : "paid_for"
 
     roles ||--o{ users : "assigned_to"
@@ -358,7 +365,7 @@ erDiagram
     }
 
     roles {
-        int role_id PK
+        int id PK
         string name
         string description
     }
@@ -1229,7 +1236,7 @@ SOFTWARE.
 
 
 
-**Made with by [dylangk2005](https://github.com/dylann)**
+**Made with by [dylangk2005](https://github.com/dylangk2005)**
 
 **Star if you find this project useful!**
 

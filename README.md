@@ -279,7 +279,7 @@ graph TB
 erDiagram
     users ||--o{ posts : "creates"
     users ||--o{ payments : "makes"
-    users ||--o{ deposits : "has"
+    users ||--o{ deposits : "deposits"
     users ||--o{ reports : "files"
     users ||--o{ notifications : "receives"
     users ||--o{ favorites : "has"
@@ -302,32 +302,32 @@ erDiagram
     provinces ||--o{ districts : "contains"
 
     users {
-        int id PK
-        string email UK
+        int id
+        string email
         string password_hash
         string full_name
-        string phone_number UK
+        string phone_number
         string avatar
         string status
         float account_balance
         float total_spent
-        int role_id FK
-        int membership_level_id FK
+        int role_id
+        int membership_level_id
         timestamp created_at
     }
 
     posts {
-        int id PK
+        int id
         string title
         string description
         string address
-        int province_id FK
-        int district_id FK
+        int province_id
+        int district_id
         float area
         float rental_price
         string status
-        int user_id FK
-        int post_type_id FK
+        int user_id
+        int post_type_id
         timestamp push_time
         timestamp end_at
         int duration_days
@@ -336,14 +336,14 @@ erDiagram
     }
 
     post_images {
-        int id PK
+        int id
         string image_url
-        int post_id FK
+        int post_id
         timestamp updated_at
     }
 
     post_types {
-        int id PK
+        int id
         string name
         string title_color
         int title_size
@@ -352,31 +352,31 @@ erDiagram
     }
 
     provinces {
-        int id PK
+        int id
         string name
     }
 
     districts {
-        int id PK
-        int province_id FK
+        int id
+        int province_id
         string name
     }
 
     roles {
-        int id PK
+        int id
         string name
         string description
     }
 
     membership_levels {
-        int id PK
+        int id
         string name
         float min_spent
         int discount_percent
     }
 
     payments {
-        int id PK
+        int id
         string payment_type
         int days
         string day_end
@@ -386,81 +386,81 @@ erDiagram
         float final_fee
         float opening_balance
         float closing_balance
-        int user_id FK
-        int post_id FK
+        int user_id
+        int post_id
         timestamp created_at
     }
 
     deposits {
-        int id PK
+        int id
         float amount
         float tax
         float net_amount
         string method
         string status
-        string transaction_ref UK
+        string transaction_ref
         string gateway_transaction_no
         float opening_balance
         float closing_balance
-        int user_id FK
+        int user_id
         timestamp created_at
     }
 
     reports {
-        int id PK
+        int id
         string reason
         string description
         string status
-        int user_id FK
-        int post_id FK
-        int moderator_id FK
+        int user_id
+        int post_id
+        int moderator_id
         timestamp created_at
         timestamp resolved_at
     }
 
     moderation_logs {
-        int id PK
+        int id
         string action
         string target_type
         int target_id
         string reason
-        int user_id FK
+        int user_id
         timestamp created_at
     }
 
     user_penalties {
-        int id PK
+        int id
         string type
         string reason
         bool is_active
         timestamp start_date
         timestamp end_date
-        int user_id FK
+        int user_id
         timestamp created_at
     }
 
     notifications {
-        int id PK
+        int id
         string title
         string message
         bool is_read
-        int user_id FK
+        int user_id
         timestamp created_at
     }
 
     audit_logs {
-        int id PK
+        int id
         string action
         string target_type
         int target_id
         string reason
-        int user_id FK
+        int user_id
         timestamp created_at
     }
 
     favorites {
-        int user_id PK FK
-        int post_id PK FK
+        int user_id
+        int post_id
         timestamp created_at
     }
 ```

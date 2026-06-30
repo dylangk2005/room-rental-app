@@ -865,7 +865,7 @@ curl -X POST http://localhost:8080/api/posts \
 #### Bước 1: Clone dự án
 
 ```bash
-git clone https://github.com/dylann/room-rental-app.git
+git clone https://github.com/dylangk2005/room-rental-app.git
 cd room-rental-app
 ```
 

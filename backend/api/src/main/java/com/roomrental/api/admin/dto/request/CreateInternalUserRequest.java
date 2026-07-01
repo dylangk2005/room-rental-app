@@ -3,6 +3,7 @@ package com.roomrental.api.admin.dto.request;
 import com.roomrental.api.user.entity.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -19,6 +20,7 @@ public class CreateInternalUserRequest {
     private String email;
 
     @NotBlank(message = "Số điện thoại không được để trống")
+    @Pattern(regexp = "^0\\d{9}$", message = "Số điện thoại không hợp lệ")
     @Size(max = 20, message = "Số điện thoại không được vượt quá 20 ký tự")
     private String phoneNumber;
 

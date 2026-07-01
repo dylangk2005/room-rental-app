@@ -44,6 +44,8 @@ const statusOptions = [
     { value: 'BANNED', label: 'Bị cấm' },
 ]
 
+const editableStatusOptions = statusOptions.filter((option) => option.value !== 'BANNED')
+
 const getStatusBadgeVariant = (status) => {
     switch (status) {
         case 'ACTIVE': return 'success'
@@ -268,7 +270,7 @@ const InternalUsersPage = () => {
                             <label className="text-sm font-bold text-slate-700">
                                 Trạng thái
                                 <select className="mt-2 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 focus:border-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-100 transition-colors" value={editForm.status} onChange={(event) => setEditForm((current) => ({ ...current, status: event.target.value }))}>
-                                    {statusOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                                    {editableStatusOptions.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                                 </select>
                             </label>
                         </div>
